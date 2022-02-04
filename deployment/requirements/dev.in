@@ -1,0 +1,19 @@
+-r ./prod.in
+
+autoflake
+bandit
+black
+coverage
+isort
+mypy
+pip-tools
+pycodestyle
+pytest
+pytest-cov
+pytest-pythonpath
+types-certifi
+types-python-dateutil
+types-requests
+types-six
+types-tornado
+wheel

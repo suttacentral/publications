@@ -1,8 +1,10 @@
-# sutta_publisher
+# publications
 
-SuttaCentral publishing engine for HTML, EPUB, PDF.
+SuttaCentral books: make HTML, EPUB, PDF
 
-https://github.com/orgs/suttacentral/projects/2/views/1
+Central repo for SuttaCentra;s' publications WIP.
+
+<https://github.com/orgs/suttacentral/projects/2/views/1>
 
 ## Features
 * [Python 3.10](https://www.python.org/)
@@ -10,7 +12,10 @@ https://github.com/orgs/suttacentral/projects/2/views/1
 
 ## How to use
 ### Development stack
-It will mount the project root to the container.
+
+First ensure pre-commit is installed ( <https://pre-commit.com/> ).
+
+It will mount the project root to the container:
 ```bash
 # Go to project root
 cd publications

@@ -1,0 +1,12 @@
+FROM python:3.10-slim
+ENV PYTHONUNBUFFERED=1
+
+RUN apt-get update && apt-get install make -y --no-install-recommends
+
+COPY ./deployment/requirements/dev.txt /
+RUN pip install -r dev.txt
+
+# We need to have sources to install
+COPY ./ /app
+WORKDIR /app
+RUN python setup.py develop

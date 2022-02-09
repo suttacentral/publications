@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+# All of the code formatters have been defined in the Makefile
+make lint

@@ -13,13 +13,22 @@ Central repo for SuttaCentra;s' publications WIP.
 ## How to use
 ### Development stack
 
-First ensure pre-commit is installed ( <https://pre-commit.com/> ).
+Clone repo
 
-It will mount the project root to the container:
+Install pre-commit got hooks:
 ```bash
 # Go to project root
 cd publications
 
+# Make sure the file is executable
+chmod +x pre-commit
+
+# Install it
+cp pre-commit .git/hooks
+```
+
+It will mount the project root to the container:
+```bash
 # Build dev image
 make build-dev
 

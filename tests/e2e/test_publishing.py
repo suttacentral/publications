@@ -1,4 +1,5 @@
 import inject
+import pytest
 
 from sutta_publisher.engine.main import run
 from sutta_publisher.publishers.base import ActivePublishers
@@ -6,9 +7,10 @@ from sutta_publisher.publishers.base import ActivePublishers
 from fixtures.publisher import TestPublisher
 
 
+@pytest.mark.vcr
 def test_should_publish_html(injector):
     # Given
-    expected_publication = "flarp"
+    expected_publication = "scpub1"
     injector(publication_number=expected_publication)
 
     # When

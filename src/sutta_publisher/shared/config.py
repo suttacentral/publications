@@ -5,19 +5,107 @@ from dataclasses import dataclass
 from typing import cast
 
 import inject
+import requests
 
 from sutta_publisher.publishers.base import ActivePublishers
 from sutta_publisher.publishers.html import HtmlPublisher
 
 
 @dataclass(frozen=True)
-class Config:
-    bilara_data_url = "https://github.com/suttacentral/bilara-data"
+class EditionsConfig:
     publication_number: str
+    text_uid: str
+    edition_number: str
+    isbn: str
+    cip: str
+    publication_type: str
+    format: str
+    creator: str
+    output: str
+    page_size: str
+    cover_image: str
+    main_toc_depth: str
+    secondary_toc: bool
+    number_of_volumes: int
+    volumes: list
+
+
+@dataclass(frozen=True)
+class Config:
+    PUBLICATION_JSON_RAW_URL = (
+        "https://raw.githubusercontent.com/suttacentral/bilara-data/published/_publication-v2.json"
+    )
+
+    publication_number: str
+    source_url: str
+    root_lang_iso: str
+    root_lang_name: str
+    root_title: str
+    creation_process: str
+    text_description: str
+    is_published: str
+    publication_status: str
+
+    creator_uid: str
+    creator_name: str
+    creator_github_handle: str
+
+    text_uid: str
+    translation_lang_iso: str
+    translation_lang_name: str
+    translation_title: str
+    translation_subtitle: str
+
+    license_type: str
+    license_abbreviation: str
+    license_url: str
+    license_statement: str
+    first_published: str
+
+    editions_url: str
+    editions: EditionsConfig
 
     @classmethod
     def from_publication(cls, publication_number: str) -> Config:
-        return cls(publication_number=publication_number)
+
+        try:
+            publication_details = cls._get_publication_details(publication_number)
+        except StopIteration as err:
+            raise ValueError(f"Publication {publication_number} does not exist") from err
+
+        edition = cls._get_edition_for_publication(publication_details)
+
+        publication_details["editions"] = edition
+
+        return cls(**publication_details)
+
+    @classmethod
+    def _get_publication_details(cls, publication_number: str) -> dict:
+        response = requests.get(cls.PUBLICATION_JSON_RAW_URL)
+        response.raise_for_status()
+
+        publications: dict = response.json()
+        publication_details: dict = next(
+            item for item in publications if item["publication_number"] == publication_number
+        )
+
+        return publication_details
+
+    @classmethod
+    def _get_edition_for_publication(cls, publication: dict) -> dict:
+        """
+        Function to be updated when editions files will be uploaded to bilara-data repo
+        """
+
+        """
+        response = requests.get(publication.get("editions_url"))
+        response.raise_for_status()
+        edition = response.json()
+        return edition
+        """
+
+        # Dummy return vaule
+        return {"key1": "val1", "key2": "val1", "key3": "val1", "key4": {"key1": "val1", "key2": "val"}}
 
 
 def setup_logging() -> None:

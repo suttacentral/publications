@@ -17,3 +17,5 @@ types-requests
 types-six
 types-tornado
 wheel
+requests
+pytest-vcr

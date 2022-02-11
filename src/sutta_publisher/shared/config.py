@@ -32,38 +32,16 @@ class EditionsConfig:
 
 @dataclass(frozen=True)
 class Config:
-    PUBLICATION_JSON_RAW_URL = (
-        "https://raw.githubusercontent.com/suttacentral/bilara-data/published/_publication-v2.json"
-    )
-
     publication_number: str
-    source_url: str
-    root_lang_iso: str
-    root_lang_name: str
     root_title: str
-    creation_process: str
-    text_description: str
-    is_published: str
-    publication_status: str
-
-    creator_uid: str
     creator_name: str
-    creator_github_handle: str
-
-    text_uid: str
-    translation_lang_iso: str
-    translation_lang_name: str
     translation_title: str
     translation_subtitle: str
+    editions: list(EditionsConfig)
 
-    license_type: str
-    license_abbreviation: str
-    license_url: str
-    license_statement: str
-    first_published: str
-
-    editions_url: str
-    editions: EditionsConfig
+    _PUBLICATION_JSON_RAW_URL = (
+        "https://raw.githubusercontent.com/suttacentral/bilara-data/published/_publication-v2.json"
+    )
 
     @classmethod
     def from_publication(cls, publication_number: str) -> Config:
@@ -81,7 +59,7 @@ class Config:
 
     @classmethod
     def _get_publication_details(cls, publication_number: str) -> dict:
-        response = requests.get(cls.PUBLICATION_JSON_RAW_URL)
+        response = requests.get(cls._PUBLICATION_JSON_RAW_URL)
         response.raise_for_status()
 
         publications: dict = response.json()

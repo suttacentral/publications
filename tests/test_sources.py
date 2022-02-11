@@ -7,7 +7,7 @@ import pytest
 
 @pytest.fixture(scope="session")
 def sources_root() -> str:
-    sources_path = Path("src")
+    sources_path = Path("/src")
     paths = set(sys.path)
     for py_path in paths:
         if py_path.endswith(str(sources_path)):

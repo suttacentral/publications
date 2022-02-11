@@ -1,3 +1,3 @@
-from .run import main
+from .engine.main import setup_and_run
 
-main()
+setup_and_run()

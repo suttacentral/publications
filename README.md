@@ -53,3 +53,30 @@ make build
 # Run the script with given args
 make run -- <script_args>
 ```
+
+
+# Maintenance
+## Requirements file
+Project uses [pip-tools](https://github.com/jazzband/pip-tools) to handle dependencies in `requirements/*.txt` files.
+To manage requirements you need to have `pip-tools` installed in your env (or run docker for devs `make build-dev; make run-dev bash`).
+Packages name used in this project are stored in `requirements/*.in`.
+[Guide](https://code.kiwi.com/our-comprehensive-guide-to-python-dependencies-8a5a4366a563) on how to resolve conflicts and/or update dependencies.
+
+### How to add new package
+1. Add package name to suitable `requirements/*.in` file
+2. Run command to propagate changes and pin the package number
+```bash
+# Compile requirements *.txt files based on *.in file content
+make compile-deps
+```
+
+### How to update all requirements to new versions
+```bash
+# To update all packages, periodically re-run
+make recompile-deps
+```
+
+### how to sync requirements with your virtual environment
+```bash
+make sync-deps
+```

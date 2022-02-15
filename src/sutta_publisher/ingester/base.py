@@ -14,10 +14,8 @@ class Ingester:
 
     @classmethod
     def get_result(cls) -> IngestResult:
-        # log.info("** Running conversion for publication: %s", cls.config.publication_number)
-        parser = TsvParser("dn.tsv")
-        # result = IngestResult(content=f"<html><body>{cls.config.publication_number=}</body></html>")
-        result = IngestResult(content=f"<html><body>{parser.parse_input()}</body></html>")
-        # log.info("** Finished conversion for publication: %s", cls.config.publication_number)
-        print(parser.parse_input())
+        log.info("** Running conversion for publication: %s", cls.config.publication_number)
+        parser = TsvParser(cls.config.input_path)
+        result = IngestResult(content=f"{parser.parse_input()}\n<p>{cls.config.publication_number=}</p>")
+        log.info("** Finished conversion for publication: %s", cls.config.publication_number)
         return result

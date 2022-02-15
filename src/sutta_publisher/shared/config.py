@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from pathlib import Path
 from typing import cast
 
 import inject
@@ -14,6 +15,7 @@ from sutta_publisher.publishers.html import HtmlPublisher
 class Config:
     bilara_data_url = "https://github.com/suttacentral/bilara-data"
     publication_number: str
+    input_path: Path = Path(__file__).parent / "dn.tsv"
 
     @classmethod
     def from_publication(cls, publication_number: str) -> Config:

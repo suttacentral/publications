@@ -20,25 +20,13 @@ class TsvParser(BaseParser):
         en = _catch_translation_en_column(self.spreadsheet.columns)
         self.spreadsheet = self.spreadsheet[[en, "html", "reference", "segment_id"]]
         self.spreadsheet.rename(columns={en: "english"}, inplace=True)
+        self.spreadsheet.fillna("")  # replace empty cells with empty strings, so we can assume all input has str
 
     def parse_input(self) -> str:
         """Parse a tsv spreadsheet content and construct HTML string"""
         # TODO: replace with Jinja2 template
-        # Header
-        output = """
-<!DOCTYPE html>
-<html>
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Long Discourses</title>
-<style>
-</style>
-</head>
-<body>
-        """
-
-        # Body
+        # Only construct the body of a page here
+        output = ""
         # TODO: look for more efficient method for dataframes than looping
         for _, row in self.spreadsheet.iterrows():
             html: list[str] = _split_html_on_bracket(row["html"])
@@ -47,10 +35,4 @@ class TsvParser(BaseParser):
             segment_id = _segment_id_to_html(row["segment_id"])
             # e.g.      <p><a class='sc-main' id='dn1:1.10.16'>DN 1:1.10.16</a>‘He refrains from running errands...<a id='dn1:1.10.17'></a></p>
             output += f"{html[0]}{reference}{row['english']}{segment_id}{html[1]}"
-
-        # Footer
-        output += """
-</body>
-</html>
-        """
         return output

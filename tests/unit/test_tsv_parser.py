@@ -15,15 +15,6 @@ dn1:1.1.1			So I have heard. 				<p><span class='evam'>{}</span>	bj7.2, cck9.1, 
     )
 
     expected_html = """
-<!DOCTYPE html>
-<html>
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Long Discourses</title>
-<style>
-</style>
-</head>
 <body>
 
 <article id='dn1'><header><ul><li class='division'>Long Discourses 1 <a id='dn1:0.1'></a></li></ul>
@@ -31,7 +22,6 @@ dn1:1.1.1			So I have heard. 				<p><span class='evam'>{}</span>	bj7.2, cck9.1, 
 <h2>1. Talk on Wanderers <a id='dn1:0.3'></a></h2>
 <p><span class='evam'><a class='bj' id='bj7.2'>BJ 7.2</a>So I have heard. <a id='dn1:1.1.1'></a></span>
 </body>
-</html>
         """
 
     parser = TsvParser(input_tsv)

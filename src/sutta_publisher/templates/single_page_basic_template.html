@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang={{ page_language }}>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <title>{{ page_title }}</title>
+</head>
+<body>
+{% for row in rows %}
+{{ row.html[0] }}{{ row.reference }}{{ row.english }}{{ row.segment_id }}{{ row.html[1] }}
+{% endfor %}
+
+<h1>My Webpage</h1>
+{{ a_variable }}
+
+{# a comment #}
+</body>
+</html>

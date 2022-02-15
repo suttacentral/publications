@@ -2,3 +2,4 @@ attrs
 pandas
 click
 inject
+requests

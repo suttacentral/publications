@@ -21,6 +21,3 @@ class Ingester:
         # log.info("** Finished conversion for publication: %s", cls.config.publication_number)
         print(parser.parse_input())
         return result
-
-
-Ingester.get_result()

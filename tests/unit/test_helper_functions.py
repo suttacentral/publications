@@ -1,4 +1,4 @@
-from pytest_mock import MockerFixture
+import pytest
 
 from sutta_publisher.ingester.helper_functions import (
     _catch_translation_en_column,
@@ -12,10 +12,36 @@ from sutta_publisher.ingester.helper_functions import (
 
 
 def test_should_check_creating_tuple_from_reference():
-    assert _split_ref_and_number("bj7.2") == ("bj", "7.2")
-    assert _split_ref_and_number("pts-vp-pli14.2") == ("pts-vp-pli", "14.2")
-    assert _split_ref_and_number("invalid-ref2.2") is None
-    assert _split_ref_and_number("bj") is None
+    list_of_refs = [
+        "ms",
+        "pts-cs",
+        "pts-vp-pli",
+        "pts-vp-pli1ed",
+        "pts-vp-pli2ed",
+        "pts-vp-en",
+        "vnp",
+        "bj",
+        "csp1ed",
+        "csp2ed",
+        "csp3ed",
+        "dr",
+        "mc",
+        "mr",
+        "si",
+        "km",
+        "lv",
+        "ndp",
+        "cck",
+        "sya1ed",
+        "sya2ed",
+        "sya-all",
+        "vri",
+        "maku",
+    ]
+    assert _split_ref_and_number("bj7.2", list_of_refs) == ("bj", "7.2")
+    assert _split_ref_and_number("pts-vp-pli14.2", list_of_refs) == ("pts-vp-pli", "14.2")
+    assert _split_ref_and_number("invalid-ref2.2", list_of_refs) is None
+    assert _split_ref_and_number("bj", list_of_refs) is None
 
 
 def test_should_check_html_element_is_created_from_segment_id():
@@ -54,36 +80,8 @@ def test_should_check_that_list_is_flattened():
     assert _flatten_list(irregular_list) == flat_list
 
 
-def test_should_check_that_list_of_refs_is_fetched(mocker: MockerFixture):
-    from_page = [
-        {"edition_set": "ms", "includes": "ms", "name": "Mahasaṅgīti Tipiṭaka, 2010"},
-        {
-            "edition_set": "pts",
-            "includes": ["pts-cs", "pts-vp-pli", "pts-vp-pli1ed", "pts-vp-pli2ed", "pts-vp-en", "vnp"],
-            "name": "Pali Text Society",
-        },
-        {"edition_set": "bj", "includes": "bj", "name": "Buddhajayantītripiṭaka, 1957–1989"},
-        {
-            "edition_set": "csp",
-            "includes": ["csp1ed", "csp2ed", "csp3ed"],
-            "name": "Chaṭṭhasaṅgīti Piṭakaṃ, 1st ed 1952–1955, 2nd ed 1956–1962, 3rd ed 1997",
-        },
-        {"edition_set": "dr", "includes": "dr", "name": "Dayyaraṭṭhassa Saṅgītitepiṭakaṁ, 1987"},
-        {"edition_set": "mc", "includes": "mc", "name": "Mahācūḷātepiṭakaṁ, 1960–1990"},
-        {"edition_set": "mr", "includes": "mr", "name": "Maramma Tipiṭaka, 1997"},
-        {"edition_set": "si", "includes": "si", "name": "Sinhala Tipiṭaka, before 1957"},
-        {"edition_set": "km", "includes": "km", "name": "Phratraipiṭakapāḷi (Cambodia), 1958–1969"},
-        {"edition_set": "lv", "includes": "lv", "name": "Lāvaraṭṭhassa Tipiṭaka, 1957"},
-        {"edition_set": "ndp", "includes": "ndp", "name": "Nālandā Devanāgarī Pāḷi Series Tipiṭaka, 1957–1962"},
-        {"edition_set": "cck", "includes": "cck", "name": "Chulachomklao Pāḷi Tipiṭaka, 1893"},
-        {"edition_set": "sya", "includes": ["sya1ed", "sya2ed", "sya-all"], "name": "Other Thai editions"},
-        {"edition_set": "vri", "includes": "vri", "name": "Vipassanā Research Institute Tipiṭaka, 2537–2542"},
-        {"edition_set": "maku", "includes": "maku", "short_name": "Mahāmakut (Milindapañha), 1923"},
-    ]
-    # patch internal func calls, so we don't need to actually download json from the Internet
-    mocker.patch(target="urllib.request.urlopen")
-    mocker.patch(target="json.loads", return_value=from_page)
-
+@pytest.mark.vcr
+def test_should_check_that_list_of_refs_is_fetched():
     list_of_refs = [
         "ms",
         "pts-cs",
@@ -113,11 +111,12 @@ def test_should_check_that_list_of_refs_is_fetched(mocker: MockerFixture):
 
     assert _fetch_possible_refs() == list_of_refs
 
-    def test_should_check_intersection_of_two_lists():
-        some_refs = [
-            "vnp",
-            "pts-vp-en",
-            "km",
-        ]
-        accepted = ["bj", "pts-vp-en"]
-        assert _filter_refs(refs=some_refs, accepted_refs=accepted) == ["pts-vp-en"]
+
+def test_should_check_intersection_of_two_lists():
+    some_refs = [
+        "vnp",
+        "pts-vp-en",
+        "km",
+    ]
+    accepted = ["bj", "pts-vp-en"]
+    assert _filter_refs(refs=some_refs, accepted_refs=accepted) == ["pts-vp-en"]

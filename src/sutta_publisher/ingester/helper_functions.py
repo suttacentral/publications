@@ -1,16 +1,16 @@
 import re
 from typing import Any, cast
 
+import requests
+
+all_references_list_url = (
+    "https://raw.githubusercontent.com/suttacentral/sc-data/master/misc/pali_reference_edition.json"
+)
+
 
 def _fetch_possible_refs() -> list[str]:
-    import json
-    from urllib.request import urlopen
-
-    all_references_list_url = (
-        "https://raw.githubusercontent.com/suttacentral/sc-data/master/misc/pali_reference_edition.json"
-    )
-    response = urlopen(all_references_list_url)
-    jsons_list = json.loads(response.read())
+    response = requests.get(all_references_list_url)
+    jsons_list = response.json()
     irregular_list_of_refs = [json["includes"] for json in jsons_list]
     # Flatten list of strings and lists
     return _flatten_list(irregular_list_of_refs)
@@ -34,17 +34,14 @@ def _flatten_list(irregular_list: list[Any]) -> list[Any]:
     return flat_list
 
 
-def _split_ref_and_number(reference: str | None) -> tuple[str, str] | None:
+def _split_ref_and_number(reference: str | None, possible_refs: list[str]) -> tuple[str, str] | None:
     """Split reference strings such as "bj7.1" into tuples e.g. ("bj", "7.1")"""
     # We work on a full dataframe column so nan is possible:
     if type(reference) is not str:
         return None
     else:
         # Returns None for each ref type from POSSIBLE_REFS not present in reference string
-        matches = [
-            re.match(rf"^({ref_type})(\d+\.?\d*)", reference, flags=re.IGNORECASE)
-            for ref_type in _fetch_possible_refs()
-        ]
+        matches = [re.match(rf"^({ref_type})(\d+\.?\d*)", reference, flags=re.IGNORECASE) for ref_type in possible_refs]
         try:
             # Select not None value from the list of matches
             match = [match for match in matches if match][0]
@@ -77,7 +74,7 @@ def _catch_translation_en_column(column_names: list[str]) -> str | None:
         return None
 
 
-def _split_html_on_bracket(html_str: str) -> list[str]:
+def _split_html_on_bracket(html_str: str | float) -> list[str]:
     """Returns a list [<before>, <after>] from a string split on {} e.g. '<h2>{}</h2>' -> ['<h2>', '</h2>']"""
     # Catch pandas.dataframe's nan which is treated as float
     if type(html_str) is not str:

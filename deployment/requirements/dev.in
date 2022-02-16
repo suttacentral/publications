@@ -11,6 +11,7 @@ pycodestyle
 pytest
 pytest-cov
 pytest-pythonpath
+requests
 types-certifi
 types-python-dateutil
 types-requests

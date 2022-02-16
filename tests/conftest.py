@@ -1,3 +1,4 @@
+from io import BytesIO
 from typing import Callable
 
 import pytest
@@ -19,3 +20,23 @@ def injector() -> Callable:
         setup_inject(publication_number=publication_number, bindings=actual_bindings)
 
     return _injector
+
+
+@pytest.fixture
+def file_like_edition() -> BytesIO:
+    return BytesIO(b"Some very wise text to print")
+
+
+@pytest.fixture
+def edition_path_in_repo() -> str:
+    return "path/in/repo/file.html"
+
+
+@pytest.fixture
+def bot_api_key() -> str:
+    return "some_bot_api_key"
+
+
+@pytest.fixture
+def repo_url() -> str:
+    return "https://github.com/someowner/somerepo/contents/"

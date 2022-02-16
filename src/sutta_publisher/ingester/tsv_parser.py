@@ -7,7 +7,6 @@ from sutta_publisher.ingester.helper_functions import (
     _catch_translation_en_column,
     _fetch_possible_refs,
     _reference_to_html,
-    _remove_multiple_white_characters,
     _segment_id_to_html,
     _split_html_on_bracket,
     _split_ref_and_number,

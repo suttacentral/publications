@@ -74,15 +74,8 @@ def _catch_translation_en_column(column_names: list[str]) -> str | None:
         return None
 
 
-def _split_html_on_bracket(html_str: str | float) -> list[str]:
+def _split_html_on_bracket(html_str: str) -> list[str]:
     """Returns a list [<before>, <after>] from a string split on {} e.g. '<h2>{}</h2>' -> ['<h2>', '</h2>']"""
     # Catch pandas.dataframe's nan which is treated as float
-    if type(html_str) is not str:
-        return ["", ""]
-    else:
-        split = html_str.split("{}")
-        # If it's a new HTML tag (i.e. not just {}): add newline
-        if split[0] != "":
-            return ["\n" + split[0], split[1]]
-        else:
-            return split
+    split = html_str.split("{}")
+    return split

@@ -21,6 +21,7 @@ class TsvParser(BaseParser):
         en = _catch_translation_en_column(self.spreadsheet.columns)
         self.spreadsheet = self.spreadsheet[[en, "html", "reference", "segment_id"]]
         self.spreadsheet.rename(columns={en: "english"}, inplace=True)
+        self.spreadsheet.dropna(inplace=True)
 
     def parse_input(self) -> str:
         """Parse a tsv spreadsheet content and construct HTML string"""

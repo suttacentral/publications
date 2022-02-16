@@ -7,6 +7,7 @@ from sutta_publisher.ingester.helper_functions import (
     _catch_translation_en_column,
     _fetch_possible_refs,
     _reference_to_html,
+    _remove_multiple_white_characters,
     _segment_id_to_html,
     _split_html_on_bracket,
     _split_ref_and_number,
@@ -35,4 +36,7 @@ class TsvParser(BaseParser):
             segment_id = _segment_id_to_html(row["segment_id"])
             # e.g.      <p><a class='sc-main' id='dn1:1.10.16'>DN 1:1.10.16</a>‘He refrains from running errands...<a id='dn1:1.10.17'></a></p>
             output.append(f"{html[0]}{reference}{row['english']}{segment_id}{html[1]}")
-        return "".join(output)
+        output_str = "".join(output)  # concatenate row to a string
+        # output_str = output_str.replace("\n", "")  # trim all newlines
+        # return _remove_multiple_white_characters(output_str)  # type: ignore
+        return output_str

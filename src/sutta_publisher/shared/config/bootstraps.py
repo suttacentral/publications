@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
 from typing import cast
 
 import inject
@@ -9,15 +8,7 @@ import inject
 from sutta_publisher.publishers.base import ActivePublishers
 from sutta_publisher.publishers.html import HtmlPublisher
 
-
-@dataclass(frozen=True)
-class Config:
-    bilara_data_url = "https://github.com/suttacentral/bilara-data"
-    publication_number: str
-
-    @classmethod
-    def from_publication(cls, publication_number: str) -> Config:
-        return cls(publication_number=publication_number)
+from .app_config import Config
 
 
 def setup_logging() -> None:

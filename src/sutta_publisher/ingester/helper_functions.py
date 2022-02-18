@@ -74,12 +74,6 @@ def _catch_translation_en_column(column_names: list[str]) -> str | None:
         return None
 
 
-def _split_html_on_bracket(html_str: str) -> list[str]:
-    """Returns a list [<before>, <after>] from a string split on {} e.g. '<h2>{}</h2>' -> ['<h2>', '</h2>']"""
-    # Catch pandas.dataframe's nan which is treated as float
-    return html_str.split("{}")
-
-
 def _remove_multiple_white_characters(text: str) -> str:
     """Return a new string with all whitespaces substituted with a single space"""
     return re.sub(r"\s{2,}", " ", text)

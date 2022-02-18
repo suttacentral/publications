@@ -3,9 +3,7 @@ from typing import Any, cast
 
 import requests
 
-ALL_REFERENCES_URL = (
-    "https://raw.githubusercontent.com/suttacentral/sc-data/master/misc/pali_reference_edition.json"
-)
+ALL_REFERENCES_URL = "https://raw.githubusercontent.com/suttacentral/sc-data/master/misc/pali_reference_edition.json"
 
 
 def _fetch_possible_refs() -> list[str]:

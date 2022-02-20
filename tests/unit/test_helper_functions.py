@@ -1,6 +1,6 @@
 import pytest
 
-from sutta_publisher.ingester.helper_functions import (
+from sutta_publisher.edition_parsers.helper_functions import (
     _catch_translation_en_column,
     _fetch_possible_refs,
     _filter_refs,

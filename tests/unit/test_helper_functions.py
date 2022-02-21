@@ -45,8 +45,8 @@ def test_should_check_creating_tuple_from_reference():
 
 
 def test_should_check_html_element_is_created_from_segment_id():
-    assert _segment_id_to_html("dn1:0.1") == f"<a id='dn1:0.1'></a>"
-    assert _segment_id_to_html("dn1:1.1.4") == f"<a id='dn1:1.1.4'></a>"
+    assert _segment_id_to_html("dn1:0.1") == "<a class='sc-main' id='dn1:0.1'>DN 1:0.1</a>"
+    assert _segment_id_to_html("dn1:1.1.4") == "<a class='sc-main' id='dn1:1.1.4'>DN 1:1.1.4</a>"
 
 
 def test_should_find_first_english_translation_column():
@@ -70,8 +70,34 @@ def test_shouldnt_find_any_english_translation_column():
 
 
 def test_should_check_creating_html_element_from_reference():
-    assert _reference_to_html(("bj", "7.2")) == "<a class='bj' id='bj7.2'>BJ 7.2</a>"
-    assert _reference_to_html(("pts-vp-pli", "14.2")) == "<a class='pts-vp-pli' id='pts-vp-pli14.2'>PTS-VP-PLI 14.2</a>"
+    list_of_refs = [
+        "ms",
+        "pts-cs",
+        "pts-vp-pli",
+        "pts-vp-pli1ed",
+        "pts-vp-pli2ed",
+        "pts-vp-en",
+        "vnp",
+        "bj",
+        "csp1ed",
+        "csp2ed",
+        "csp3ed",
+        "dr",
+        "mc",
+        "mr",
+        "si",
+        "km",
+        "lv",
+        "ndp",
+        "cck",
+        "sya1ed",
+        "sya2ed",
+        "sya-all",
+        "vri",
+        "maku",
+    ]
+    assert _reference_to_html("bj7.2", list_of_refs) == "<a class='bj' id='bj7.2'>BJ 7.2</a>"
+    assert _reference_to_html("pts-vp-pli14.2", list_of_refs) == "<a class='pts-vp-pli' id='pts-vp-pli14.2'>PTS-VP-PLI 14.2</a>"
 
 
 def test_should_check_that_list_is_flattened():

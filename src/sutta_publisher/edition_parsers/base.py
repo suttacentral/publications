@@ -22,7 +22,7 @@ class EditionParser(ABC):
         self.config = config
         self.possible_refs = _fetch_possible_refs()
 
-    def __generate_html(self) -> None:
+    def __generate_html(self) -> str:
         """Generate content of an HTML body"""
         log.info("Generating html...")
         html_output: list[str] = []

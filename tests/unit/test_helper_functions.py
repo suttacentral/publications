@@ -11,8 +11,9 @@ from sutta_publisher.edition_parsers.helper_functions import (
 )
 
 
-def test_should_check_creating_tuple_from_reference():
-    list_of_refs = [
+@pytest.fixture
+def list_of_all_refs():
+    return [
         "ms",
         "pts-cs",
         "pts-vp-pli",
@@ -38,15 +39,26 @@ def test_should_check_creating_tuple_from_reference():
         "vri",
         "maku",
     ]
-    assert _split_ref_and_number("bj7.2", list_of_refs) == ("bj", "7.2")
-    assert _split_ref_and_number("pts-vp-pli14.2", list_of_refs) == ("pts-vp-pli", "14.2")
-    assert _split_ref_and_number("invalid-ref2.2", list_of_refs) is None
-    assert _split_ref_and_number("bj", list_of_refs) is None
 
 
-def test_should_check_html_element_is_created_from_segment_id():
-    assert _segment_id_to_html("dn1:0.1") == "<a class='sc-main' id='dn1:0.1'>DN 1:0.1</a>"
-    assert _segment_id_to_html("dn1:1.1.4") == "<a class='sc-main' id='dn1:1.1.4'>DN 1:1.1.4</a>"
+@pytest.fixture
+@pytest.mark.parametrize(
+    "test_reference, expected",
+    [("bj7.2", ("bj", "7.2")), ("pts-vp-pli14.2", ("bj", "7.2")), ("invalid-ref2.2", None), ("bj", None)],
+)
+def test_should_check_creating_tuple_from_reference(test_reference, expected, list_of_all_refs):
+    assert _split_ref_and_number(test_reference, list_of_all_refs) == expected
+
+
+@pytest.mark.parametrize(
+    "test_segment_id, expected_html",
+    [
+        ("dn1:0.1", "<a class='sc-main' id='dn1:0.1'>DN 1:0.1</a>"),
+        ("dn1:1.1.4", "<a class='sc-main' id='dn1:1.1.4'>DN 1:1.1.4</a>"),
+    ],
+)
+def test_should_check_html_element_is_created_from_segment_id(test_segment_id, expected_html):
+    assert _segment_id_to_html(test_segment_id) == expected_html
 
 
 def test_should_find_first_english_translation_column():
@@ -69,35 +81,17 @@ def test_shouldnt_find_any_english_translation_column():
     assert _catch_translation_en_column(column_names2) is None
 
 
-def test_should_check_creating_html_element_from_reference():
-    list_of_refs = [
-        "ms",
-        "pts-cs",
-        "pts-vp-pli",
-        "pts-vp-pli1ed",
-        "pts-vp-pli2ed",
-        "pts-vp-en",
-        "vnp",
-        "bj",
-        "csp1ed",
-        "csp2ed",
-        "csp3ed",
-        "dr",
-        "mc",
-        "mr",
-        "si",
-        "km",
-        "lv",
-        "ndp",
-        "cck",
-        "sya1ed",
-        "sya2ed",
-        "sya-all",
-        "vri",
-        "maku",
-    ]
-    assert _reference_to_html("bj7.2", list_of_refs) == "<a class='bj' id='bj7.2'>BJ 7.2</a>"
-    assert _reference_to_html("pts-vp-pli14.2", list_of_refs) == "<a class='pts-vp-pli' id='pts-vp-pli14.2'>PTS-VP-PLI 14.2</a>"
+@pytest.fixture
+@pytest.mark.parametrize(
+    "test_reference, expected_tag",
+    [
+        ("bj7.2", "<a class='bj' id='bj7.2'>BJ 7.2</a>"),
+        ("pts-vp-pli14.2", "<a class='pts-vp-pli' id='pts-vp-pli14.2'>PTS-VP-PLI 14.2</a>"),
+        ("wrong-reference", ""),
+    ],
+)
+def test_should_check_creating_html_element_from_reference(test_reference, expected_tag, list_of_all_refs):
+    assert _reference_to_html(test_reference, list_of_all_refs) == expected_tag
 
 
 def test_should_check_that_list_is_flattened():
@@ -106,36 +100,10 @@ def test_should_check_that_list_is_flattened():
     assert _flatten_list(irregular_list) == flat_list
 
 
+@pytest.fixture
 @pytest.mark.vcr
-def test_should_check_that_list_of_refs_is_fetched():
-    list_of_refs = [
-        "ms",
-        "pts-cs",
-        "pts-vp-pli",
-        "pts-vp-pli1ed",
-        "pts-vp-pli2ed",
-        "pts-vp-en",
-        "vnp",
-        "bj",
-        "csp1ed",
-        "csp2ed",
-        "csp3ed",
-        "dr",
-        "mc",
-        "mr",
-        "si",
-        "km",
-        "lv",
-        "ndp",
-        "cck",
-        "sya1ed",
-        "sya2ed",
-        "sya-all",
-        "vri",
-        "maku",
-    ]
-
-    assert _fetch_possible_refs() == list_of_refs
+def test_should_check_that_list_of_refs_is_fetched(list_of_all_refs):
+    assert _fetch_possible_refs() == list_of_all_refs
 
 
 def test_should_check_intersection_of_two_lists():

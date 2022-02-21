@@ -32,7 +32,25 @@ def _flatten_list(irregular_list: list[Any]) -> list[Any]:
     return flat_list
 
 
-def _split_ref_and_number(reference: str | None, possible_refs: list[str]) -> tuple[str, str] | None:
+def _segment_id_to_html(segment_id: str) -> str:
+    """Convert segment id strings such as 'mn138:1.5' into displayable format such as: 'MN 138:1.5'"""
+    # TODO: add logic for when to display and when not to display segment ID
+    displayable: bool = True  # ?????
+    class_ = " class='sc-main' " if displayable else " "
+    # Catch two groups. First: 1 or more lowercase letters, second: everything except lowercase letters (one or more)
+    regex = re.match("^([a-z]+)([^a-z]+)$", segment_id)
+    # If not matched will be None
+    if not regex:
+        raise KeyError(f"Invalid or unsupported segment ID {segment_id}")
+    else:
+        segment_id_displayable: str = f"{regex.group(1).upper()} {regex.group(2)}" if displayable else ""
+        # Depending on displayable flag return:
+        # displayable anchor:                              or non displayable anchor:
+        # <a class='sc-main' id='mn138:1.5'>MN 138:1.5</a> or <a id='mn138:1.5'></a>
+        return f"<a{class_}id='{segment_id}'>{segment_id_displayable}</a>"
+
+
+def _split_ref_and_number(reference: str, possible_refs: list[str]) -> tuple[str, str] | None:
     """Split reference strings such as "bj7.1" into tuples e.g. ("bj", "7.1")"""
     # We work on a full dataframe column so nan is possible:
     if type(reference) is not str:
@@ -49,15 +67,14 @@ def _split_ref_and_number(reference: str | None, possible_refs: list[str]) -> tu
             return None
 
 
-def _reference_to_html(reference: tuple[str, str]) -> str:
+def _reference_to_html(reference: str, possible_refs: list[str]) -> str:
     """Return HTML element made of a reference"""
-    ref_type, ref_id = reference
-    # E.g. <a class='bj' id='bj7.2'>BJ 7.2</a>
-    return f"<a class='{ref_type}' id='{ref_type}{ref_id}'>{ref_type.upper()} {ref_id}</a>"
-
-
-def _segment_id_to_html(segment_id: str) -> str:
-    return f"<a id='{segment_id}'></a>"
+    # First make a tuple: (ref_type, ref_id)
+    if ref_as_tuple := _split_ref_and_number(reference, possible_refs):
+        # E.g. <a class='bj' id='bj7.2'>BJ 7.2</a>
+        return f"<a class='{ref_as_tuple[0]}' id='{ref_as_tuple[0]}{ref_as_tuple[1]}'>{ref_as_tuple[0].upper()} {ref_as_tuple[1]}</a>"
+    else:
+        return ""
 
 
 def _catch_translation_en_column(column_names: list[str]) -> str | None:
@@ -72,6 +89,8 @@ def _catch_translation_en_column(column_names: list[str]) -> str | None:
         return None
 
 
-def _remove_multiple_white_characters(text: str) -> str:
-    """Return a new string with all whitespaces substituted with a single space"""
-    return re.sub(r"\s{2,}", " ", text)
+def _process_a_line(markup: str, segment_id: str, text: str, references: list[str], possible_refs: list[str]) -> str:
+    segment_id_html: str = _segment_id_to_html(segment_id)  # create html tag from segment_id
+    list_of_refs_tags: list[str] = [_reference_to_html(reference, possible_refs) for reference in references]
+    references_html = "".join(list_of_refs_tags)
+    return markup.format(f"{segment_id_html}{references_html}{text}")

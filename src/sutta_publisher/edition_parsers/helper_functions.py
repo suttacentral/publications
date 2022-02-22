@@ -4,6 +4,7 @@ from typing import Any, cast
 import requests
 
 ALL_REFERENCES_URL = "https://raw.githubusercontent.com/suttacentral/sc-data/master/misc/pali_reference_edition.json"
+ACCEPTED_REFERENCES = ["bj", "pts-vp-pli"]
 
 
 def _fetch_possible_refs() -> list[str]:
@@ -14,9 +15,9 @@ def _fetch_possible_refs() -> list[str]:
     return _flatten_list(irregular_list_of_refs)
 
 
-def _filter_refs(refs: list[str], accepted_refs: list[str]) -> list[str]:
+def _filter_refs(references: list[tuple[str, str]], accepted_references: list[str]) -> list[tuple[str, str]]:
     """Filters out not accepted references from a list"""
-    return [value for value in refs if value in accepted_refs]
+    return [value for value in references if value[0] in accepted_references]
 
 
 def _flatten_list(irregular_list: list[Any]) -> list[Any]:
@@ -52,31 +53,31 @@ def _segment_id_to_html(segment_id: str) -> str:
 
 def _split_ref_and_number(reference: str, possible_refs: list[str]) -> tuple[str, str] | None:
     """Split reference strings such as "bj7.1" into tuples e.g. ("bj", "7.1")"""
-    # We work on a full dataframe column so nan is possible:
-    if type(reference) is not str:
+    # We use possible_refs list fetched from GitHub because the references have inconsistent formats, letters, numbers, hyphens, dots...
+    # It's hard to guess which part is "reference type" (e.g. bj) and which is "reference id" (e.g. 7.9).
+    # This is what I called them, not the official names
+    # Additional benefit (although we could do away without it) is that we can also valide the references received in a payload against a list of possible references
+
+    # Returns None for each ref type from POSSIBLE_REFS not present in reference string
+    matches = [re.match(rf"^({ref_type})(\d+\.?\d*)", reference, flags=re.IGNORECASE) for ref_type in possible_refs]
+    try:
+        # Select not None value from the list of matches, meaning a ref type is on a list of possible refs
+        match = [match for match in matches if match][0]
+        # Build tuple consisting of (ref_type, ref_id) e.g. ("bj", "7.1")
+        return match.group(1), match.group(2)
+    except IndexError:  # string doesn't match any of the POSSIBLE_REFs
         return None
-    else:
-        # Returns None for each ref type from POSSIBLE_REFS not present in reference string
-        matches = [re.match(rf"^({ref_type})(\d+\.?\d*)", reference, flags=re.IGNORECASE) for ref_type in possible_refs]
-        try:
-            # Select not None value from the list of matches
-            match = [match for match in matches if match][0]
-            # Build tuple consisting of (ref_type, ref_id) e.g. ("bj", "7.1")
-            return match.group(1), match.group(2)
-        except IndexError:  # string doesn't match any of the POSSIBLE_REFs
-            return None
 
 
-def _reference_to_html(reference: str, possible_refs: list[str]) -> str:
-    """Return HTML element made of a reference"""
+def _reference_to_html(reference: tuple[str, str]) -> str:
+    """Return HTML element made of a reference tuple i.e. ("bj", "7,9")"""
     # First make a tuple: (ref_type, ref_id)
-    if ref_as_tuple := _split_ref_and_number(reference, possible_refs):
-        # E.g. <a class='bj' id='bj7.2'>BJ 7.2</a>
-        return f"<a class='{ref_as_tuple[0]}' id='{ref_as_tuple[0]}{ref_as_tuple[1]}'>{ref_as_tuple[0].upper()} {ref_as_tuple[1]}</a>"
-    else:
-        return ""
+    ref_type, ref_id = reference
+    # E.g. <a class='bj' id='bj7.2'>BJ 7.2</a>
+    return f"<a class='{ref_type}' id='{ref_type}{ref_id}'>{ref_type.upper()} {ref_id}</a>"
 
 
+# TODO: verify if we still need this. This was used in TsvParser
 def _catch_translation_en_column(column_names: list[str]) -> str | None:
     """Given a list of columns in a tsv file return a column with English translation"""
     # Check a list of column names against a pattern. Get a list of lists with matches (or list of empty lists)
@@ -89,8 +90,18 @@ def _catch_translation_en_column(column_names: list[str]) -> str | None:
         return None
 
 
-def _process_a_line(markup: str, segment_id: str, text: str, references: list[str], possible_refs: list[str]) -> str:
+def _process_a_line(markup: str, segment_id: str, text: str, references: str, possible_refs: list[str]) -> str:
     segment_id_html: str = _segment_id_to_html(segment_id)  # create html tag from segment_id
-    list_of_refs_tags: list[str] = [_reference_to_html(reference, possible_refs) for reference in references]
+    split_references: list[str] = ", ".split(
+        references
+    )  # references are passed as a string such as: "ref1, ref2, ref3"
+    references_divided_into_types_and_ids: list[tuple[str, str] | None] = [
+        _split_ref_and_number(reference=ref, possible_refs=possible_refs) for ref in split_references
+    ]
+    filtered_references = [ref for ref in references_divided_into_types_and_ids if ref]  # filter out Nones
+    filtered_references = _filter_refs(
+        references=filtered_references, accepted_references=ACCEPTED_REFERENCES
+    )  # filter out unaccepted references
+    list_of_refs_tags: list[str] = [_reference_to_html(reference) for reference in filtered_references]
     references_html = "".join(list_of_refs_tags)
     return markup.format(f"{segment_id_html}{references_html}{text}")

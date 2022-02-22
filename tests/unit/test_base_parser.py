@@ -7,6 +7,36 @@ from sutta_publisher.shared.config import PAYLOADS_PATH
 
 
 @pytest.fixture
+def list_of_all_refs():
+    return [
+        "ms",
+        "pts-cs",
+        "pts-vp-pli",
+        "pts-vp-pli1ed",
+        "pts-vp-pli2ed",
+        "pts-vp-en",
+        "vnp",
+        "bj",
+        "csp1ed",
+        "csp2ed",
+        "csp3ed",
+        "dr",
+        "mc",
+        "mr",
+        "si",
+        "km",
+        "lv",
+        "ndp",
+        "cck",
+        "sya1ed",
+        "sya2ed",
+        "sya-all",
+        "vri",
+        "maku",
+    ]
+
+
+@pytest.fixture
 def payload() -> dict:
     return json.load(open(PAYLOADS_PATH / "mn-en-sujato_scpub3-ed6-html_2022-02-10-mn.json"))
 

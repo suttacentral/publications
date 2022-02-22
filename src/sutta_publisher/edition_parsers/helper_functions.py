@@ -92,8 +92,8 @@ def _catch_translation_en_column(column_names: list[str]) -> str | None:
 
 def _process_a_line(markup: str, segment_id: str, text: str, references: str, possible_refs: list[str]) -> str:
     segment_id_html: str = _segment_id_to_html(segment_id)  # create html tag from segment_id
-    split_references: list[str] = ", ".split(
-        references
+    split_references: list[str] = references.split(
+        ", "
     )  # references are passed as a string such as: "ref1, ref2, ref3"
     references_divided_into_types_and_ids: list[tuple[str, str] | None] = [
         _split_ref_and_number(reference=ref, possible_refs=possible_refs) for ref in split_references

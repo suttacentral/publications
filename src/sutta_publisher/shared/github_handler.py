@@ -52,8 +52,8 @@ def __get_file_sha(file_path: str, repo_url: str) -> str:
         file_path (string): path where file is to be uploaded (e.g. /folder1/folder2/file.html)
         repo_url (string): url of SuttaCentral editions repo
     """
-    response = requests.get(repo_url.format(file_name=file_path))
 
+    response = requests.get(repo_url.format(file_name=file_path))
     sha_val = response.json().get("sha") or ""
 
     return sha_val

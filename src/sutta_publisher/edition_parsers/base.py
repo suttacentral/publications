@@ -25,26 +25,52 @@ class EditionParser(ABC):
     def __generate_html(self) -> str:
         """Generate content of an HTML body"""
         log.info("Generating html...")
-        html_output: list[str] = []
-        for volume in self.raw_data:  # iterate over volumes
-            volume_html: list[str] = []
-            for volume_content in volume.mainmatter:  # iterate over matters in each volume
-                volume_text: dict[str, str] = volume_content.mainmatter.main_text
-                markup: dict[str, str] = volume_content.mainmatter.markup
-                reference: dict[str, str] = volume_content.mainmatter.reference
-                for segment_id, text in volume_text.items():
-                    references_per_segment_id = reference[segment_id].split(", ")
-                    volume_html.append(
-                        _process_a_line(
-                            markup=markup[segment_id],
-                            segment_id=segment_id,
-                            text=text,
-                            references=references_per_segment_id,
-                            possible_refs=self.possible_refs,
+
+        # Publication is separated into volumes
+        publication_html_volumes_output: list[str] = []
+        for volume in self.raw_data:
+
+            # Each volume's mainmatter is separated into a list of mainmatter sub-entities (MainMatterDetails class)
+            processed_single_mainmatter_subentity: list[str] = []
+            for mainmatter_info in volume.mainmatter:
+                processed_mainmatter_single_lines: list[str] = []
+                try:
+                    # Only store segment_id if it has matching text (prune empty strings: "")
+                    segment_ids = [
+                        segment_id for segment_id, text in mainmatter_info.mainmatter.main_text.items() if text
+                    ]
+
+                    # Each mainmatter sub-entity (MainMatterDetails) have dictionaries with text lines, markup lines and references. Keys are always segment IDs
+                    for segment_id in segment_ids:
+                        processed_mainmatter_single_lines.append(
+                            _process_a_line(
+                                markup=mainmatter_info.mainmatter.markup[segment_id],
+                                segment_id=segment_id,
+                                text=mainmatter_info.mainmatter.main_text[segment_id],
+                                references=mainmatter_info.mainmatter.reference.get(
+                                    segment_id, ""
+                                ),  # references are provides as: "single, comma, separated, string". We take care of splitting it in helper functions
+                                possible_refs=self.possible_refs,
+                            )
                         )
-                    )
-            html_output.append("".join(volume_html))
-        return "".join(html_output)
+                except AttributeError:
+                    # 'NoneType' object has no attribute 'keys' -- means the mainmatter is an empty dict. Skip it.
+                    continue
+
+                single_mainmatter_subentity_output: str = "".join(
+                    processed_mainmatter_single_lines
+                )  # putting one sub-entity together (complete HTML body)
+                processed_single_mainmatter_subentity.append(
+                    single_mainmatter_subentity_output
+                )  # collecting sub-entities into one full mainmatter of a volume
+
+            single_mainmatter_output: str = "".join(
+                processed_single_mainmatter_subentity
+            )  # a complete mainmatter of a single volume in HTML <body>{single_mainmatter_output}</body>
+            publication_html_volumes_output.append(
+                single_mainmatter_output
+            )  # all main matters from each volumes as a list of html bodies' contents
+        return "".join(publication_html_volumes_output)
 
     def __generate_covers(self) -> None:
         log.info("Generating covers...")

@@ -8,9 +8,12 @@ isort
 mypy
 pip-tools
 pycodestyle
+pydantic
 pytest
 pytest-cov
 pytest-pythonpath
+pytest-vcr
+requests
 types-certifi
 types-python-dateutil
 types-requests

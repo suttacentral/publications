@@ -1,7 +1,6 @@
 import pytest
 
 from sutta_publisher.edition_parsers.helper_functions import (
-    _catch_translation_en_column,
     _fetch_possible_refs,
     _filter_refs,
     _flatten_list,
@@ -59,26 +58,6 @@ def test_should_check_creating_tuple_from_reference(test_reference, expected, li
 )
 def test_should_check_html_element_is_created_from_segment_id(test_segment_id, expected_html):
     assert _segment_id_to_html(test_segment_id) == expected_html
-
-
-def test_should_find_first_english_translation_column():
-    column_names1 = [
-        "translation-de-sabbamitta",
-        "translation-en-sujato",
-        "translation-en-second",
-        "translation-pl-hardao",
-        "variant-pli-ms",
-    ]
-    assert _catch_translation_en_column(column_names1) == "translation-en-sujato"
-
-
-def test_shouldnt_find_any_english_translation_column():
-    column_names2 = [
-        "segment_id",
-        "translation-de-sabbamitta",
-        "html",
-    ]
-    assert _catch_translation_en_column(column_names2) is None
 
 
 @pytest.mark.parametrize(

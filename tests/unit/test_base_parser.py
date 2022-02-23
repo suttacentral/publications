@@ -77,10 +77,13 @@ def base_parser(example_edition_config, example_edition_data) -> EditionParser:
 
 
 def test_should_parse_json_to_html(base_parser):
-    assert base_parser._EditionParser__generate_html() is not None
+    generated_html = base_parser._EditionParser__generate_html()
+    assert generated_html is not None
     # Adding the hardcoded html_[head|tail] for styling of output .html file. Will be useful for demo only
     with open("output_test_html_from_test_base_parser.html", "w") as f:
-        f.write(f"{html_head}{base_parser._EditionParser__generate_html()}{html_tail}")
+        f.write(f"{html_head}{generated_html}{html_tail}")
+    with open("output_test_html_from_test_base_parser (without css).html", "w") as f:
+        f.write(generated_html)
 
 
 html_head = """

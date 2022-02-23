@@ -1,0 +1,26 @@
+name: Generate and publish edition
+
+on:
+  workflow_dispatch:
+    inputs:
+      publication_ids:
+        description: 'IDs of publications'     
+        required: true
+ 
+env:
+  BOT_API_KEY: ${{ secrets.SC_BOT_KEY }}
+  PUBLICATION_IDS: ${{ github.event.inputs.publication_ids }}
+
+jobs:
+  generate_and_publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.10"
+      - name: Build SuttaPublisher
+        run: make build 
+      - name: Run SuttaPublisher
+        run: make run $PUBLICATION_IDS $BOT_API_KEY

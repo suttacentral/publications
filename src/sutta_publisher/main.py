@@ -37,12 +37,14 @@ def run(editions: EditionsConfigs) -> None:
 
 
 @click.command()
-@click.argument("publication_number", default="noop_number")
-def setup_and_run(publication_number: str) -> None:
+@click.argument("publication_number_list", default="noop_number")
+@click.argument("token", default=None)
+def setup_and_run(publication_number_list: str, token: str) -> None:
     """Setup and run the engine. It's entrypoint of the script."""
+
     try:
         setup_logging()
-        editions = get_editions_configs(publication_number=publication_number)
+        editions = get_editions_configs(publication_number=publication_number_list)
         run(editions=editions)
     except Exception as e:
         log.exception(e)

@@ -91,15 +91,15 @@ class EditionParser(ABC):
         log.info("Generating end matters...")
 
     def collect_all(self) -> EditionResult:
-        html_part = self.__generate_html()
         self.__generate_frontmatter()
         self.__generate_endmatter()
         self.__generate_covers()
-        
-        content = html_part
-        
+
+        content = "<head>"+ "<style>"+ self.__get_standalone_html_css()+ "</style>"+ "</head>"+ self.__generate_html()
+
         print(content)
         
+        exit()
         result = EditionResult()
         result.write(content)
         result.seek(0)

@@ -12,7 +12,7 @@ from sutta_publisher.shared.value_objects.edition_config import EditionsConfigs
 log = logging.getLogger(__name__)
 
 
-def run(editions: EditionsConfigs) -> None:
+def run(editions: EditionsConfigs, api_key: str) -> None:
     """Run the script engine. Configuration should be already done via the setup functions."""
     edition_list = []
     edition_class_mapping = EditionParser.get_edition_mapping()
@@ -29,7 +29,7 @@ def run(editions: EditionsConfigs) -> None:
     for edition in edition_list:  # type: EditionParser
         try:
             file_like_obj = edition.collect_all()
-            publish(file_like_obj)
+            publish(file_like_obj, api_key)
         except Exception as e:
             log.exception(e)
 
@@ -45,7 +45,7 @@ def setup_and_run(publication_number_list: str, token: str) -> None:
     try:
         setup_logging()
         editions = get_editions_configs(publication_number=publication_number_list)
-        run(editions=editions)
+        run(editions=editions, api_key=token)
     except Exception as e:
         log.exception(e)
         raise

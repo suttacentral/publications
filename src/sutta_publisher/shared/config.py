@@ -46,7 +46,7 @@ def get_editions_configs(publication_number: str) -> EditionsConfigs:
         try:
             editions_config.append(get_edition_config(edition_id=each_id))
         except ValidationError:
-            logging.warning("Not upported edition type found. Skipping to next one.")
+            logging.warning("Not supported edition type found. Skipping to next one.")
 
     if not editions_config:
         raise SystemExit(f"No valid edition configs found for {publication_number=}. Stopping.")

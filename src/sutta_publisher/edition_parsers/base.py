@@ -82,13 +82,17 @@ class EditionParser(ABC):
         log.info("Generating end matters...")
 
     def collect_all(self) -> EditionResult:
-        self.__generate_html()
+        html_part = self.__generate_html()
         self.__generate_frontmatter()
         self.__generate_endmatter()
         self.__generate_covers()
-        txt = "dummy"
+        
+        content = html_part
+        
+        print(content)
+        
         result = EditionResult()
-        result.write(txt)
+        result.write(content)
         result.seek(0)
         return result
 

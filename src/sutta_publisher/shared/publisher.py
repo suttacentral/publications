@@ -12,7 +12,7 @@ def publish(result: EditionResult, token: str) -> None:
     result.seek(0)
     
     print("-----------------------------------------------")
-    string = EditionResult.read()[::1]    
+    string = EditionResult.read()  
     print(string)
     print("-----------------------------------------------")
     

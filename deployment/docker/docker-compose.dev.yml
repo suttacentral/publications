@@ -6,5 +6,6 @@ services:
       context: ../../
       dockerfile: ./deployment/docker/Dockerfile.dev
     container_name: sutta_publisher_dev
+    network_mode: host
     volumes:
       - ../..:/app

@@ -1,0 +1,172 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.27.1
+    method: GET
+    uri: http://localhost/api/publication/editions
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAEA7WXW26DMBREtxLxHUsxeapbqarIYLe4BYJ45Kfq3us0f+HycW6VBXDmMjPXhtfv
+        LPg4xkt7jj57WWVdHc14NddoQmuK3lWNq+N5KLupOJngd6bz7+d8k+dmkxu7ydbpkamoY+n+IO3U
+        FKG/ge6PZD/rFZTITUjE52ocTDU29XM1tqZyvS8v19A/V2hvOteFvnDl1z+FXHtLfZg+3Xi5Z75P
+        mateZC8lL/Np4ACtsgbwaY8AGm6aSB7a7jFQe0yJUsftUUpzia7qC5OgvjM6tJ7BVZWUJcYqfjzm
+        e1DEe5DSXYKr5kcK0H7EpsVBcFXxRQVfzRZXs7fi2i6wqTOEreoMEYCVIWhVqKLAWLnZutq0rip3
+        rLyzsoLqHZACbQ+C4+uKeAOrIw4++cdj2Co+lu1JmnuBjT0hcJwmgevqThR0dRcV0q/RLFrNFSse
+        CEtwWEnEVrmPFFTuIwVaTxHezP51ttqzeCvtrcynowM0PREAWhUp4MPCi+Rhlucu5QnJOylJmaxa
+        JMBXeQ74tIkATZsoov0sz4T1dOpcClRGqwwHfOoKQKu6CPhwixL57Re2P7M1WRQAAA==
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 01 Mar 2022 10:58:37 GMT
+      ETag:
+      - W/"d57bc99724c1f544cc8c455640e80936"
+      Keep-Alive:
+      - timeout=5
+      Server:
+      - nginx/1.21.1
+      Transfer-Encoding:
+      - chunked
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.27.1
+    method: GET
+    uri: http://localhost/api/publication/edition/mn-en-sujato_scpub3-ed2-epub_2022-02-10
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAEA4VWwW7cNhD9FUKnFvCubBcoguTUuD30kCJFfWmDQqCk0Wq8FKmS1K43gYHmkC/o
+        ZxT9gNzzI+mX9A252pWTAAUMaKkZDofvvXnym4Jajuxs8VS9KRoe8Sz294fXxYUqGk86Uiuvri+v
+        r1eX16urSwkc91ScYoNdkV2F6U5HV4VmnOpvVtRerwi/qi9vtNNQk5fCSJSKHGppodB101K3kVeD
+        ZltF11QtjbFPQWMkkDdXrqt2zkwDBcSu8H7UG6oCvyasO20CybupNtxouWF1PjQ3KbWW8XgYZWsh
+        fUssUONsq/1BuljUDG7yTTr1zbFJuo+yMXptg0mHnRHJV/HbKUHbxyHfwcVUoWjcMJCNj/M9deTJ
+        Nqmd8+IBTUWcVU0z8FJ8GtvPWLqSwBmdV6DW7chXPAAjaXVd8rApE0Mpsh5tAp1sO+gYEzevCrYt
+        3Uspm9rFDz3F3vmqZlf8jmXnnY2LDZGjIeFBNjVuPHje9FEWAiEe6zJnl53ztHe+Xc+InCJso3ft
+        1Ahnn0d1s7Vub6jdkOAWcob0InpZtDLY1GEG4cx9EsaD5OP0LdtN1XISYunGWIYGf6vO6LCVHwBW
+        44nrGu11lZbVQjIl2TLrvjyORChxrvC0yALewF9mSVQ4egfxiGaLlx58+IPKglJ7HVTsSbW84aiN
+        eqH7D2+D/vj+3ebD35HV8QjlupT2UhtWtzzyx/f/6K1eq9uj/KhV4GU4JV2oPcdenXSkolOBIAec
+        8YPdGA69Wkg3XCgKIzWsjTmgiAskRz7vebvtJ/XctT2vE79yJYgB3faY9F7b1iRxZUiWKVYPKTIX
+        +SWZxTLjKOnz1hnQavJGwJLkjn2ImYDQz8Z09URCHB69j36S8cfskw1U6br2tOPEgBS7uUk+NodD
+        xASJnCR22zN4OI+ywlJbRfejB2+gUNDAC20bxhYVRvYcJ4ApswnAdFQ9qKyJrBp1COCjdXurakGT
+        1POpBYIBmV5n71UYhhSqyVLHMR1gDEiyMR1RE4Qa1urHKM20gAaWhrIgUipmreEQGQGFa6qbpLYd
+        qRvYi7NB/Ubeqa9w7a/X6lc3Ke1JwWDc5DGsqZBM6wVEAn1i+ACebvUY8TBwgwuFDh3O8nuGHAa9
+        JTVlXcRP4IIO0dKMH7YBNagpdpPIydMfE4UoQgdM2h5SmZoUGtdNA0MArJQFK1fbaYN8JLZq9AzE
+        R4PlcQJOSIqJTpbjIelyZnX28y+CIZqZE48K62Mcw9OyzKO6g/sn7NbOb8oMcUa4fA0wy6v1ZSlF
+        ciTP9v99YURnUxp98IKbgEOBfMdJVqDW2Y0D1eka3rlYGQ2H4uBEmKNhOfD8fp4qcYJTJFmwpL/Q
+        d3c9DMby9sPbg5aEbDTVJ/fN87vGdWFmMWqMDOgzZXa9bILRE8G6A7RQztxiFBYGmLaK++EcGQR8
+        tkPjeTz+c1F8NlZid6P2We1g191BJUnSs48lcXfQqEpe91O+SDiro3PGuD0AU5qH8FSNBgMAyY6o
+        ppte14Zmh3um8DEPGDsZWdxiYOuM2xyeiewwBZFAhD3O48Jhn8FLKRng6XOW5lC6H3QLt56gy426
+        vrz69t8//8Ljidr3jIMfe11yd/B/kGSI/WceiC/Urea9tonvBNqjL/sC6EdCoAzy2aJydJbD0dMT
+        EYucMNUnbXynzNRwexrTo6vJxM2yUUe4Py1zqvGCW/i9+p6D2EjAvzMPD/8BphcfqU8KAAA=
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 01 Mar 2022 10:58:37 GMT
+      ETag:
+      - W/"9f1a895c9a9ee2d6eb7ac606b89e8cea"
+      Keep-Alive:
+      - timeout=5
+      Server:
+      - nginx/1.21.1
+      Transfer-Encoding:
+      - chunked
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.27.1
+    method: GET
+    uri: http://localhost/api/publication/edition/mn-en-sujato_scpub3-ed3-hardcover_2022-02-10
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAEA8VWwY7bNhD9FcKnFrCtXS8QpMmp2fbQQ4oU3UsbFMJIGltcU6RKUut1ggWaQ7+g
+        n1H0A3LPj6Rf0jekZHs3KYL20AIGZGmGw5k3bx75esaNjtrZ2RP1elbrHs/Z7nb/ajZXs9ozRW7k
+        0+pstVqcrRbnZ2IY15Q62Tq7YLsIwzVFV4a6H6qLBTcXi5Z8U7sb9uXHV9uhq9hLdHhLWB0qyWNG
+        Vd3weiOfOtK2jK4uG+5jm4zGiCEvLt26vHFm6DjAdoHvPW24DPoVi+8jbefqC21lAdIyuiaptTzu
+        nNN9aI/7Pq0/VCAOgWtnG/J7yQfR12QCy3c3+Drt/3pMl2+j7B492WDSjkeAJFJHfjskpNvY5Wpc
+        TBFmtes6tvG+v+c1e7Z1yun4codQEXuVw9QHCT70zQdNOxfDEaeX6HTqi+6AlqS6LHS3KQ7lltkM
+        +G6BniB8vuxtagjbpqMYU99ezrRt+FaC21QA/tAQW+fLSrvZT3hde2fjyYKoo2HpkSyqXb/3etNG
+        eRFQ8VgW2btYO88755vlhNHBom30rhlqaeWHVqq31u0MNxsWJEP2kFyESyepgLbdYKgnaylQyjZD
+        dEIPqXwGnP85YKv/BLC/KYuur1v09lOlrf5daRf/Y2lDT15/qq6L2Z0AA/Zstd2UjU4iU7g+FqHG
+        b7E2FLbyB6NCeIKuhjyV6bU8UYqCbZGFrRg1LxSdFdhO9QQTBIKIWIq49N5BDkSPZi88uuD3KkuE
+        2lFQsWXV6I2OZNRzat+9CfT+7a+bd79HrcYtlFsntxdktLrSvX7/9g/a0lJdjYLCjcJcdQenudrp
+        2KqDMqjoVGAIL/b42m6MDq06EaMwVxx6rjUZs0cQF1i2fNbq7bYd1DPXtHqZ5lNKwjAj23aoypZs
+        Y5JcZEhOXSx1yTIF+T6dBqceo0gdl06AloM3ApY4r7UPMTcgtNPJc/5YTDrc+x79IOILSWcbuKSq
+        8nyjUwck2OVlOqgmc4jQRJEDsV21Gn04irPCK1nFt71H39BCQQMfyNYaS1TotddxAJiitgCMomrR
+        yorZqp5CQD8at7OqEjRZPRsaIBjg6SkfrgpilkwVW17rmDYwBk2yMW1RMYgaluqbKMk0gAYnFcKi
+        kRIxMxKbiIQplKkuE9tuWF3iwHA2qB/ZO/UZyv58qX5wgyLPCkeGGzzENgUStZ2DJOAnxBPgUUN9
+        xMNAzecKGTrs5XcadOhoy2rIvIgP4AIPkdKEH5YBNbAprgehk+efBw5RiA6YyO5TmIoVEqe6hqAD
+        Vs6EldJuyMAfjo3qvQbivcHrOAEHJOVYHKyO+8TLqavTMf1RMIQzk+PIsDbGPjwpijyqNzjPE3ZL
+        5zdFhjgjXLwCmMX58qyQINmSZ/tTFwfh2ZBGH31BJeihQH6jE63QWmc3Dq1OZXjnYmkICqWDE2L2
+        RsuGx+/TVIkSHCzpCBX356PMW71992ZP4pCFpnxQb57fJcqFmMVIGBm0zxRZ9bIIRs+MozeAC8XU
+        W4zCiQCmpaJ+2EcGAVeyUEOMx9vj7IOxErmDXGe2o7vuGixJlJ50LJF7DY6qpHXf5kLCkR1rZ4zb
+        ATBFugtPVG8wAKBsj2hUt1QZnhTuqcL1LGDsZGRRRaetM26zfyq0wxRERiPsOI8nCvsUWspJAA/X
+        kTSHkn1HDdR6AC83anV2/ujPX37D47HatRob39e6pO7o/16cQfbvdMd6rq5I78imfifQ7t3VToC+
+        RwTOIB8lKlsnOoyanhpx4hOG6sCNL5UZat0cxnRUNZm4iTZqhPthmEOM57qB3quvdBAZCbig3t39
+        BXQJ1ecwDAAA
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 01 Mar 2022 10:58:37 GMT
+      ETag:
+      - W/"fe709fafc65e0d5792a46838f97b972f"
+      Keep-Alive:
+      - timeout=5
+      Server:
+      - nginx/1.21.1
+      Transfer-Encoding:
+      - chunked
+    status:
+      code: 200
+      message: OK
+version: 1

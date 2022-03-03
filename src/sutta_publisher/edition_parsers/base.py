@@ -72,6 +72,14 @@ class EditionParser(ABC):
             )  # all main matters from each volumes as a list of html bodies' contents
         return "".join(publication_html_volumes_output)
 
+    def __get_standalone_html_css(self) -> str:
+        """Returns css stylesheet as a string"""
+
+        with open("css_stylesheets/standalone_html.css", "r") as css_file:
+            content = css_file.read()
+
+        return content
+
     def __generate_covers(self) -> None:
         log.info("Generating covers...")
 

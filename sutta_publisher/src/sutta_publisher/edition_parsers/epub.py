@@ -1,6 +1,6 @@
 import logging
 import tempfile
-from subprocess import PIPE, Popen
+from subprocess import PIPE, Popen  # nosec
 
 from sutta_publisher.shared.value_objects.edition import EditionType
 

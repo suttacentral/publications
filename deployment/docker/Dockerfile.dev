@@ -1,7 +1,11 @@
 FROM python:3.10-slim
 ENV PYTHONUNBUFFERED=1
 
-RUN apt-get update && apt-get install make -y --no-install-recommends
+RUN apt-get update -y \
+    && apt-get upgrade -y \
+    && apt-get install make --no-install-recommends -y \
+    && apt-get install pandoc  --no-install-recommends -y \
+    && apt-get clean -y
 
 COPY ./deployment/requirements/dev.txt /
 RUN pip install -r dev.txt

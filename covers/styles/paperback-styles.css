@@ -1,0 +1,394 @@
+@font-face
+{
+    font-family: 'Source Serif 4 Variable';
+    font-weight: 200 900;
+    font-style: normal;
+    font-stretch: normal;
+
+    src: url('../fonts/SourceSerif4Variable-Roman.ttf') format('truetype');
+}
+
+@font-face
+{
+    font-family: 'Source Serif 4 Variable';
+    font-weight: 200 900;
+    font-style: italic;
+    font-stretch: normal;
+
+    src: url('../fonts/SourceSerif4Variable-Italic.ttf') format('truetype');
+}
+
+@font-face
+{
+    font-family: 'Libre Barcode 128 Text';
+    font-weight: 400;
+    font-style: normal;
+
+    src: url('../fonts/LibreBarcode128Text-Regular.ttf');
+}
+
+*
+{
+    box-sizing: border-box;
+}
+
+:root
+{
+    font-size: 12px;
+
+    --huge-font-size:  6rem;
+    --large-font-size:  3rem;
+    --large-font-line-height:  1.2;
+    --medium-font-size:  1.5rem;
+
+    --title-font-weight:  350l;
+
+    --primary-spacing:  1in;
+    --secondary-spacing:  .6667in;
+    --tertiary-spacing:  .333in;
+}
+
+
+.blue{
+    --text-color: white;
+    --secondary-text-color:  #93B4D4;
+    --background-color:  #104B84;
+}
+
+ .orange       {
+    --text-color: black;
+    --secondary-text-color:  rgba(111, 68, 33, 1);
+    --background-color:  #FD8523;
+}
+
+.red{
+    --text-color: white;
+    --secondary-text-color:  rgba(255, 176, 179, 1);
+    --background-color:  rgba(179, 3, 9, 1);
+}
+
+ .white       {
+    --text-color: black;
+    --secondary-text-color:  rgba(119, 119, 119, 1);
+    --background-color:  white;
+}
+
+.yellow{
+    --text-color: black;
+    --secondary-text-color:  rgba(122, 112, 38, 1);
+    --background-color:  #FFDF00;
+}
+
+ .green       {
+    --text-color: white;
+    --secondary-text-color:  rgba(203, 219, 193, 1);
+    --background-color:  #507538;
+}
+
+body
+{
+    font-family: 'Source Serif 4 Variable';
+    line-height: 1.2;
+
+    display: flex;
+
+    height: 100vh;
+
+    background-color: #efefef;
+
+    place-content: center;
+    align-items: center;
+}
+
+main,
+div,
+section
+{
+    display: flex;
+}
+
+main
+{
+    color: var(--text-color);
+    background-color: var(--background-color);
+
+    padding:  3mm;
+}
+
+.back
+{
+    flex-direction: column;
+
+    padding: var(--primary-spacing) var(--secondary-spacing) var(--secondary-spacing) var(--secondary-spacing);
+
+    justify-content: space-between;
+}
+
+.back-top-blurb{
+    flex-direction: column;
+}
+
+p
+{
+    line-height: 1.5;
+
+    margin:  0 0 1.5rem 0;
+}
+
+.back-bottom
+{
+    flex-direction: column;
+}
+
+.back-bottom-blurb
+{
+    width: 3in;
+
+    align-self: center;
+}
+
+.back-bottom-blurb .blurb
+{
+    font-style: italic;
+
+    text-align: center;
+
+    color: var(--secondary-text-color);
+}
+
+.back-bottom-imprint
+{
+    font-size: var(--medium-font-size);
+
+    flex-direction: row;
+
+    height: 20px;
+    margin-top: var(--secondary-spacing);
+
+    justify-content: space-around;
+}
+
+.publisher-details
+{
+    gap: .25rem;
+    align-items: center;
+    font-variant-caps: small-caps;
+}
+
+svg
+{
+    width: 20px;
+    height: 20px;
+
+    fill: var(--text-color);
+}
+
+.publisher-details svg
+{
+    margin-top: 1px;
+}
+
+.isbn
+{
+    font-family: 'Libre Barcode 128 Text' ;
+}
+
+.spine
+{
+    flex-direction: column;
+
+    width: calc(200in / 444 + .06in);
+    height: 9in;
+}
+
+.spine-top
+{
+    line-height: 1.5;
+
+    flex-direction: column;
+
+    height: var(--primary-spacing);
+
+    align-items: center;
+    justify-content: center;
+}
+
+.spine .volume_number
+{
+    color: var(--secondary-text-color);
+}
+
+.spine-middle
+{
+    font-size: var(--medium-font-size);
+
+    flex-direction: row;
+
+    height: 100%;
+
+    writing-mode: vertical-rl;
+    align-items: center;
+    justify-content: space-around;
+}
+
+.spine-bottom
+{
+    flex-direction: column;
+
+    height: var(--primary-spacing);
+
+    align-items: center;
+    justify-content: center;
+}
+
+.front
+{
+    flex-direction: column;
+
+    padding: var(--primary-spacing) var(--secondary-spacing) var(--secondary-spacing) var(--secondary-spacing);
+
+    justify-content: space-between;
+}
+
+.front-top
+{
+    flex-direction: column;
+}
+
+.front-title
+{
+    flex-direction: column;
+
+    padding-bottom: var(--tertiary-spacing);
+
+    border-bottom: 0px solid var(--secondary-text-color);
+}
+
+.front-title .translation_title
+{
+    font-size: var(--huge-font-size);
+    font-weight: var(--title-font-weight);
+    line-height: 1;
+
+    margin-top: -.1em;
+    /* This is a magic number to compensate for the added leading above the heading. It will vary per font. Check that the top of the heading aligns with the top of the blub on the back cover. */
+}
+
+.front-title .translation_subtitle
+{
+    font-size: var(--large-font-size);
+    font-weight: var(--title-font-weight);
+
+    color: var(--secondary-text-color);
+}
+
+hr{
+    width:  100%;
+    border:  none;
+    border-top: 1px solid var(--secondary-text-color);
+}
+
+.front-creator
+{
+    flex-direction: column;
+
+    margin-top: var(--tertiary-spacing);
+
+    align-items: end;
+}
+
+.byline
+{
+    font-style: italic;
+
+    color: var(--secondary-text-color);
+}
+
+.front-creator .creator_name
+{
+    font-size: var(--medium-font-size);
+    line-height: 1.5;
+}
+
+.volume-details
+{
+    flex-direction: column;
+}
+
+.volume-details .volume_number
+{
+    font-size: var(--medium-font-size);
+
+    color: var(--secondary-text-color);
+}
+
+.volume-details .volume_acronym
+{
+    font-size: var(--large-font-size);
+}
+
+.volume-details .volume_translation_title
+{
+    font-size: var(--medium-font-size);
+}
+
+.volume-details .volume_root_title
+{
+    font-size: var(--medium-font-size);
+
+    margin-top: .5rem;
+
+    color: var(--secondary-text-color);
+}
+
+main 
+{
+    background-image: url('../img/leaf1.png');
+    background-repeat: no-repeat;
+    background-position: 8.5in -4in;
+    background-size: 75%;
+
+}
+
+main.yellow{
+    background-blend-mode: color-burn;
+}
+
+main.orange{
+    background-blend-mode: screen;
+}
+
+main.white{
+    background-blend-mode: hard-light;
+}
+
+.front
+{
+    text-shadow: 
+    1px 0 1px var(--background-color),
+    0 1px 1px var(--background-color),
+    -1px 0 1px var(--background-color),
+    0 -1px 1px var(--background-color),
+    0 0 1px var(--background-color),
+    0 0 2px var(--background-color),
+    0 0 4px var(--background-color),
+    0 0 8px var(--background-color),
+    0 0 16px var(--background-color),
+    0 0 24px var(--background-color),
+    0 0 1px var(--background-color),
+    0 0 2px var(--background-color),
+    0 0 4px var(--background-color),
+    0 0 8px var(--background-color),
+    0 0 16px var(--background-color),
+    0 0 24px var(--background-color);
+}
+
+hr
+{
+    box-shadow: 0 0 1px var(--background-color),
+    0 0 2px var(--background-color),
+    0 0 4px var(--background-color),
+    0 0 8px var(--background-color),
+    0 0 16px var(--background-color),
+    0 0 24px var(--background-color);
+}

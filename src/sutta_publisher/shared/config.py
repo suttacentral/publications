@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import cast
 
 import requests
+from pydantic import ValidationError
 
 from sutta_publisher.shared.value_objects.edition_config import EditionConfig, EditionMappingList, EditionsConfigs
 
@@ -30,7 +31,7 @@ def get_edition_config(edition_id: str) -> EditionConfig:
     """Fetch config for a given edition."""
     response = requests.get(API_URL + API_ENDPOINTS["specific_edition"].format(edition_id=edition_id))
     response.raise_for_status()
-    payload = response.content.decode("utf-8") 
+    payload = response.content.decode("utf-8")
 
     config = EditionConfig.parse_raw(payload)
     return config
@@ -44,9 +45,8 @@ def get_editions_configs(publication_number: str) -> EditionsConfigs:
     for each_id in editions_id:
         try:
             editions_config.append(get_edition_config(edition_id=each_id))
-        except FileNotFoundError:
-            msg = "No edition config found for edition_id=%s, skipping that edition."
-            logging.warning(msg, each_id)
+        except ValidationError:
+            logging.warning("Not upported edition type found. Skipping to next one.")
 
     if not editions_config:
         raise SystemExit(f"No valid edition configs found for {publication_number=}. Stopping.")

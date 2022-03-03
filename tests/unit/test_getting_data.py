@@ -4,6 +4,7 @@ from sutta_publisher.shared.config import get_edition_config
 from sutta_publisher.shared.data import get_edition_data
 from sutta_publisher.shared.value_objects.edition_data import MainMatterDetails
 
+
 @pytest.mark.vcr()
 def test_should_return_data_for_edition():
     # Given
@@ -13,7 +14,6 @@ def test_should_return_data_for_edition():
     # Then
     assert len(edition_data) == 1
 
-    
     first_edition_data = edition_data[0]
     assert len(first_edition_data.mainmatter) == 171
 

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+
+<meta charset="UTF-8">
+
+<link rel='stylesheet' href='styles/cover-styles.css'>
+
+<style>
+
+:root{
+--page-width:  6in;
+--page-height:  9in;
+--cover-bleed:  0;
+--flap-width:  0;
+--spine-width:  0;
+}
+
+main
+{
+    background-image: url('img/blue2.png');
+    background-position-x: calc(var(--page-width) / 2);
+    background-position-y: -3in;
+    background-repeat: no-repeat;
+    background-size: var(--page-height);
+    background-blend-mode: normal;
+}
+
+/* Leaf image must be set on main so that it is full bleed. Position must then be adjusted manually for each publication type from the left of the image. */
+
+</style>
+
+</head>
+<body>
+<main class='blue'>
+<section class='front'>
+<div class='front-top'>
+<div class='front-title'>
+<div class='translation_title'>Linked Discourses</div>
+<div class='translation_subtitle'>A plain translation of the Saṁyutta Nikāya</div>
+</div>
+<hr>
+<div class='front-creator'>
+<div class='byline'>translated by</div>
+<div class='creator_name'>Bhikkhu Sujato</div>
+</div>
+</div>
+<div class='front-bottom'>
+<div class='volume-details'>
+<div class='volume_number'>Volume 4</div>
+<div class='volume_acronym'>SN 35–44</div>
+<div class='volume_translation_title'>The Group of Linked Discourses Beginning With the Six Sense Fields</div>
+<div class='volume_root_title'>Saḷāyatanavaggasaṁyutta</div>
+</div>
+</div>
+</section>
+</main>
+</body>
+</html>

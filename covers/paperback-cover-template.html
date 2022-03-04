@@ -2,26 +2,33 @@
 <html lang='en'>
 <head>
 
-<link rel='stylesheet' href='styles/paperback-styles.css'>
+<meta charset="UTF-8">
+
+<link rel='stylesheet' href='styles/cover-styles.css'>
 
 <style>
 
-.back,
-.front{
-	height:  [[page_height]];
-	width:  [[page_width]];
+:root{
+--page-width:  {{page_width}};
+--page-height:  {{page_height}};
+--cover-bleed:  {{cover_bleed}};
+--flap-width:  {{flap_width}};
+--spine-width:  calc({{number_of_pages}}in / 444 + .06in);
+/* The first number of the spine width is the PDF page number. This is according to Lulu's formula; if using a different printer the value may be different. */
 }
 
-.spine{
-width: calc([[number_of_pages]]in / 444 + .06in)
+main
+{
+	background-image: url('img/{{cover_image}}');
+    background-position-x: calc(var(--page-width) + var(--page-width) / 2);
+    background-position-y: -3in;
 }
 
 </style>
-<!-- This calculates spine width. The first number is the PDF page number. This is according to Lulu's formula; if using a different printer the value may be different. -->
 
 </head>
 <body>
-<main class='red'>
+<main class='{{theme_color}}'>
 <section class='back'>
 <div class='back-top'>
 <div class='back-top-blurb'>

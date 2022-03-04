@@ -76,7 +76,7 @@ class EditionParser(ABC):
     def __get_standalone_html_css(self) -> str:
         """Returns css stylesheet as a string"""
 
-        with open(os.path.dirname(__file__) + "css_stylesheets/standalone_html.css", "r") as css_file:
+        with open(os.path.dirname(__file__) + "/css_stylesheets/standalone_html.css", "r") as css_file:
             content = css_file.read()
 
         return content

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from abc import ABC
 from typing import Type
 
@@ -75,7 +76,7 @@ class EditionParser(ABC):
     def __get_standalone_html_css(self) -> str:
         """Returns css stylesheet as a string"""
 
-        with open("css_stylesheets/standalone_html.css", "r") as css_file:
+        with open(os.path.dirname(__file__) + "css_stylesheets/standalone_html.css", "r") as css_file:
             content = css_file.read()
 
         return content

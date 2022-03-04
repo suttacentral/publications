@@ -3,7 +3,10 @@ from __future__ import annotations
 import logging
 import os
 from abc import ABC
+from io import StringIO
 from typing import Type
+
+from lxml import etree
 
 from sutta_publisher.edition_parsers.helper_functions import _fetch_possible_refs, _process_a_line
 from sutta_publisher.shared.value_objects.edition import EditionResult, EditionType
@@ -71,7 +74,26 @@ class EditionParser(ABC):
             publication_html_volumes_output.append(
                 single_mainmatter_output
             )  # all main matters from each volumes as a list of html bodies' contents
-        return "".join(publication_html_volumes_output)
+
+        content = "".join(publication_html_volumes_output)
+        self.__validate_html(content)
+        return content
+
+    def __validate_html(self, content: str) -> None:
+        content_file = StringIO(content)
+
+        try:
+            etree.parse(content_file, etree.HTMLParser(recover=False))
+        except etree.XMLSyntaxError as err:
+            error_message = (
+                "\n-----------------------------------------\n"
+                + "Error when validating HTML:\n"
+                + err.msg
+                + "\nWhole line, where error occured: \n"
+                + content_file.readlines()[err.position[0] - 1][: err.position[1]]
+                + "\n-----------------------------------------\n"
+            )
+            raise ValueError(error_message) from err
 
     def __get_standalone_html_css(self) -> str:
         """Returns css stylesheet as a string"""

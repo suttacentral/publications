@@ -89,7 +89,7 @@ class EditionParser(ABC):
                 "\n-----------------------------------------\n"
                 + "Error when validating HTML:\n"
                 + err.msg
-                + "\nWhole line, where error occured: \n"
+                + "\nLine, where error occured: \n"
                 + content_file.readlines()[err.position[0] - 1][: err.position[1]]
                 + "\n-----------------------------------------\n"
             )

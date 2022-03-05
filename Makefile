@@ -17,10 +17,11 @@ LINT_PATHS = $(APP_PATH)
 run:
 	$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) run publisher $(MAIN) $(filter-out $@,$(MAKECMDGOALS))
 
-
 run-dev:
 	$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) -f $(DEV_DOCKER_COMPOSE) run publisher $(MAIN) $(filter-out $@,$(MAKECMDGOALS))
 
+run-command:
+	$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) -f $(DEV_DOCKER_COMPOSE) run publisher $(filter-out $@,$(MAKECMDGOALS))
 
 build:
 	$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) build publisher
@@ -29,7 +30,6 @@ build:
 clean:
 	$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) rm -fsv
 	$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) -f $(DEV_DOCKER_COMPOSE) rm -fsv
-##############################################################################
 
 
 ##############################################################################
@@ -42,7 +42,6 @@ build-dev:
 test: build-dev
 	$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) -f $(DEV_DOCKER_COMPOSE) run publisher pytest /tests
 
-
 test-ci:
 	$(PYTHON_EXEC) -m autoflake --check --recursive --ignore-init-module-imports --remove-duplicate-keys --remove-unused-variables --remove-all-unused-imports $(LINT_PATHS) > /dev/null
 	$(PYTHON_EXEC) -m isort --check-only $(LINT_PATHS)
@@ -50,7 +49,6 @@ test-ci:
 	$(PYTHON_EXEC) -m mypy $(APP_PATH) --ignore-missing-imports
 	$(PYTHON_EXEC) -m bandit -r -q $(APP_PATH)
 	$(PYTHON_EXEC) -m coverage run -m pytest
-##############################################################################
 
 
 ##############################################################################
@@ -63,16 +61,13 @@ lint:
 	$(PYTHON_EXEC) -m mypy $(APP_PATH) --ignore-missing-imports
 	$(PYTHON_EXEC) -m bandit -r $(APP_PATH)
 
-
 compile-deps:
 	$(PYTHON_EXEC) -m piptools compile --no-annotate --no-header --generate-hashes "${PROJ_ROOT}/sutta_publisher/dev.in"
 	$(PYTHON_EXEC) -m piptools compile --no-annotate --no-header --generate-hashes "${PROJ_ROOT}/sutta_publisher/prod.in"
 
-
 recompile-deps:
 	$(PYTHON_EXEC) -m piptools compile --no-annotate --no-header --generate-hashes --upgrade "${PROJ_ROOT}/sutta_publisher/dev.in"
 	$(PYTHON_EXEC) -m piptools compile --no-annotate --no-header --generate-hashes --upgrade "${PROJ_ROOT}/sutta_publisher/prod.in"
-
 
 sync-deps:
 	$(PYTHON_EXEC) -m piptools help >/dev/null 2>&1 || $(PYTHON_EXEC) -m pip install pip-tools

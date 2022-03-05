@@ -8,7 +8,8 @@ from sutta_publisher.edition_parsers.base import EditionParser
 from sutta_publisher.shared.value_objects.edition_config import EditionConfig
 from sutta_publisher.shared.value_objects.edition_data import EditionData, MainMatter, MainMatterInfo, VolumeData
 
-PAYLOADS_PATH = Path(__file__).parent.parent.parent / "src/sutta_publisher/shared/example_payloads"
+
+PAYLOADS_PATH = Path("/app/sutta_publisher/shared/example_payloads/")
 
 
 @pytest.fixture
@@ -44,7 +45,6 @@ def list_of_all_refs():
 @pytest.fixture
 def example_data_payload() -> list[dict[str, Any]]:
     return json.load(open(PAYLOADS_PATH / "mn-en-sujato_scpub3-ed6-html_2022-02-10-mn.json"))
-
 
 @pytest.fixture
 def example_config_payload() -> dict[str, Any]:

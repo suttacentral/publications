@@ -47,8 +47,7 @@ def setup_and_run(publication_number_list: str, token: str) -> None:
     try:
         setup_logging()
         editions = get_editions_configs(publication_number=publication_number_list)
-        import pprint
-        pprint.pprint(editions)
+
         run(editions=editions)
     except Exception as e:
         log.exception(e)

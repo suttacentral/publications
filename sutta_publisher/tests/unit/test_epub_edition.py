@@ -8,7 +8,7 @@ from sutta_publisher.edition_parsers.epub import EpubEdition
 from sutta_publisher.shared.value_objects.edition_config import EditionConfig
 from sutta_publisher.shared.value_objects.edition_data import EditionData, MainMatter, MainMatterInfo, VolumeData
 
-PAYLOADS_PATH = Path(__file__).parent.parent / "/app/sutta_publisher/shared/example_payloads/"
+PAYLOADS_PATH = Path("/app/sutta_publisher/shared/example_payloads/")
 
 
 @pytest.fixture

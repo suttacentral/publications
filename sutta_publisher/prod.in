@@ -2,3 +2,6 @@ click
 inject
 pydantic
 requests
+ebooklib
+beautifulsoup4
+lxml

@@ -1,7 +1,6 @@
 PROJ_ROOT=$(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 PYTHON_EXEC?=python
 COMPOSE_EXEC?=docker-compose
-MAIN?=python sutta_publisher
 
 APP_PATH = sutta_publisher/src
 
@@ -15,10 +14,13 @@ LINT_PATHS = $(APP_PATH)
 ### Run app
 ###########
 run:
-	$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) run publisher $(MAIN) $(filter-out $@,$(MAKECMDGOALS))
+	$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) run publisher python sutta_publisher $(filter-out $@,$(MAKECMDGOALS))
 
 run-dev:
-	$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) -f $(DEV_DOCKER_COMPOSE) run publisher $(MAIN) $(filter-out $@,$(MAKECMDGOALS))
+	$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) -f $(DEV_DOCKER_COMPOSE) run publisher python sutta_publisher $(filter-out $@,$(MAKECMDGOALS))
+
+run-debug:
+	$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) -f $(DEV_DOCKER_COMPOSE) run publisher python -m debugpy --wait-for-client --listen 0.0.0.0:5678 sutta_publisher $(filter-out $@,$(MAKECMDGOALS))
 
 run-command:
 	$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) -f $(DEV_DOCKER_COMPOSE) run publisher $(filter-out $@,$(MAKECMDGOALS))

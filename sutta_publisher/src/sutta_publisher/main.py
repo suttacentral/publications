@@ -1,4 +1,5 @@
 import logging
+import os
 from typing import Type
 
 import click
@@ -8,6 +9,7 @@ from shared.data import get_edition_data
 from shared.publisher import publish
 from shared.value_objects.edition_config import EditionsConfigs
 
+logging.basicConfig(encoding="utf-8", level=logging.getLevelName(os.environ.get("PYTHONLOGLEVEL", "INFO")))
 log = logging.getLogger(__name__)
 
 
@@ -35,7 +37,7 @@ def run(editions: EditionsConfigs) -> None:
         except Exception as e:
             log.exception(e)
 
-    log.info("*** Script finished ***")
+    log.debug("*** Script finished ***")
 
 
 @click.command()
@@ -47,7 +49,6 @@ def setup_and_run(publication_number_list: str, token: str) -> None:
     try:
         setup_logging()
         editions = get_editions_configs(publication_number=publication_number_list)
-
         run(editions=editions)
     except Exception as e:
         log.exception(e)

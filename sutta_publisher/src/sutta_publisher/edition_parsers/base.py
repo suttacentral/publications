@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from abc import ABC
-from typing import Type
+from typing import List, Type
 
 from sutta_publisher.edition_parsers.helper_functions import _fetch_possible_refs, _process_a_line
 from sutta_publisher.shared.value_objects.edition import EditionResult, EditionType
@@ -22,14 +22,13 @@ class EditionParser(ABC):
         self.config = config
         self.possible_refs = _fetch_possible_refs()
 
-    def __generate_html(self) -> str:
+    def __generate_html(self) -> List[str]:
         """Generate content of an HTML body"""
-        log.info("Generating html...")
+        log.debug("Generating html...")
 
         # Publication is separated into volumes
         publication_html_volumes_output: list[str] = []
         for volume in self.raw_data:
-
             # Each volume's mainmatter is separated into a list of mainmatter sub-entities (MainMatterDetails class)
             processed_single_mainmatter_subentity: list[str] = []
             for mainmatter_info in volume.mainmatter:
@@ -63,14 +62,14 @@ class EditionParser(ABC):
                 processed_single_mainmatter_subentity.append(
                     single_mainmatter_subentity_output
                 )  # collecting sub-entities into one full mainmatter of a volume
-
             single_mainmatter_output: str = "".join(
                 processed_single_mainmatter_subentity
             )  # a complete mainmatter of a single volume in HTML <body>{single_mainmatter_output}</body>
             publication_html_volumes_output.append(
                 single_mainmatter_output
             )  # all main matters from each volumes as a list of html bodies' contents
-        return "".join(publication_html_volumes_output)
+        # return "".join(publication_html_volumes_output)
+        return publication_html_volumes_output
 
     def __get_standalone_html_css(self) -> str:
         """Returns css stylesheet as a string"""
@@ -81,13 +80,13 @@ class EditionParser(ABC):
         return content
 
     def __generate_covers(self) -> None:
-        log.info("Generating covers...")
+        log.debug("Generating covers...")
 
     def __generate_frontmatter(self) -> None:
-        log.info("Generating front matters...")
+        log.debug("Generating front matters...")
 
     def __generate_endmatter(self) -> None:
-        log.info("Generating end matters...")
+        log.debug("Generating end matters...")
 
     def collect_all(self) -> EditionResult:
         self.__generate_html()

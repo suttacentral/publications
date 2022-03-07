@@ -37,17 +37,15 @@ class EditionParser(ABC):
                 processed_mainmatter_single_lines: list[str] = []
                 try:
                     # Only store segment_id if it has matching text (prune empty strings: "")
-                    segment_ids = [
-                        segment_id for segment_id, text in mainmatter_info.mainmatter.main_text.items() if text
-                    ]
+                    segment_ids = [segment_id for segment_id, _ in mainmatter_info.mainmatter.markup.items()]
 
                     # Each mainmatter sub-entity (MainMatterDetails) have dictionaries with text lines, markup lines and references. Keys are always segment IDs
                     for segment_id in segment_ids:
                         processed_mainmatter_single_lines.append(
                             _process_a_line(
-                                markup=mainmatter_info.mainmatter.markup[segment_id],
+                                markup=mainmatter_info.mainmatter.markup.get(segment_id),
                                 segment_id=segment_id,
-                                text=mainmatter_info.mainmatter.main_text[segment_id],
+                                text=mainmatter_info.mainmatter.main_text.get(segment_id),
                                 references=mainmatter_info.mainmatter.reference.get(
                                     segment_id, ""
                                 ),  # references are provides as: "single, comma, separated, string". We take care of splitting it in helper functions

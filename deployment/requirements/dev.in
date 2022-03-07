@@ -21,3 +21,4 @@ types-six
 types-tornado
 wheel
 debug
+lxml

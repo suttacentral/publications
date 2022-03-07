@@ -2,3 +2,4 @@ click
 inject
 pydantic
 requests
+lxml

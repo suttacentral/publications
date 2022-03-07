@@ -1,14 +1,15 @@
 import logging
+import os
 from typing import Type
 
 import click
+from edition_parsers.base import EditionParser
+from shared.config import get_editions_configs, setup_logging
+from shared.data import get_edition_data
+from shared.publisher import publish
+from shared.value_objects.edition_config import EditionsConfigs
 
-from sutta_publisher.edition_parsers.base import EditionParser
-from sutta_publisher.shared.config import get_editions_configs, setup_logging
-from sutta_publisher.shared.data import get_edition_data
-from sutta_publisher.shared.publisher import publish
-from sutta_publisher.shared.value_objects.edition_config import EditionsConfigs
-
+logging.basicConfig(encoding="utf-8", level=logging.getLevelName(os.environ.get("PYTHONLOGLEVEL", "INFO")))
 log = logging.getLogger(__name__)
 
 
@@ -27,13 +28,16 @@ def run(editions: EditionsConfigs) -> None:
             log.exception("Can't parse publication_type='%s'. Error: %s", edition_config.edition.publication_type, e)
 
     for edition in edition_list:  # type: EditionParser
+
+        log.debug(edition)
+
         try:
             file_like_obj = edition.collect_all()
             publish(file_like_obj)
         except Exception as e:
             log.exception(e)
 
-    log.info("*** Script finished ***")
+    log.debug("*** Script finished ***")
 
 
 @click.command()

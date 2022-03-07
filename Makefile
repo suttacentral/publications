@@ -2,44 +2,47 @@ PROJ_ROOT=$(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 PYTHON_EXEC?=python
 COMPOSE_EXEC?=docker-compose
 
-APP_PATH = src/sutta_publisher
+APP_PATH = sutta_publisher/src
 
-LINT_PATHS = \
-$(APP_PATH) \
-tests
+PROD_DOCKER_COMPOSE=./docker-compose.yml
+DEV_DOCKER_COMPOSE=./docker-compose.dev.yml
+
+LINT_PATHS = $(APP_PATH)
 
 
 ##############################################################################
 ### Run app
 ###########
 run:
-	$(COMPOSE_EXEC) -f ./deployment/docker/docker-compose.yml run publisher sutta_publisher $(filter-out $@,$(MAKECMDGOALS))
-
+	$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) run publisher python sutta_publisher $(filter-out $@,$(MAKECMDGOALS))
 
 run-dev:
-	$(COMPOSE_EXEC) -f ./deployment/docker/docker-compose.yml -f ./deployment/docker/docker-compose.dev.yml run publisher $(filter-out $@,$(MAKECMDGOALS))
+	$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) -f $(DEV_DOCKER_COMPOSE) run publisher python sutta_publisher $(filter-out $@,$(MAKECMDGOALS))
 
+run-debug:
+	$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) -f $(DEV_DOCKER_COMPOSE) run publisher python -m debugpy --wait-for-client --listen 0.0.0.0:5678 sutta_publisher $(filter-out $@,$(MAKECMDGOALS))
+
+run-command:
+	$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) -f $(DEV_DOCKER_COMPOSE) run publisher $(filter-out $@,$(MAKECMDGOALS))
 
 build:
-	$(COMPOSE_EXEC) -f ./deployment/docker/docker-compose.yml build publisher
+	$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) build publisher
 
 
 clean:
-	$(COMPOSE_EXEC) -f ./deployment/docker/docker-compose.yml rm -fsv
-	$(COMPOSE_EXEC) -f ./deployment/docker/docker-compose.yml -f ./deployment/docker/docker-compose.dev.yml rm -fsv
-##############################################################################
+	$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) rm -fsv
+	$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) -f $(DEV_DOCKER_COMPOSE) rm -fsv
 
 
 ##############################################################################
 ### Testing
 ###########
 build-dev:
-	$(COMPOSE_EXEC) -f deployment/docker/docker-compose.yml -f ./deployment/docker/docker-compose.dev.yml build publisher
+	$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) -f $(DEV_DOCKER_COMPOSE) build publisher
 
 
 test: build-dev
-	$(COMPOSE_EXEC) -f deployment/docker/docker-compose.yml -f ./deployment/docker/docker-compose.dev.yml run publisher pytest
-
+	$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) -f $(DEV_DOCKER_COMPOSE) run publisher pytest /tests -vv
 
 test-ci:
 	$(PYTHON_EXEC) -m autoflake --check --recursive --ignore-init-module-imports --remove-duplicate-keys --remove-unused-variables --remove-all-unused-imports $(LINT_PATHS) > /dev/null
@@ -48,7 +51,6 @@ test-ci:
 	$(PYTHON_EXEC) -m mypy $(APP_PATH) --ignore-missing-imports
 	$(PYTHON_EXEC) -m bandit -r -q $(APP_PATH)
 	$(PYTHON_EXEC) -m coverage run -m pytest
-##############################################################################
 
 
 ##############################################################################
@@ -61,20 +63,17 @@ lint:
 	$(PYTHON_EXEC) -m mypy $(APP_PATH) --ignore-missing-imports
 	$(PYTHON_EXEC) -m bandit -r $(APP_PATH)
 
-
 compile-deps:
-	$(PYTHON_EXEC) -m piptools compile --no-annotate --no-header --generate-hashes "${PROJ_ROOT}/deployment/requirements/dev.in"
-	$(PYTHON_EXEC) -m piptools compile --no-annotate --no-header --generate-hashes "${PROJ_ROOT}/deployment/requirements/prod.in"
-
+	$(PYTHON_EXEC) -m piptools compile --no-annotate --no-header --generate-hashes "${PROJ_ROOT}/sutta_publisher/dev.in"
+	$(PYTHON_EXEC) -m piptools compile --no-annotate --no-header --generate-hashes "${PROJ_ROOT}/sutta_publisher/prod.in"
 
 recompile-deps:
-	$(PYTHON_EXEC) -m piptools compile --no-annotate --no-header --generate-hashes --upgrade "${PROJ_ROOT}/deployment/requirements/dev.in"
-	$(PYTHON_EXEC) -m piptools compile --no-annotate --no-header --generate-hashes --upgrade "${PROJ_ROOT}/deployment/requirements/prod.in"
-
+	$(PYTHON_EXEC) -m piptools compile --no-annotate --no-header --generate-hashes --upgrade "${PROJ_ROOT}/sutta_publisher/dev.in"
+	$(PYTHON_EXEC) -m piptools compile --no-annotate --no-header --generate-hashes --upgrade "${PROJ_ROOT}/sutta_publisher/prod.in"
 
 sync-deps:
 	$(PYTHON_EXEC) -m piptools help >/dev/null 2>&1 || $(PYTHON_EXEC) -m pip install pip-tools
-	$(PYTHON_EXEC) -m piptools sync "${PROJ_ROOT}/deployment/requirements/dev.txt"
+	$(PYTHON_EXEC) -m piptools sync "${PROJ_ROOT}/sutta_publisher/dev.txt"
 	$(PYTHON_EXEC) -m pip install -e .
 
 

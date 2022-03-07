@@ -33,8 +33,9 @@ def _flatten_list(irregular_list: list[Any]) -> list[Any]:
 def _segment_id_to_html(segment_id: str) -> str:
     """Convert segment id strings such as 'mn138:1.5' into HTML anchors"""
     # TODO: [#27] Implement logic for toggling visibility of segment ID
-    displayable: bool = True
-    class_ = " class='sc-main' " if displayable else " "
+    tag = "span"
+    displayable: bool = False
+    class_ = "class='sc-main'" if displayable else " "
     # Catch two groups. First: 1 or more lowercase letters, second: everything except lowercase letters (one or more)
     regex = re.match("^([a-z]+)([^a-z]+)$", segment_id)
     # If not matched, will be None
@@ -45,7 +46,7 @@ def _segment_id_to_html(segment_id: str) -> str:
         # Depending on displayable flag return:
         # displayable anchor:                              or non displayable anchor:
         # <a class='sc-main' id='mn138:1.5'>MN 138:1.5</a> or <a id='mn138:1.5'></a>
-        return f"<a{class_}id='{segment_id}'>{segment_id_displayable}</a>"
+        return f"<{tag} {class_} id='{segment_id}'>{segment_id_displayable}</{tag}>"
 
 
 def _split_ref_and_number(reference: str, possible_refs: list[str]) -> tuple[str, str] | None:
@@ -70,16 +71,15 @@ def _reference_to_html(reference: tuple[str, str]) -> str:
 
 def _process_a_line(markup: str, segment_id: str, text: str, references: str, possible_refs: list[str]) -> str:
     segment_id_html: str = _segment_id_to_html(segment_id)
-    split_references: list[str] = references.split(
-        ", "
-    )  # references are passed as a string such as: "ref1, ref2, ref3"
+    # references are passed as a string such as: "ref1, ref2, ref3"
+    split_references: list[str] = [r.strip() for r in references.split(",")]
     references_divided_into_types_and_ids: list[tuple[str, str] | None] = [
         _split_ref_and_number(reference=ref, possible_refs=possible_refs) for ref in split_references
     ]
-    filtered_references = [ref for ref in references_divided_into_types_and_ids if ref]  # filter out Nones
-    filtered_references = _filter_refs(
-        references=filtered_references, accepted_references=ACCEPTED_REFERENCES
-    )  # filter out unaccepted references
+
+    filtered_references = [ref for ref in references_divided_into_types_and_ids if ref]
+    # filter out unaccepted references
+    filtered_references = _filter_refs(references=filtered_references, accepted_references=ACCEPTED_REFERENCES)
     list_of_refs_tags: list[str] = [_reference_to_html(reference) for reference in filtered_references]
     references_html = "".join(list_of_refs_tags)
     return markup.format(f"{segment_id_html}{references_html}{text}")

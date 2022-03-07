@@ -1,7 +1,8 @@
+import sys
 from io import BytesIO
 
 import pytest
-
+sys.path.insert(0, "/app")
 
 @pytest.fixture
 def file_like_edition() -> BytesIO:

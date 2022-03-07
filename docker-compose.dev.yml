@@ -1,0 +1,15 @@
+version: "3.9"
+
+services:
+  publisher:
+    build:
+      context: sutta_publisher
+      target: development
+    volumes:
+      - ./sutta_publisher/src:/app
+      - ./sutta_publisher/tests:/tests
+      - ./tmp:/tmp
+    # environment:
+      # - PYTHONDEBUG=1
+      # - PYTHONLOGLEVEL=DEBUG
+    network_mode: host

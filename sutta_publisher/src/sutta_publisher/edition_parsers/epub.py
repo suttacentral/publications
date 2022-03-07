@@ -1,4 +1,6 @@
 import logging
+import os
+import tempfile
 import uuid
 
 from bs4 import BeautifulSoup
@@ -78,9 +80,11 @@ class EpubEdition(EditionParser):
 
             # create spine
             book.spine = ["nav", _chapter]
-
+            _path = os.path.join(
+                tempfile.gettempdir(), f"{self.config.publication.translation_title} vol {volume_number}.epub"
+            )
             # create epub file
-            epub.write_epub(f"/tmp/{self.config.publication.translation_title} vol {volume_number}.epub", book, {})
+            epub.write_epub(_path, book, {})
 
     def collect_all(self) -> EditionResult:
         # self.__generate_frontmatter()

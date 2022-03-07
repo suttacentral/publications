@@ -1,7 +1,7 @@
 import logging
 import os
 import tempfile
-import uuid
+from typing import List, Tuple, Union
 
 from bs4 import BeautifulSoup
 from ebooklib import epub
@@ -41,45 +41,72 @@ nav[epub|type~='toc'] > ol > li > ol > li {
 class EpubEdition(EditionParser):
     edition_type = EditionType.epub
 
+    def __set_metadata(self, book: epub.EpubBook) -> None:
+        book.set_identifier(self.config.edition.edition_id)
+        book.set_title(self.config.publication.translation_title)
+        book.set_language(self.config.publication.translation_lang_iso)
+        book.add_author(self.config.publication.creator_name)
+
+    def __set_styles(self, book: epub.EpubBook) -> None:
+        default_css = epub.EpubItem(
+            uid="style_default", file_name="style/default.css", media_type="text/css", content=_css
+        )
+        book.add_item(default_css)
+
+    def __make_chapter_content(self, html: BeautifulSoup, file_name: str) -> epub.EpubHtml:
+        _chapter = epub.EpubHtml(title=self.config.publication.translation_title, file_name=file_name)
+        _chapter.content = str(html)
+        return _chapter
+
+    def __make_chapter_index(
+        self, html: BeautifulSoup, file_name: str, section_name: str = ""
+    ) -> Union[List[Tuple[epub.Section, List[epub.Link]]], List[epub.Link]]:
+        _links = [epub.Link(f"{file_name}#{l.span['id']}", l.text, l.span["id"]) for l in html.find_all("h1")]
+        if section_name:
+            return [
+                (epub.Section(section_name), _links),
+            ]
+        else:
+            return _links
+
+    def __make_chapter(
+        self, html: BeautifulSoup, chapter_number: int, section_name: str = ""
+    ) -> Tuple[epub.EpubHtml, List[epub.Link]]:
+        file_name = f"chapter_{chapter_number}.xhtml"
+        chapter = self.__make_chapter_content(html, file_name)
+        index = _chapter = self.__make_chapter_index(html, file_name, section_name=section_name)
+        return chapter, index
+
+    def __set_chapters(
+        self, book: epub.EpubBook, html: BeautifulSoup, chapter_number: int, section_name: str = ""
+    ) -> None:
+        chapter, index = self.__make_chapter(html=html, chapter_number=chapter_number, section_name=section_name)
+        book.add_item(chapter)
+        book.toc.extend(index)
+        book.spine.append(chapter)
+
     def __generate_epub(self) -> None:
         """Generate epub"""
         log.debug("Generating epub...")
 
-        print(self.config.edition.volumes)
+        _volumes_in_html = [BeautifulSoup(_, "lxml") for _ in self._EditionParser__generate_html()]  # type: ignore
+
         volume_number = 0
-        for _config, _html in zip(self.config.edition.volumes, self._EditionParser__generate_html()):  # type: ignore
+        for _config, _html in zip(self.config.edition.volumes, _volumes_in_html):
             volume_number = +1
-
-            file_name = f"content_{volume_number}.xhtml"
-
             book = epub.EpubBook()
-            # add metadata
-            book.set_identifier(str(uuid.uuid4()))
-            book.set_title(self.config.publication.translation_title)
-            # book.set_language("en")
-            book.add_author(self.config.publication.creator_name)
+            book.spine = [
+                "nav",
+            ]
 
-            default_css = epub.EpubItem(
-                uid="style_default", file_name="style/default.css", media_type="text/css", content=_css
-            )
-            book.add_item(default_css)
+            self.__set_metadata(book)
+            self.__set_styles(book)
+            self.__set_chapters(book, html=_html, chapter_number=volume_number)
 
-            _chapter = epub.EpubHtml(title=self.config.publication.translation_title, file_name=file_name)
-            _parsed_html = BeautifulSoup(_html, "lxml")
-            _content_toc = []
-            for l in _parsed_html.find_all("h1"):
-                _content_toc.append(epub.Link(f"{file_name}#{l.span['id']}", l.text, l.span["id"]))
-            _chapter.content = str(_parsed_html)
-            book.add_item(_chapter)
-
-            book.toc = (epub.Section("Content"), *_content_toc)
-
-            # # add navigation files
+            # add navigation files
             book.add_item(epub.EpubNcx())
             book.add_item(epub.EpubNav())
 
-            # create spine
-            book.spine = ["nav", _chapter]
             _path = os.path.join(
                 tempfile.gettempdir(), f"{self.config.publication.translation_title} vol {volume_number}.epub"
             )

@@ -137,3 +137,5 @@ dmypy.json
 .idea
 .run
 .vscode/
+
+tmp/

@@ -28,8 +28,11 @@ class Volumes(BaseModel):
 
 class EditionDetails(BaseModel):
     edition_id: str
+    publication_number: str
     publication_type: EditionType
     volumes: Volumes
+    created: str
+    updated: str
 
     class Config:
         extra = "ignore"
@@ -39,6 +42,7 @@ class PublicationDetails(BaseModel):
     creator_name: str
     translation_subtitle: str
     translation_title: str
+    translation_lang_iso: str
 
     class Config:
         extra = "ignore"

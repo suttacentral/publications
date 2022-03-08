@@ -6,6 +6,7 @@ import os
 from abc import ABC
 from typing import List, Type
 
+import os
 import requests
 
 from sutta_publisher.edition_parsers.helper_functions import _fetch_possible_refs, _process_a_line
@@ -17,6 +18,8 @@ log = logging.getLogger(__name__)
 
 
 class EditionParser(ABC):
+    FRONTMATTER_URL = os.getenv("FRONTMATTER_URL")
+    
     config: EditionConfig
     raw_data: EditionData
     edition_type: EditionType
@@ -85,16 +88,12 @@ class EditionParser(ABC):
         frontmatter = ast.literal_eval(self.config.edition.volumes.json())[0].get("frontmatter")
         working_dir = self.config.edition.working_dir.removeprefix("/opt/sc/sc-flask/sc-data")
 
-        url = (
-            "https://raw.githubusercontent.com/suttacentral/sc-data/master" + "{working_dir}" + "{matter}"
-        )  # Dont worry it will be moved to .env, its covered by another ticket ;)
-
         matter_paths = [elem.removeprefix(".") for elem in frontmatter if elem.startswith("./")]
 
         matters_dict = dict()
 
         for sufix in matter_paths:
-            response = requests.get(url.format(matter=sufix, working_dir=working_dir))
+            response = requests.get(self.FRONTMATTER_URL.format(matter=sufix, working_dir=working_dir))
             response.raise_for_status()
 
             match sufix:

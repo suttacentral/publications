@@ -2,7 +2,8 @@ version: "3.9"
 
 services:
   publisher:
+    env_file:
+      - ./.env_public
     build:
       context: sutta_publisher
       target: production
-    network_mode: host

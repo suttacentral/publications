@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import ast
 import logging
+import os
 from pathlib import Path
 from typing import cast
 
@@ -10,11 +12,8 @@ from pydantic import ValidationError
 from sutta_publisher.shared.value_objects.edition_config import EditionConfig, EditionMappingList, EditionsConfigs
 
 PAYLOADS_PATH = Path(__file__).parent / "example_payloads"
-API_URL = "http://localhost:80/api/"  # TODO: Change url for real one
-API_ENDPOINTS = {
-    "editions_mapping": "publication/editions",
-    "specific_edition": "publication/edition/{edition_id}",
-}
+API_URL = os.getenv("API_URL", "")
+API_ENDPOINTS = ast.literal_eval(os.getenv("API_ENDPOINTS", ""))
 
 
 def get_editions_ids(publication_number: str) -> list[str]:

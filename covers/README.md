@@ -19,7 +19,7 @@ Background image requirements:
 - 9in high
 - crop tight to image
 - as wide as the image needs
-- 600dpi
+- 300dpi minimum
 
 See details here
 

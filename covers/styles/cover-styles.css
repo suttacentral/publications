@@ -175,6 +175,10 @@ main
     justify-content: space-between;
 }
 
+.back-top{
+       width:  100%;
+}
+
 .back-top-blurb
 {
     flex-direction: column;
@@ -187,6 +191,10 @@ p
     margin: 0 0 1.5rem 0;
 
     font-variant-numeric: oldstyle-nums;
+
+    hyphens: auto;
+
+    text-align: justify;
 }
 
 .back-bottom

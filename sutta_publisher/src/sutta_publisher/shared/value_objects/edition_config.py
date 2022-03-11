@@ -33,6 +33,7 @@ class EditionDetails(BaseModel):
     volumes: Volumes
     created: str
     updated: str
+    working_dir: str
 
     class Config:
         extra = "ignore"

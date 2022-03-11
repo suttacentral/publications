@@ -5,7 +5,7 @@ bandit
 black
 coverage
 isort
-mypy>=0.940
+mypy >= 0.940
 pip-tools
 pycodestyle
 pydantic

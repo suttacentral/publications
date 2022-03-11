@@ -5,4 +5,3 @@ services:
     build:
       context: sutta_publisher
       target: production
-    network_mode: host

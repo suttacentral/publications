@@ -9,7 +9,7 @@ services:
       - ./sutta_publisher/src:/app
       - ./sutta_publisher/tests:/tests
       - ./tmp:/tmp
-    # environment:
-      # - PYTHONDEBUG=1
-      # - PYTHONLOGLEVEL=DEBUG
+    environment:
+      - PYTHONDEBUG=1
+      - PYTHONLOGLEVEL=DEBUG
     network_mode: host

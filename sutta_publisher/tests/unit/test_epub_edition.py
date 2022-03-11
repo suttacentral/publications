@@ -76,8 +76,8 @@ def base_parser(example_edition_config, example_edition_data) -> EpubEdition:
     return EpubEdition(config=example_edition_config, data=example_edition_data)
 
 
-def test_should_parse_json_to_html(base_parser):
-    base_parser._EpubEdition__generate_epub()
+# def test_should_parse_json_to_html(base_parser):
+   # base_parser._EpubEdition__generate_epub()
     # assert generated_html is not None
     # Adding the hardcoded html_[head|tail] for styling of output .html file. Will be useful for demo only
     # with open("output_test_html_from_test_base_parser.html", "w") as f:

@@ -12,7 +12,7 @@ PAYLOADS_PATH = Path("/app/sutta_publisher/shared/example_payloads/")
 
 
 @pytest.fixture
-def list_of_all_refs():
+def list_of_all_refs() -> list[str]:
     return [
         "ms",
         "pts-cs",
@@ -43,21 +43,21 @@ def list_of_all_refs():
 
 @pytest.fixture
 def example_data_payload() -> list[dict[str, Any]]:
-    return json.load(open(PAYLOADS_PATH / "mn-en-sujato_scpub3-ed6-html_2022-02-10-mn.json"))
+    return json.load(open(PAYLOADS_PATH / "mn-en-sujato_scpub3-ed6-html_2022-02-10-mn.json"))  # type: ignore
 
 
 @pytest.fixture
 def example_config_payload() -> dict[str, Any]:
-    return json.load(open(PAYLOADS_PATH / "mn-en-sujato_scpub3-ed6-html_2022-02-10.json"))
+    return json.load(open(PAYLOADS_PATH / "mn-en-sujato_scpub3-ed6-html_2022-02-10.json"))  # type: ignore
 
 
 @pytest.fixture
-def example_edition_config(example_config_payload) -> EditionConfig:
+def example_edition_config(example_config_payload: dict[str, Any]) -> EditionConfig:
     return EditionConfig(**example_config_payload)
 
 
 @pytest.fixture
-def single_volume(example_data_payload) -> VolumeData:
+def single_volume(example_data_payload: list[dict[str, Any]]) -> VolumeData:
     mainmatter_list: list[MainMatterInfo] = []
     for main_matter_info in example_data_payload:
         mainmatter_list.append(MainMatterInfo(**main_matter_info))
@@ -67,16 +67,16 @@ def single_volume(example_data_payload) -> VolumeData:
 
 
 @pytest.fixture
-def example_edition_data(single_volume) -> EditionData:
+def example_edition_data(single_volume: VolumeData) -> EditionData:
     return EditionData([single_volume])
 
 
 @pytest.fixture
-def base_parser(example_edition_config, example_edition_data) -> EditionParser:
+def base_parser(example_edition_config: EditionConfig, example_edition_data: EditionData) -> EditionParser:
     return EditionParser(config=example_edition_config, data=example_edition_data)
 
 
-def test_should_parse_json_to_html(base_parser):
+def test_should_parse_json_to_html(base_parser: EditionParser) -> None:
     generated_html = base_parser._EditionParser__generate_html()
     assert generated_html is not None
     # Adding the hardcoded html_[head|tail] for styling of output .html file. Will be useful for demo only

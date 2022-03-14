@@ -16,7 +16,7 @@ def sources_root() -> str:
     raise RuntimeError(f"Couldn't find sources [{sources_path}] for this project. paths: {paths}")
 
 
-def test_no_relative_imports(sources_root):
+def test_no_relative_imports(sources_root: str) -> None:
     """Ensure that there are no relative imports from parent modules."""
     process = subprocess.run(
         ["grep", "-F", "from ..", "-R", sources_root],

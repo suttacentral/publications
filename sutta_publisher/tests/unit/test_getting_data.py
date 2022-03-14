@@ -6,7 +6,7 @@ from sutta_publisher.shared.value_objects.edition_data import MainMatterDetails
 
 
 @pytest.mark.vcr()
-def test_should_return_data_for_edition():
+def test_should_return_data_for_edition() -> None:
     # Given
     edition_config = get_edition_config(edition_id="mn-en-sujato_scpub3-ed2-epub_2022-02-10")
     # When

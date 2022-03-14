@@ -5,7 +5,7 @@ from sutta_publisher.shared.value_objects.edition import EditionType
 
 
 @pytest.mark.vcr()
-def test_should_create_config():
+def test_should_create_config() -> None:
     publication_number = "scpub3"
     # When
     editions = get_editions_configs(publication_number=publication_number)
@@ -38,7 +38,7 @@ def test_should_create_config():
 
 
 @pytest.mark.vcr()
-def test_should_raise_for_missing_publication_number():
+def test_should_raise_for_missing_publication_number() -> None:
     publication_number = "missing_pub_no"
 
     with pytest.raises(ValueError):

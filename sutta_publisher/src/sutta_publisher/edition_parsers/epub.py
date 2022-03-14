@@ -70,19 +70,24 @@ class EpubEdition(EditionParser):
             return _links
 
     def __make_chapter(
-        self, html: BeautifulSoup, chapter_number: int, section_name: str = ""
-    ) -> Tuple[epub.EpubHtml, List[epub.Link]]:
+        self, html: BeautifulSoup, chapter_number: int, section_name: str = "", make_index: bool = True
+    ) -> Tuple[epub.EpubHtml, List[epub.Link] | None]:
         file_name = f"chapter_{chapter_number}.xhtml"
         chapter = self.__make_chapter_content(html, file_name)
-        index = _chapter = self.__make_chapter_index(html, file_name, section_name=section_name)
+
+        index = _chapter = self.__make_chapter_index(html, file_name, section_name=section_name) if make_index else None
+
         return chapter, index
 
     def __set_chapters(
-        self, book: epub.EpubBook, html: BeautifulSoup, chapter_number: int, section_name: str = ""
+        self, book: epub.EpubBook, html: BeautifulSoup, chapter_number: int, section_name: str = "", make_index: bool=True
     ) -> None:
-        chapter, index = self.__make_chapter(html=html, chapter_number=chapter_number, section_name=section_name)
+        chapter, index = self.__make_chapter(
+            html=html, chapter_number=chapter_number, section_name=section_name, make_index=make_index
+        )
         book.add_item(chapter)
-        book.toc.extend(index)
+        if index:
+            book.toc.extend(index)
         book.spine.append(chapter)
 
     def __generate_epub(self) -> None:
@@ -90,6 +95,7 @@ class EpubEdition(EditionParser):
         log.debug("Generating epub...")
 
         _volumes_in_html = [BeautifulSoup(_, "lxml") for _ in self._EditionParser__generate_html()]  # type: ignore
+        frontmatters = [BeautifulSoup(_, "lxml") for _ in self._EditionParser__generate_frontmatter().values()]
 
         volume_number = 0
         for _config, _html in zip(self.config.edition.volumes, _volumes_in_html):
@@ -101,6 +107,11 @@ class EpubEdition(EditionParser):
 
             self.__set_metadata(book)
             self.__set_styles(book)
+
+            for _frontmatter in frontmatters:
+                self.__set_chapters(book, html=_frontmatter, chapter_number=volume_number, make_index=False)
+                volume_number = +1
+
             self.__set_chapters(book, html=_html, chapter_number=volume_number)
 
             # add navigation files
@@ -114,7 +125,6 @@ class EpubEdition(EditionParser):
             epub.write_epub(_path, book, {})
 
     def collect_all(self) -> EditionResult:
-        # self.__generate_frontmatter()
         # self.__generate_endmatter()
         # self.__generate_covers()
         self.__generate_epub()

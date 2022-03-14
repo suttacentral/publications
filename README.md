@@ -16,16 +16,23 @@ Central repo for SuttaCentra;s' publications WIP.
 Clone repo
 
 Install pre-commit got hooks:
-```bash
-# Go to project root
-cd publications
 
-# Make sure the file is executable
-chmod +x pre-commit
+1. First install dependencies (libraries responsible for formatting). You fill find them in Makefile#lint
+e.g.
+    ```bash
+    pip install black isort mypy bandit`
+    ```
+2. Then install the actual pre-commit hook
+    ```bash
+    # Go to project root
+    cd publications
 
-# Install it
-cp pre-commit .git/hooks
-```
+    # Make sure the file is executable
+    chmod +x pre-commit
+
+    # Install it
+    cp pre-commit .git/hooks
+    ```
 
 It will mount the project root to the container:
 ```bash

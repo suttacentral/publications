@@ -81,7 +81,7 @@ class EditionParser(ABC):
 
         return content
 
-    def __generate_frontmatter(self) -> dict[str:str]:
+    def __generate_frontmatter(self) -> dict[str, str]:
         log.debug("Generating covers...")
         frontmatter = ast.literal_eval(self.config.edition.volumes.json())[0].get("frontmatter")
         working_dir = self.config.edition.working_dir.removeprefix("/opt/sc/sc-flask/sc-data")

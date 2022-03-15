@@ -1,8 +1,10 @@
 import logging
 import os
+import re
 import tempfile
 from typing import List, Tuple, Union
 
+import bs4
 from bs4 import BeautifulSoup
 from ebooklib import epub
 
@@ -59,15 +61,53 @@ class EpubEdition(EditionParser):
         return _chapter
 
     def __make_chapter_index(
-        self, html: BeautifulSoup, file_name: str, section_name: str = ""
+        self, html: BeautifulSoup, file_name: str, section_name: str = "", depth: int = 6
     ) -> Union[List[Tuple[epub.Section, List[epub.Link]]], List[epub.Link]]:
-        _links = [epub.Link(f"{file_name}#{l.span['id']}", l.text, l.span["id"]) for l in html.find_all("h1")]
+
+        # Validate input, max depth of HTML heading is h6
+        if depth > 6:
+            depth = 6
+
+        # Catch all the heading HTML tags (h1, ..., h<depth>)
+        all_headings: list[bs4.element.Tag] = [heading for heading in html.find_all(re.compile(f"^h[1-{depth}]$"))]
+
+        def _extract_heading_number(heading_tag: bs4.element.Tag) -> int:
+            """Extract heading number from html tag i.e. 'h1' -> 1"""
+            return int(re.search(f"[1-{depth}]$", heading_tag.name).group(0))  # type: ignore
+
+        def _make_link(tag: bs4.element.Tag) -> epub.Link:
+            return epub.Link(href=f"{file_name}#{tag.span['id']}", title=tag.text, uid=tag.span["id"])
+
+        def _make_section(tag: bs4.element.Tag) -> epub.Section:
+            return epub.Section(title=tag.text, href=f"{file_name}#{tag.span['id']}")
+
+        all_headings_iterable = iter(all_headings)  # type: ignore
+
+        nested_list: epub.Link | list = []
+
+        # Next build a nested lists structure of a pattern:
+        # [<h1 tag>,[<h2 tag>, <h2 tag>, [<h3 tag>], <h2 tag>], <h1 tag>, [<h2 tag>]]
+        # Each lower level heading is a nested list
+        def _nest_or_extend() -> epub.Link | list | None:
+            current_tag = next(all_headings_iterable, None)
+            next_tag = next(all_headings_iterable, None)
+
+            if not current_tag:
+                return None  # reached the end of list
+            elif not next_tag or _extract_heading_number(current_tag) <= _extract_heading_number(next_tag):
+                return _make_link(current_tag)
+            else:  # next heading is lower level, need to nest
+                return [_make_section(current_tag), [_nest_or_extend()]]
+
+        while section := _nest_or_extend():  # loop breaks when iterator next() becomes None
+            nested_list.append(section)
+
         if section_name:
             return [
-                (epub.Section(section_name), _links),
+                (epub.Section(section_name), nested_list),
             ]
         else:
-            return _links
+            return nested_list
 
     def __make_chapter(
         self, html: BeautifulSoup, chapter_number: int, section_name: str = "", make_index: bool = True

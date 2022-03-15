@@ -1,12 +1,9 @@
 from __future__ import annotations
 
-import ast
 import logging
 import os
 from abc import ABC
 from typing import List, Type
-
-import requests
 
 from sutta_publisher.edition_parsers.helper_functions import _fetch_possible_refs, _process_a_line
 from sutta_publisher.shared.value_objects.edition import EditionResult, EditionType
@@ -80,37 +77,38 @@ class EditionParser(ABC):
 
         return content
 
-    def __generate_frontmatter(self) -> dict[str, str]:
+    def __generate_frontmatter(self) -> None:
+        # def __generate_frontmatter(self) -> dict[str, str]:
         log.debug("Generating covers...")
-        frontmatter = ast.literal_eval(self.config.edition.volumes.json())[0].get("frontmatter")
-        working_dir = self.config.edition.working_dir.removeprefix("/opt/sc/sc-flask/sc-data")
-
-        url = (
-            "https://raw.githubusercontent.com/suttacentral/sc-data/master" + "{working_dir}" + "{matter}"
-        )  # Dont worry it will be moved to .env, its covered by another ticket ;)
-
-        matter_paths = [elem.removeprefix(".") for elem in frontmatter if elem.startswith("./")]
-
-        matters_dict = dict()
-
-        for sufix in matter_paths:
-            response = requests.get(url.format(matter=sufix, working_dir=working_dir))
-            response.raise_for_status()
-
-            match sufix:
-                case "/matter/foreword.html":
-                    matters_dict["foreword"] = response.text
-
-                case "/matter/introduction.html":
-                    matters_dict["introduction"] = response.text
-
-                case "/matter/acknowledgements.html":
-                    matters_dict["acknowledgements"] = response.text
-
-                case _:
-                    raise ValueError("Not supported frontmatter type")
-
-        return matters_dict
+        # frontmatter = ast.literal_eval(self.config.edition.volumes.json())[0].get("frontmatter")
+        # working_dir = self.config.edition.working_dir.removeprefix("/opt/sc/sc-flask/sc-data")
+        #
+        # url = (
+        #     "https://raw.githubusercontent.com/suttacentral/sc-data/master" + "{working_dir}" + "{matter}"
+        # )  # Dont worry it will be moved to .env, its covered by another ticket ;)
+        #
+        # matter_paths = [elem.removeprefix(".") for elem in frontmatter if elem.startswith("./")]
+        #
+        # matters_dict = dict()
+        #
+        # for sufix in matter_paths:
+        #     response = requests.get(url.format(matter=sufix, working_dir=working_dir))
+        #     response.raise_for_status()
+        #
+        #     match sufix:
+        #         case "/matter/foreword.html":
+        #             matters_dict["foreword"] = response.text
+        #
+        #         case "/matter/introduction.html":
+        #             matters_dict["introduction"] = response.text
+        #
+        #         case "/matter/acknowledgements.html":
+        #             matters_dict["acknowledgements"] = response.text
+        #
+        #         case _:
+        #             raise ValueError("Not supported frontmatter type")
+        #
+        # return matters_dict
 
     def __generate_covers(self) -> None:
         log.debug("Generating covers...")

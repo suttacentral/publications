@@ -48,9 +48,8 @@ class EditionParser(ABC):
                                 markup=mainmatter_info.mainmatter.markup.get(segment_id),
                                 segment_id=segment_id,
                                 text=mainmatter_info.mainmatter.main_text.get(segment_id, ""),
-                                references=mainmatter_info.mainmatter.reference.get(
-                                    segment_id, ""
-                                ),  # references are provides as: "single, comma, separated, string". We take care of splitting it in helper functions
+                                references=mainmatter_info.mainmatter.reference.get(segment_id, ""),
+                                # references are provides as: "single, comma, separated, string". We take care of splitting it in helper functions
                                 possible_refs=self.possible_refs,
                             )
                         )

@@ -17,7 +17,7 @@ Clone repo
 
 In general for this to function first you need to set up this repo: [suttacentral/suttacentral](https://github.com/suttacentral/suttacentral).
 
-Install pre-commit got hooks:
+Install pre-commit git hooks:
 
 1. First install dependencies (libraries responsible for formatting). You fill find them in Makefile#lint
 e.g.

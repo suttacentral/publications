@@ -120,7 +120,12 @@ class EpubEdition(EditionParser):
         return chapter, index
 
     def __set_chapters(
-        self, book: epub.EpubBook, html: BeautifulSoup, chapter_number: int, section_name: str = "", make_index: bool=True
+        self,
+        book: epub.EpubBook,
+        html: BeautifulSoup,
+        chapter_number: int,
+        section_name: str = "",
+        make_index: bool = True,
     ) -> None:
         chapter, index = self.__make_chapter(
             html=html, chapter_number=chapter_number, section_name=section_name, make_index=make_index
@@ -135,7 +140,7 @@ class EpubEdition(EditionParser):
         log.debug("Generating epub...")
 
         _volumes_in_html = [BeautifulSoup(_, "lxml") for _ in self._EditionParser__generate_html()]  # type: ignore
-        frontmatters = [BeautifulSoup(_, "lxml") for _ in self._EditionParser__generate_frontmatter().values()]
+        frontmatters = [BeautifulSoup(_, "lxml") for _ in self._EditionParser__generate_frontmatter().values()]  # type: ignore # TODO: resolve this
 
         volume_number = 0
         for _config, _html in zip(self.config.edition.volumes, _volumes_in_html):

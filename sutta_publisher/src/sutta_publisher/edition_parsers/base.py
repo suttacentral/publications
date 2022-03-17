@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import ast
 import logging
-import os
 from abc import ABC
 from typing import List, Type
 
@@ -69,35 +68,27 @@ class EditionParser(ABC):
             publication_html_volumes_output.append(
                 single_mainmatter_output
             )  # all main matters from each volumes as a list of html bodies' contents
-        # return "".join(publication_html_volumes_output)
         return publication_html_volumes_output
-
-    def __get_standalone_html_css(self) -> str:
-        """Returns css stylesheet as a string"""
-
-        with open(os.path.dirname(__file__) + "/css_stylesheets/standalone_html.css", "r") as css_file:
-            content = css_file.read()
-
-        return content
 
     def __generate_frontmatter(self) -> dict[str, str]:
         log.debug("Generating covers...")
         frontmatter = ast.literal_eval(self.config.edition.volumes.json())[0].get("frontmatter")
         working_dir = self.config.edition.working_dir.removeprefix("/opt/sc/sc-flask/sc-data")
 
+        # TODO: move to .env
         url = (
             "https://raw.githubusercontent.com/suttacentral/sc-data/master" + "{working_dir}" + "{matter}"
-        )  # Dont worry it will be moved to .env, its covered by another ticket ;)
+        )  # Don't worry it will be moved to .env, it's covered by another ticket ;)
 
         matter_paths = [elem.removeprefix(".") for elem in frontmatter if elem.startswith("./")]
 
         matters_dict = dict()
 
-        for sufix in matter_paths:
-            response = requests.get(url.format(matter=sufix, working_dir=working_dir))
+        for suffix in matter_paths:
+            response = requests.get(url.format(matter=suffix, working_dir=working_dir))
             response.raise_for_status()
 
-            match sufix:
+            match suffix:
                 case "/matter/foreword.html":
                     matters_dict["foreword"] = response.text
 

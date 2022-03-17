@@ -3,12 +3,11 @@ import os
 import re
 import tempfile
 from collections import namedtuple
-from typing import Any, List, Literal, Tuple
+from typing import Literal
 
 import bs4
 from bs4 import BeautifulSoup
 from ebooklib import epub
-from ebooklib.epub import Section
 
 from sutta_publisher.shared.value_objects.edition import EditionResult, EditionType
 
@@ -65,7 +64,7 @@ class EpubEdition(EditionParser):
 
     def __make_chapter_index(
         self, html: BeautifulSoup, file_name: str, section_name: str = "", depth: int = 6
-    ) -> list[Section | list[None]] | list[tuple[Section, list[Any]]] | list[Any]:
+    ) -> list[tuple[epub.Section, list[list[epub.Section] | epub.Link]]] | list[list[epub.Section] | epub.Link]:
 
         # Validate input, max depth of HTML heading is h6
         if depth > 6:
@@ -155,7 +154,7 @@ class EpubEdition(EditionParser):
 
     def __make_chapter(
         self, html: BeautifulSoup, chapter_number: int, section_name: str = "", make_index: bool = True
-    ) -> Tuple[epub.EpubHtml, List[epub.Link] | None]:
+    ) -> tuple[epub.EpubHtml, list[epub.Link] | None]:
         file_name = f"chapter_{chapter_number}.xhtml"
         chapter = self.__make_chapter_content(html, file_name)
 

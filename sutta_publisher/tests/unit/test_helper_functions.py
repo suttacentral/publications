@@ -114,9 +114,14 @@ def test_should_check_intersection_of_two_lists() -> None:
     ],
 )
 def test_should_check_that_a_full_mainmatter_item_is_processed(
-    test_markup, test_segment, test_text, test_references, expected_line, list_of_all_refs
-):
-    
+    test_markup: str,
+    test_segment: str,
+    test_text: str,
+    test_references: str,
+    expected_line: str,
+    list_of_all_refs: list[str],
+) -> None:
+
     assert (
         _process_a_line(
             markup=test_markup,

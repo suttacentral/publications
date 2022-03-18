@@ -8,7 +8,7 @@ from sutta_publisher.edition_parsers.epub import EpubEdition
 from sutta_publisher.shared.value_objects.edition_config import EditionConfig
 from sutta_publisher.shared.value_objects.edition_data import EditionData, MainMatter, MainMatterInfo, VolumeData
 
-RESOURCES_PATH = Path("/app/sutta_publisher/shared/example_payloads/")
+RESOURCES_PATH = Path(__file__).parent.parent / "resources"
 
 
 @pytest.fixture
@@ -23,7 +23,7 @@ def example_config_payload() -> dict[str, Any]:
 
 @pytest.fixture
 def example_edition_config(example_config_payload: dict[str, Any]) -> EditionConfig:
-    return EditionConfig(**example_config_payload)
+    return EditionConfig(example_config_payload)
 
 
 @pytest.fixture
@@ -42,7 +42,7 @@ def example_edition_data(single_volume: VolumeData) -> EditionData:
 
 
 @pytest.fixture
-def base_parser(example_edition_config: EditionConfig, example_edition_data: EditionData) -> EpubEdition:
+def epub_parser(example_edition_config: EditionConfig, example_edition_data: EditionData) -> EpubEdition:
     return EpubEdition(config=example_edition_config, data=example_edition_data)
 
 

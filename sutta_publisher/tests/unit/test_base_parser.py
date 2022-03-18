@@ -1,12 +1,11 @@
-import json
 from pathlib import Path
 from typing import Any
 
 import pytest
-
+import json
 from sutta_publisher.edition_parsers.base import EditionParser
 from sutta_publisher.shared.value_objects.edition_config import EditionConfig
-from sutta_publisher.shared.value_objects.edition_data import EditionData, MainMatter, MainMatterInfo, VolumeData
+from sutta_publisher.shared.value_objects.edition_data import MainMatterInfo, VolumeData, MainMatter, EditionData
 
 RESOURCES_PATH = Path(__file__).parent.parent / "resources"
 

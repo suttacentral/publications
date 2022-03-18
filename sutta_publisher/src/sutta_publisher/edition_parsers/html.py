@@ -21,38 +21,6 @@ class HtmlEdition(EditionParser):
     def __generate_html(self) -> None:
         log.debug("Generating html...")
 
-        # _volumes_in_html = [BeautifulSoup(_, "lxml") for _ in self._EditionParser__generate_html()]  # type: ignore
-        # frontmatters = [
-        #     BeautifulSoup(_, "lxml") for _ in self._EditionParser__generate_frontmatter().values()
-        # ]  # type: ignore # TODO: resolve this
-        #
-        # volume_number = 0
-        # for _config, _html in zip(self.config.edition.volumes, _volumes_in_html):
-        #     volume_number = +1
-        #     book = epub.EpubBook()
-        #     book.spine = [
-        #         "nav",
-        #     ]
-        #
-        #     self.__set_metadata(book)
-        #     self.__set_styles(book)
-        #
-        #     for _frontmatter in frontmatters:
-        #         self.__set_chapters(book, html=_frontmatter, chapter_number=volume_number, make_index=False)
-        #         volume_number = +1
-        #
-        #     self.__set_chapters(book, html=_html, chapter_number=volume_number)
-        #
-        #     # add navigation files
-        #     book.add_item(epub.EpubNcx())
-        #     book.add_item(epub.EpubNav())
-        #
-        #     _path = os.path.join(
-        #         tempfile.gettempdir(), f"{self.config.publication.translation_title} vol {volume_number}.epub"
-        #     )
-        #     # create epub file
-        #     epub.write_epub(_path, book, {})
-
     def collect_all(self) -> EditionResult:
         # self.__generate_backmatter()
         self.__generate_html()

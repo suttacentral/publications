@@ -192,8 +192,7 @@ class EditionParser(ABC):
                     matters_dict["acknowledgements"] = response.text
 
                 case _:
-                    # raise ValueError("Not supported frontmatter type")
-                    pass
+                    raise ValueError("Not supported frontmatter type")
 
         return matters_dict
 

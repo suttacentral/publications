@@ -144,7 +144,6 @@ class EpubEdition(EditionParser):
 
         volume_number = 0
         for _config, _html in zip(self.config.edition.volumes, _volumes_in_html):
-            volume_number = +1
             book = epub.EpubBook()
             book.spine = [
                 "nav",
@@ -154,8 +153,10 @@ class EpubEdition(EditionParser):
             self.__set_styles(book)
 
             for _frontmatter in frontmatters:
+                volume_number += 1
                 self.__set_chapters(book, html=_frontmatter, chapter_number=volume_number, make_index=False)
-                volume_number = +1
+
+            volume_number += 1
 
             self.__set_chapters(book, html=_html, chapter_number=volume_number)
 

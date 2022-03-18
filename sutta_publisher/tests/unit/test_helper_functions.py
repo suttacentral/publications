@@ -54,8 +54,8 @@ def test_should_check_creating_tuple_from_reference(
 @pytest.mark.parametrize(
     "test_segment_id, expected_html",
     [
-        ("dn1:0.1", "<a class='sc-main' id='dn1:0.1'>DN 1:0.1</a>"),
-        ("dn1:1.1.4", "<a class='sc-main' id='dn1:1.1.4'>DN 1:1.1.4</a>"),
+        ("dn1:0.1", "<span   id='dn1:0.1'></span>"),
+        ("dn1:1.1.4", "<span   id='dn1:1.1.4'></span>"),
     ],
 )
 def test_should_check_html_element_is_created_from_segment_id(test_segment_id: str, expected_html: str) -> None:
@@ -102,25 +102,21 @@ def test_should_check_intersection_of_two_lists() -> None:
             "dn1:0.1",
             "lorem ipsum",
             "vnp1.9, pts-vp-pli14.2",
-            "<p><a class='sc-main' id='dn1:0.1'>DN 1:0.1</a><a class='pts-vp-pli' id='pts-vp-pli14.2'>PTS-VP-PLI 14.2</a>lorem ipsum",
+            "<p><span   id='dn1:0.1'></span><a class='pts-vp-pli' id='pts-vp-pli14.2'>PTS-VP-PLI 14.2</a>lorem ipsum",
         ),
         (
             "<h1 class='sutta-title'>{}</h1></header>",
             "mn138:0.2",
             "dolor sit",
             "invalid_ref, bj7.9",
-            "<h1 class='sutta-title'><a class='sc-main' id='mn138:0.2'>MN 138:0.2</a><a class='bj' id='bj7.9'>BJ 7.9</a>dolor sit</h1></header>",
+            "<h1 class='sutta-title'><span   id='mn138:0.2'></span><a class='bj' id='bj7.9'>BJ 7.9</a>dolor sit</h1></header>",
         ),
     ],
 )
 def test_should_check_that_a_full_mainmatter_item_is_processed(
-    test_markup: str,
-    test_segment: str,
-    test_text: str,
-    test_references: str,
-    expected_line: str,
-    list_of_all_refs: list[str],
-) -> None:
+    test_markup, test_segment, test_text, test_references, expected_line, list_of_all_refs
+):
+    
     assert (
         _process_a_line(
             markup=test_markup,

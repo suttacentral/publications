@@ -6,7 +6,6 @@ import os
 from abc import ABC
 from typing import List, Type
 
-import os
 import requests
 
 from sutta_publisher.edition_parsers.helper_functions import _fetch_possible_refs, _process_a_line
@@ -18,8 +17,8 @@ log = logging.getLogger(__name__)
 
 
 class EditionParser(ABC):
-    FRONTMATTER_URL = os.getenv("FRONTMATTER_URL")
-    
+    FRONTMATTER_URL = os.getenv("FRONTMATTER_URL", "")
+
     config: EditionConfig
     raw_data: EditionData
     edition_type: EditionType

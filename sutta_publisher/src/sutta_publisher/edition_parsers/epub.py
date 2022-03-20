@@ -9,10 +9,14 @@ from bs4 import BeautifulSoup
 from ebooklib import epub
 
 from sutta_publisher.shared.value_objects.edition import EditionResult, EditionType
+from sutta_publisher.shared.value_objects.edition_config import Volumes
 
 from .base import EditionParser
+from .covers import make_cover
 
 log = logging.getLogger(__name__)
+
+COVER_TEMPLATE = "epub-cover-template.html"
 
 
 _css = """
@@ -54,6 +58,65 @@ class EpubEdition(EditionParser):
             uid="style_default", file_name="style/default.css", media_type="text/css", content=_css
         )
         book.add_item(default_css)
+
+    def __make_cover(self, volume: Volumes) -> str:
+
+        if volume.volume_translation_title == "False":
+            volume_translation_title = ""
+        else:
+            volume_translation_title = volume.volume_translation_title
+
+        if volume.volume_root_title == "False":
+            volume_root_title = ""
+        else:
+            volume_root_title = volume.volume_root_title
+
+        if volume.volume_number == "False":
+            volume_number = ""
+        else:
+            volume_number = volume.volume_number
+
+        if self.config.edition.cover_bleed == "False":
+            cover_bleed = 0
+        else:
+            cover_bleed = self.config.edition.cover_bleed
+
+        if self.config.edition.cover_flap_width == "False":
+            cover_flap_width = 0
+        else:
+            cover_flap_width = self.config.edition.cover_flap_width
+
+        template_vars = {
+            "translation_title": self.config.publication.translation_title,
+            "translation_subtitle": self.config.publication.translation_subtitle,
+            "volume_acronym": volume.volume_acronym,
+            "volume_translation_title": volume_translation_title,
+            "volume_root_title": volume_root_title,
+            "creator_name": self.config.publication.creator_name,
+            "volume_number": volume_number,
+            "page_width": self.config.edition.page_width,
+            "page_height": self.config.edition.page_height,
+            "cover_bleed": cover_bleed,
+            "flap_width": cover_flap_width,
+            "cover_image": volume.cover_background_image,
+            "theme_color": self.config.edition.cover_theme_color,
+        }
+        paths = make_cover(
+            template_file_name=COVER_TEMPLATE,
+            template_vars=template_vars,
+            jpg=True,
+            pdf=True,
+            raw_screenshot=True,
+            width=float(self.config.edition.page_width[:-2]),
+            height=float(self.config.edition.page_height[:-2]),
+            dpi=600,
+        )
+        return paths["jpg"]
+
+    def __set_cover(self, book: epub.EpubBook, volume: Volumes) -> None:
+        cover_image = self.__make_cover(volume)
+        with open(cover_image, "rb") as _file:
+            book.set_cover("cover.jpg", _file.read())
 
     def __make_chapter_content(self, html: BeautifulSoup, file_name: str) -> epub.EpubHtml:
         _chapter = epub.EpubHtml(title=self.config.publication.translation_title, file_name=file_name)
@@ -151,6 +214,7 @@ class EpubEdition(EditionParser):
 
             self.__set_metadata(book)
             self.__set_styles(book)
+            self.__set_cover(book, _config)
 
             for _frontmatter in frontmatters:
                 volume_number += 1
@@ -164,9 +228,7 @@ class EpubEdition(EditionParser):
             book.add_item(epub.EpubNcx())
             book.add_item(epub.EpubNav())
 
-            _path = os.path.join(
-                tempfile.gettempdir(), f"{self.config.publication.translation_title} vol {volume_number}.epub"
-            )
+            _path = os.path.join(tempfile.gettempdir(), f"{self.config.edition.edition_id}.epub")
             # create epub file
             epub.write_epub(_path, book, {})
 

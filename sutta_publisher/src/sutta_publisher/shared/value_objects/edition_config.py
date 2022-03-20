@@ -11,6 +11,11 @@ class VolumeDetail(BaseModel):
     endmatter: list[str]
     frontmatter: list[str]
     mainmatter: list[str]
+    volume_acronym: str
+    volume_translation_title: str
+    volume_root_title: str
+    cover_background_image: str
+    volume_number: str
 
 
 class Volumes(BaseModel):
@@ -34,6 +39,11 @@ class EditionDetails(BaseModel):
     created: str
     updated: str
     working_dir: str
+    cover_theme_color: str
+    page_height: str
+    page_width: str
+    cover_flap_width: str
+    cover_bleed: str
 
     class Config:
         extra = "ignore"

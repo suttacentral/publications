@@ -5,3 +5,6 @@ requests
 ebooklib
 beautifulsoup4
 lxml
+selenium
+pdf2image
+jinja2

@@ -11,8 +11,15 @@ ENV PYTHONPATH=/app/
 
 RUN apt-get update -y \
     && apt-get upgrade --no-install-recommends -y \
-    && apt-get install pandoc --no-install-recommends -y\
-    && apt-get clean -y
+    && apt-get install wget xvfb unzip poppler-utils -y \
+    && apt-get install xfonts-100dpi xfonts-75dpi xfonts-scalable xfonts-cyrillic -y \
+    && apt-get clean -y \
+    && cd /tmp \
+    && wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
+    && apt-get install ./google-chrome-stable_current_amd64.deb -y \
+    && wget https://chromedriver.storage.googleapis.com/99.0.4844.51/chromedriver_linux64.zip \
+    && unzip chromedriver_linux64.zip \
+    && mv chromedriver /usr/local/bin/
 
 
 ### PRODUCTION

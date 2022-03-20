@@ -8,8 +8,9 @@ services:
     volumes:
       - ./sutta_publisher/src:/app
       - ./sutta_publisher/tests:/tests
+      - ./covers:/covers
       - ./tmp:/tmp
     environment:
       - PYTHONDEBUG=1
-      - PYTHONLOGLEVEL=DEBUG
+      # - PYTHONLOGLEVEL=DEBUG
     network_mode: host

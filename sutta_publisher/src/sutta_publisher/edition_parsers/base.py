@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ast
 import logging
+import re
 from abc import ABC
 from typing import List, Type
 
@@ -24,6 +25,24 @@ class EditionParser(ABC):
         self.raw_data = data
         self.config = config
         self.possible_refs = _fetch_possible_refs()
+
+    def __convert_descriptive_toc_to_int(self, text: str) -> int:
+        if text == "all":
+            return 6
+        elif match := re.match("^[1-6]$", text):
+            return int(match.group(0))
+        else:
+            raise ValueError("Provided depth '%s' not supported", text)
+
+    def __get_toc_depth(self) -> int:
+        """Return depth of the table of contents for the whole publication (main ToC)"""
+        return self.__convert_descriptive_toc_to_int(self.config.edition.main_toc_depth)
+
+    def __collect_main_toc_headings(self) -> list[str]:
+        pass
+
+    def __collect_secondary_toc_headings(self) -> list[str]:
+        pass
 
     def __generate_html(self) -> List[str]:
         """Generate content of an HTML body"""

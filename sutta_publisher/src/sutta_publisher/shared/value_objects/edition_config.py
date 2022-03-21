@@ -34,6 +34,8 @@ class EditionDetails(BaseModel):
     created: str
     updated: str
     working_dir: str
+    main_toc_depth: str
+    secondary_toc: bool
 
     class Config:
         extra = "ignore"

@@ -22,7 +22,7 @@ def _filter_refs(references: list[tuple[str, str]], accepted_references: list[st
 def _flatten_list(irregular_list: list[Any]) -> list[Any]:
     flat_list = []
     for element in irregular_list:
-        if type(element) is list:
+        if isinstance(element, list):
             for item in element:
                 flat_list.append(item)
         else:
@@ -83,3 +83,21 @@ def _process_a_line(markup: str, segment_id: str, text: str, references: str, po
     list_of_refs_tags: list[str] = [_reference_to_html(reference) for reference in filtered_references]
     references_html = "".join(list_of_refs_tags)
     return markup.format(f"{segment_id_html}{references_html}{text}")
+
+
+def _convert_descriptive_toc_to_int(text: str) -> int:
+    """
+    Get a desired max depth of headings in table of contents from text.
+
+    Desired depth of the main table of contents is passed as a string of value: ["all" | "1" | ... | "6"]
+    This function sanitises the input from API response, which is of type:
+        {"main-toc-depth": "2"},
+        {"main-toc-depth": "all"}
+    to a number, which we will use as a max depth of a heading in ToC.
+    """
+    if text == "all":
+        return 6
+    elif match := re.match("^[1-6]$", text):
+        return int(match.group(0))
+    else:
+        raise ValueError(f"Provided depth '{text}' not supported")

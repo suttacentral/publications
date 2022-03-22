@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang='en'>
+<html lang='{{lang}}'>
 <head>
 
 <meta charset="UTF-8">
@@ -18,12 +18,9 @@
 
 main
 {
-	background-image: url('img/{{cover_image}}');
-    background-position-x: calc(var(--page-width) / 2);
-    background-position-y: -3in;
-    background-repeat: no-repeat;
-    background-size: var(--page-height);
-    background-blend-mode: normal;
+	background-image: url('img/img/{{cover_image}}');
+    background-position-x: calc(var(--page-width) / 3);
+    background-position-y: 0;
 }
 
 /* Leaf image must be set on main so that it is full bleed. Position must then be adjusted manually for each publication type from the left of the image. */

@@ -1,13 +1,19 @@
 import re
-from typing import Any, cast
+from collections import namedtuple
+from typing import Any, Iterator, cast
 
 import requests
 from bs4 import BeautifulSoup, Tag
 from bs4.element import ResultSet
+from ebooklib.epub import Link, Section
 
 ALL_REFERENCES_URL = "https://raw.githubusercontent.com/suttacentral/sc-data/master/misc/pali_reference_edition.json"
 ACCEPTED_REFERENCES = ["bj", "pts-vp-pli"]
 MAX_HEADING_DEPTH = 6
+
+HeadingsIndexTreeFrozen = namedtuple(
+    "HeadingsIndexTreeFrozen", ["h1", "h2", "h3", "h4", "h5", "h6"]
+)  # this is needed for dictionary building, as dictionary keys must be immutable
 
 
 def _fetch_possible_refs() -> list[str]:
@@ -88,7 +94,7 @@ def _process_a_line(markup: str, segment_id: str, text: str, references: str, po
     return markup.format(f"{segment_id_html}{references_html}{text}")
 
 
-def _get_heading_number(heading_tag: Tag) -> int:
+def _get_heading_number(tag: Tag) -> int:
     """Extract heading number from html tag i.e. 'h1' -> 1"""
     return int(re.search(f"^(h)([1-{MAX_HEADING_DEPTH}])$", heading_tag.name).group(2))  # type: ignore
 
@@ -117,11 +123,14 @@ def collect_main_toc_depths(depth: str, all_volumes: list[BeautifulSoup]) -> lis
 def _find_sutta_title_depth(html: BeautifulSoup) -> int:
     """Find depth of a header, whose class is 'sutta-title'
 
+    Args:
+        html: HTML to look for heading with class 'sutta-title'. Only the first found match is processed
+
     Returns:
         Level of a found heading, None if didn't find any:
     """
     heading: Tag = html.find(name=re.compile(f"^h[1-{MAX_HEADING_DEPTH}]"), class_="sutta-title")
-    return _get_heading_number(heading_tag=heading)
+    return _get_heading_number(tag=heading)
 
 
 def _collect_headings(start_depth: int = 1, *, end_depth: int, volume: BeautifulSoup) -> ResultSet:
@@ -136,3 +145,106 @@ def _collect_headings(start_depth: int = 1, *, end_depth: int, volume: Beautiful
         ResultSet: A collection of headings with a specified depth range
     """
     return cast(ResultSet, volume.find_all(name=re.compile(f"^h[{start_depth}-{end_depth}]$")))
+
+
+def _make_link(tag: Tag, file_name: str) -> Link:
+    return Link(href=f"{file_name}#{tag.span['id']}", title=tag.text, uid=tag.span["id"])
+
+
+def _make_section(tag: Tag, file_name: str) -> Section:
+    return Section(title=tag.text, href=f"{file_name}#{tag.span['id']}")
+
+
+def _nest_or_extend(headings: Iterator[Tag], file_name: str) -> Link | list | None:
+    """Recursively build a nested links and sections structure ready to be used for epub ToC
+
+    Args:
+        headings:
+        file_name:
+
+    Returns:
+        Link | list | None:
+
+    """
+    current_tag = next(headings, None)
+    next_tag = next(headings, None)
+
+    if not current_tag:
+        return None  # reached the end of list
+    elif not next_tag or _get_heading_number(current_tag) <= _get_heading_number(next_tag):
+        return _make_link(tag=current_tag, file_name=file_name)
+    else:  # next heading is lower level, need to nest
+        return [_make_section(tag=current_tag, file_name=file_name), [_nest_or_extend(headings, file_name)]]
+
+
+def _update_index(index: list[int], tag: Tag) -> None:
+    """Increment index for this heading level *IN PLACE*
+
+    e.g. [1, 1, 2+1, 0, 0, 0] - added another h3
+    """
+    index[_get_heading_number(tag) - 1] += 1
+
+    # When adding another heading all lower level headings counters are reset
+    for i in range(_get_heading_number(tag), 6):
+        index[i] = 0
+
+
+def _find_index_root(index: HeadingsIndexTreeFrozen) -> tuple[int, ...]:
+    """Find common index root for all children of this heading - i.e. a non-zero subset of this tuple"""
+    return tuple([i for i in index if i != 0])
+
+
+def _compare_index_with_root(index: HeadingsIndexTreeFrozen, root: tuple[int, ...]) -> bool:
+    """Return True if index is in a given root (heading is a child of superheading with that root)"""
+    for i, counter in enumerate(root):
+        if counter != index[i]:
+            return False
+    return True
+
+
+def _find_children_by_index(
+    index: HeadingsIndexTreeFrozen, headings_tree: dict[HeadingsIndexTreeFrozen, Tag]
+) -> list[HeadingsIndexTreeFrozen]:
+    """Based on parents index, find all children and return their indices"""
+    parent_root = _find_index_root(index)
+    # Return all indexes with the same root except for the parent
+    return [
+        child_index
+        for child_index in headings_tree.keys()
+        if _compare_index_with_root(index=child_index, root=parent_root) and child_index != index
+    ]
+
+
+def make_headings_tree(chapter_headings: list[Tag]) -> dict[HeadingsIndexTreeFrozen, Tag]:
+    """Build a tree of headings where structure is represented by tuple of indexes
+
+    Returns:
+        dict[tuple,  list[Tag]]: a structure of headings as index: heading
+    """
+    heading_index = [0, 0, 0, 0, 0, 0]
+
+    # Build a tree of headings where structure is represented by tuple of indexes
+    headings_tree: dict[HeadingsIndexTreeFrozen, Tag] = {}
+    for heading in chapter_headings:
+        _update_index(index=heading_index, tag=heading)
+        # This freezes and copies the current state of heading_index even though it is used in further iterations
+        headings_tree.update({HeadingsIndexTreeFrozen(*heading_index): heading})
+
+    return headings_tree
+
+
+def make_section_or_link(
+    index: HeadingsIndexTreeFrozen, headings_tree: dict[HeadingsIndexTreeFrozen, Tag], file_name: str
+) -> list[Section] | Link:
+    """Look up heading's children and accordingly create link or section recursively"""
+    children: list[HeadingsIndexTreeFrozen] = _find_children_by_index(index=index, headings_tree=headings_tree)
+    heading: Tag = headings_tree[index]
+    # Heading has children (subheadings), so it's a Section
+    if children:
+        return [
+            _make_section(tag=heading, file_name=file_name),
+            [make_section_or_link(index=child, headings_tree=headings_tree, file_name=file_name) for child in children],
+        ]
+    # Heading is childless so it's a Link
+    else:
+        return _make_link(tag=heading, file_name=file_name)

@@ -1,19 +1,20 @@
 import logging
 import os
-import re
 import tempfile
-from typing import List, Tuple, Union
+from typing import List, Tuple
 
-import bs4
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 from ebooklib import epub
+from ebooklib.epub import Link, Section
 
 from sutta_publisher.shared.value_objects.edition import EditionResult, EditionType
+from sutta_publisher.shared.value_objects.edition_config import EditionConfig
+from sutta_publisher.shared.value_objects.edition_data import EditionData
 
 from .base import EditionParser
+from .helper_functions import HeadingsIndexTreeFrozen, _find_index_root, make_headings_tree, make_section_or_link
 
 log = logging.getLogger(__name__)
-
 
 _css = """
 @namespace epub "http://www.idpf.org/2007/ops";
@@ -43,6 +44,11 @@ nav[epub|type~='toc'] > ol > li > ol > li {
 class EpubEdition(EditionParser):
     edition_type = EditionType.epub
 
+    # We need an overridden init to collect headings for ToC
+    def __init__(self, config: EditionConfig, data: EditionData):
+        super().__init__(config, data)
+        self.__generate_toc()
+
     def __set_metadata(self, book: epub.EpubBook) -> None:
         book.set_identifier(self.config.edition.edition_id)
         book.set_title(self.config.publication.translation_title)
@@ -60,54 +66,29 @@ class EpubEdition(EditionParser):
         _chapter.content = str(html)
         return _chapter
 
-    def __make_chapter_index(
-        self, html: BeautifulSoup, file_name: str, section_name: str = "", depth: int = 6
-    ) -> Union[List[Tuple[epub.Section, List[epub.Link]]], List[epub.Link]]:
+    @staticmethod
+    def __make_chapter_toc(
+        headings: list[Tag], file_name: str, section_name: str = ""
+    ) -> list[tuple[Section, list[list[Section] | Link]]] | list[list[Section] | Link]:
 
-        # Validate input, max depth of HTML heading is h6
-        if depth > 6:
-            depth = 6
+        headings_tree: dict[HeadingsIndexTreeFrozen, Tag] = make_headings_tree(chapter_headings=headings)
 
-        # Catch all the heading HTML tags (h1, ..., h<depth>)
-        all_headings: list[bs4.element.Tag] = [heading for heading in html.find_all(re.compile(f"^h[1-{depth}]$"))]
+        # Time to create the output list. Loop only through top level headings, subheadings will be handled recursively by the function
+        top_level_headings = [
+            index for index in headings_tree.keys() if len(_find_index_root(index)) == 1
+        ]  # top level headings are heading with only h1 counter != 0
 
-        def _extract_heading_number(heading_tag: bs4.element.Tag) -> int:
-            """Extract heading number from html tag i.e. 'h1' -> 1"""
-            return int(re.search(f"[1-{depth}]$", heading_tag.name).group(0))  # type: ignore
-
-        def _make_link(tag: bs4.element.Tag) -> epub.Link:
-            return epub.Link(href=f"{file_name}#{tag.span['id']}", title=tag.text, uid=tag.span["id"])
-
-        def _make_section(tag: bs4.element.Tag) -> epub.Section:
-            return epub.Section(title=tag.text, href=f"{file_name}#{tag.span['id']}")
-
-        all_headings_iterable = iter(all_headings)  # type: ignore
-
-        nested_list: epub.Link | list = []
-
-        # Next build a nested lists structure of a pattern:
-        # [<h1 tag>,[<h2 tag>, <h2 tag>, [<h3 tag>], <h2 tag>], <h1 tag>, [<h2 tag>]]
-        # Each lower level heading is a nested list
-        def _nest_or_extend() -> epub.Link | list | None:
-            current_tag = next(all_headings_iterable, None)
-            next_tag = next(all_headings_iterable, None)
-
-            if not current_tag:
-                return None  # reached the end of list
-            elif not next_tag or _extract_heading_number(current_tag) <= _extract_heading_number(next_tag):
-                return _make_link(current_tag)
-            else:  # next heading is lower level, need to nest
-                return [_make_section(current_tag), [_nest_or_extend()]]
-
-        while section := _nest_or_extend():  # loop breaks when iterator next() becomes None
-            nested_list.append(section)
+        toc_as_list = [
+            make_section_or_link(index=index, headings_tree=headings_tree, file_name=file_name)
+            for index in top_level_headings
+        ]
 
         if section_name:
             return [
-                (epub.Section(section_name), nested_list),
+                (Section(section_name), toc_as_list),
             ]
         else:
-            return nested_list
+            return toc_as_list
 
     def __make_chapter(
         self, html: BeautifulSoup, chapter_number: int, section_name: str = "", make_index: bool = True
@@ -115,7 +96,7 @@ class EpubEdition(EditionParser):
         file_name = f"chapter_{chapter_number}.xhtml"
         chapter = self.__make_chapter_content(html, file_name)
 
-        index = _chapter = self.__make_chapter_index(html, file_name, section_name=section_name) if make_index else None
+        index = EpubEdition.__make_chapter_toc(html, file_name, section_name=section_name) if make_index else None
 
         return chapter, index
 
@@ -139,11 +120,12 @@ class EpubEdition(EditionParser):
         """Generate epub"""
         log.debug("Generating epub...")
 
-        _volumes_in_html = [BeautifulSoup(_, "lxml") for _ in self._EditionParser__generate_html()]  # type: ignore
-        frontmatters = [BeautifulSoup(_, "lxml") for _ in self._EditionParser__generate_frontmatter().values()]  # type: ignore # TODO: resolve this
+        frontmatters = [
+            BeautifulSoup(_, "lxml") for _ in self._EditionParser__generate_frontmatter().values()  # type: ignore  # TODO: resolve this
+        ]
 
         volume_number = 0
-        for _config, _html in zip(self.config.edition.volumes, _volumes_in_html):
+        for _config, _html in zip(self.config.edition.volumes, self.per_volume_html):
             book = epub.EpubBook()
             book.spine = [
                 "nav",

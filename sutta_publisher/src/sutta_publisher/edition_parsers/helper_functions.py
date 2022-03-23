@@ -1,10 +1,13 @@
 import re
-from typing import Any
+from typing import Any, cast
 
 import requests
+from bs4 import BeautifulSoup, Tag
+from bs4.element import ResultSet
 
 ALL_REFERENCES_URL = "https://raw.githubusercontent.com/suttacentral/sc-data/master/misc/pali_reference_edition.json"
 ACCEPTED_REFERENCES = ["bj", "pts-vp-pli"]
+MAX_HEADING_DEPTH = 6
 
 
 def _fetch_possible_refs() -> list[str]:
@@ -85,19 +88,51 @@ def _process_a_line(markup: str, segment_id: str, text: str, references: str, po
     return markup.format(f"{segment_id_html}{references_html}{text}")
 
 
-def _convert_descriptive_toc_to_int(text: str) -> int:
-    """
-    Get a desired max depth of headings in table of contents from text.
+def _get_heading_number(heading_tag: Tag) -> int:
+    """Extract heading number from html tag i.e. 'h1' -> 1"""
+    return int(re.search(f"^(h)([1-{MAX_HEADING_DEPTH}])$", heading_tag.name).group(2))  # type: ignore
 
-    Desired depth of the main table of contents is passed as a string of value: ["all" | "1" | ... | "6"]
-    This function sanitises the input from API response, which is of type:
-        {"main-toc-depth": "2"},
-        {"main-toc-depth": "all"}
-    to a number, which we will use as a max depth of a heading in ToC.
+
+def _parse_main_toc_depth(depth: str, html: BeautifulSoup) -> int:
+    """Analyse data from config.edition.main_toc_depth and return actual number hor heading depth for ToC
+
+    Args:
+        depth: depth of ToC headings tree provided as: "all" | "1" | "2".
+        html: HTML of a single volume/chapter
+
+    Returns:
+        int: A level of a found heading
     """
-    if text == "all":
-        return 6
-    elif match := re.match("^[1-6]$", text):
-        return int(match.group(0))
-    else:
-        raise ValueError(f"Provided depth '{text}' not supported")
+    if depth == "all":  # Means ToC goes down from h1 to hX with class='sutta-title'
+        return _find_sutta_title_depth(html)
+    else:  # Else depth given explicitly.ToC made of h1...h<depth> range of headings
+        return int(re.match(f"^[1-{depth}]$", depth).group(0))  # type: ignore
+
+
+def collect_main_toc_depths(depth: str, all_volumes: list[BeautifulSoup]) -> list[int]:
+    """Collect ToC depths for all volumes"""
+    return [_parse_main_toc_depth(depth=depth, html=volume) for volume in all_volumes]
+
+
+def _find_sutta_title_depth(html: BeautifulSoup) -> int:
+    """Find depth of a header, whose class is 'sutta-title'
+
+    Returns:
+        Level of a found heading, None if didn't find any:
+    """
+    heading: Tag = html.find(name=re.compile(f"^h[1-{MAX_HEADING_DEPTH}]"), class_="sutta-title")
+    return _get_heading_number(heading_tag=heading)
+
+
+def _collect_headings(start_depth: int = 1, *, end_depth: int, volume: BeautifulSoup) -> ResultSet:
+    """Collect all heading from range h<start_depth>...h<end_depth>
+
+    Args:
+        start_depth: Minimal heading depth, the default is h1
+        end_depth: Maximal heading depth
+        volume: A html to search in
+
+    Returns:
+        ResultSet: A collection of headings with a specified depth range
+    """
+    return cast(ResultSet, volume.find_all(name=re.compile(f"^h[{start_depth}-{end_depth}]$")))

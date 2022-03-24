@@ -3,17 +3,21 @@ from __future__ import annotations
 import ast
 import logging
 from abc import ABC
+from copy import deepcopy
 from typing import Type
 
 import requests
 from bs4 import BeautifulSoup, Tag
 
 from sutta_publisher.edition_parsers.helper_functions import (
-    MAX_HEADING_DEPTH,
     _collect_headings,
+    _collect_secondary_toc_depths,
     _fetch_possible_refs,
+    _find_children_by_index,
+    _get_heading_depth,
     _process_a_line,
     collect_main_toc_depths,
+    make_headings_tree,
 )
 from sutta_publisher.shared.value_objects.edition import EditionResult, EditionType
 from sutta_publisher.shared.value_objects.edition_config import EditionConfig
@@ -125,21 +129,39 @@ class EditionParser(ABC):
             list[dict[Tag, list[Tag]]]: for each volume a separate mapping is created. List of mappings for all volumes is returned. Mapping associates a heading in text where secondary ToC needs to be inserted with a list of headings required to build this ToC.
         """
         log.debug("Collecting headings for secondary ToCs...")
-        depth: str = self.config.edition.main_toc_depth
-        per_volume_targets = self.__collect_secondary_toc_targets()
-        per_volume_depth: list[int] = []
-        for i in collect_main_toc_depths(depth=depth, all_volumes=self.per_volume_html):
-            per_volume_depth.append(i + 1 if i < MAX_HEADING_DEPTH else i)  # to avoid having start_depth > end_depth
-        self.secondary_toc_headings: dict[Tag, list[Tag]] = {}
-        for target_, depth_, volume_ in zip(per_volume_targets, per_volume_depth, self.per_volume_html):
-            self.secondary_toc_headings.update(
-                {target_: _collect_headings(start_depth=depth_, end_depth=MAX_HEADING_DEPTH, volume=volume_)}
-            )
 
-    def __generate_toc(self) -> None:
-        self.__collect_main_toc_headings()
-        if self.config.edition.secondary_toc:
-            self.__collect_secondary_toc_headings()
+        per_volume_targets = self.__collect_secondary_toc_targets(main_toc_depths)
+        per_volume_depths: list[tuple[int, int]] = _collect_secondary_toc_depths(
+            main_toc_depths=main_toc_depths, all_volumes=self.per_volume_html
+        )
+
+        all_volumes_tocs: list[dict[Tag, list[Tag]]] = []
+        for _targets, _depth, _volume in zip(per_volume_targets, per_volume_depths, self.per_volume_html):
+            secondary_toc_headings: dict[
+                Tag, list[Tag]
+            ] = {}  # mapping is reset for each volume. We deepcopy it to a list with all volumes
+            # In each volume matching the right parent heading with its deeper level headings/children is important. After all these children will create secondary ToC and the parent will be a target for it's insertion
+            tree = make_headings_tree(
+                headings=_collect_headings(start_depth=_depth[0] - 1, end_depth=_depth[1], volume=_volume)
+            )
+            parents = [
+                (index, heading) for (index, heading) in tree.items() if _get_heading_depth(heading) == _depth[0]
+            ]  # parents (targets) are all highest level headings from this collection
+
+            # We got indexed headings and filtered out (indexed) parents, so all there is to do is find parent's children by index and build a mapping for each volume
+            for _index, _target in parents:
+                secondary_toc_headings.update(
+                    {
+                        _target: [
+                            tree[child_index]
+                            for child_index in _find_children_by_index(index=_index, headings_tree=tree)
+                        ]
+                    }
+                )
+
+            all_volumes_tocs.append(deepcopy(secondary_toc_headings))
+
+        return all_volumes_tocs
 
     def __generate_frontmatter(self) -> dict[str, str]:
         log.debug("Generating covers...")

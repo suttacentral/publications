@@ -119,17 +119,17 @@ class EditionParser(ABC):
             toc_targets.append(_collect_headings(start_depth=_depth, end_depth=_depth, volume=_volume))
         return toc_targets
 
-    def __collect_secondary_toc(self, main_toc_depths: list[int]) -> list[dict[Tag, list[Tag]]]:
+    def __collect_secondary_toc(self) -> list[dict[Tag, list[Tag]]]:
         """Based on main ToC headings generate a collection secondary ToCs headings for each volume
-
-        Args:
-            main_toc_depths: Depths of the main ToC split for each volume
 
         Returns:
             list[dict[Tag, list[Tag]]]: for each volume a separate mapping is created. List of mappings for all volumes is returned. Mapping associates a heading in text where secondary ToC needs to be inserted with a list of headings required to build this ToC.
         """
         log.debug("Collecting headings for secondary ToCs...")
 
+        main_toc_depths: list[int] = collect_main_toc_depths(
+            depth=self.config.edition.main_toc_depth, all_volumes=self.per_volume_html
+        )
         per_volume_targets = self.__collect_secondary_toc_targets(main_toc_depths)
         per_volume_depths: list[tuple[int, int]] = _collect_secondary_toc_depths(
             main_toc_depths=main_toc_depths, all_volumes=self.per_volume_html

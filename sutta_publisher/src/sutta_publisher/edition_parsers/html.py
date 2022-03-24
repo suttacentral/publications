@@ -1,9 +1,8 @@
 import logging
 import os
 
+from sutta_publisher.edition_parsers.base import EditionParser
 from sutta_publisher.shared.value_objects.edition import EditionResult, EditionType
-
-from .base import EditionParser
 
 log = logging.getLogger(__name__)
 

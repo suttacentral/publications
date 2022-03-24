@@ -81,19 +81,49 @@ class EditionParser(ABC):
             )  # all main matters from each volumes as a list of html bodies' contents
         return [BeautifulSoup(volume, "lxml") for volume in publication_html_volumes_output]
 
-    def __collect_main_toc_headings(self) -> None:
-        log.debug("Collecting headings for the main ToC...")
-        depth: str = self.config.edition.main_toc_depth
-        per_volume_depth: list[int] = collect_main_toc_depths(depth=depth, all_volumes=self.per_volume_html)
-        self.main_toc_headings: list[list[Tag]] = []
-        for depth_, volume_ in zip(per_volume_depth, self.per_volume_html):
-            self.main_toc_headings.append(_collect_headings(end_depth=depth_, volume=volume_))
+    def __collect_main_toc_headings(self) -> list[list[Tag]]:
+        """Collect all headings, which belong to main ToCs.
 
-    def __collect_secondary_toc_targets(self) -> list[Tag]:
-        # TODO: implement
-        pass
+        The collection is divided by volume.
 
-    def __collect_secondary_toc_headings(self) -> None:
+        Returns:
+            list[list[Tag]]: Headings to be placed in main ToCs, delivered as a list for each volume
+            e.g.: [ [some_heading_for_volume_1, other_heading_for_volume_1], [some_heading_for_volume_2, other_heading_for_volume_2] ]
+        """
+        log.debug("Collecting headings for the main ToCs...")
+
+        per_volume_depth: list[int] = collect_main_toc_depths(
+            depth=self.config.edition.main_toc_depth, all_volumes=self.per_volume_html
+        )
+        main_toc_headings: list[list[Tag]] = []
+        for _depth, _volume in zip(per_volume_depth, self.per_volume_html):
+            main_toc_headings.append(_collect_headings(end_depth=_depth, volume=_volume))
+
+        return main_toc_headings
+
+    def __collect_secondary_toc_targets(self, main_toc_depths: list[int]) -> list[list[Tag]]:
+        """Collect list of targets (heading), under them secondary tables of contents will be inserted.
+
+        Returns:
+            list[list[Tag]]: A list of headings for each volume
+        """
+        log.debug("Collecting targets to insert secondary ToCs...")
+
+        toc_targets: list[list[Tag]] = []
+        # Headings are in lists within a main list. Different list for each volume
+        for _depth, _volume in zip(main_toc_depths, self.per_volume_html):
+            toc_targets.append(_collect_headings(start_depth=_depth, end_depth=_depth, volume=_volume))
+        return toc_targets
+
+    def __collect_secondary_toc(self, main_toc_depths: list[int]) -> list[dict[Tag, list[Tag]]]:
+        """Based on main ToC headings generate a collection secondary ToCs headings for each volume
+
+        Args:
+            main_toc_depths: Depths of the main ToC split for each volume
+
+        Returns:
+            list[dict[Tag, list[Tag]]]: for each volume a separate mapping is created. List of mappings for all volumes is returned. Mapping associates a heading in text where secondary ToC needs to be inserted with a list of headings required to build this ToC.
+        """
         log.debug("Collecting headings for secondary ToCs...")
         depth: str = self.config.edition.main_toc_depth
         per_volume_targets = self.__collect_secondary_toc_targets()

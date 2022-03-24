@@ -116,7 +116,15 @@ def _parse_main_toc_depth(depth: str, html: BeautifulSoup) -> int:
 
 
 def collect_main_toc_depths(depth: str, all_volumes: list[BeautifulSoup]) -> list[int]:
-    """Collect ToC depths for all volumes"""
+    """Collect ToC depths for all volumes
+
+    Args:
+        depth: unparsed input from configuration (such as: "all", "1")
+        all_volumes: HTML for each volume
+
+    Returns:
+        list[int]: list of depths for each volume
+    """
     return [_parse_main_toc_depth(depth=depth, html=volume) for volume in all_volumes]
 
 
@@ -127,10 +135,10 @@ def _find_sutta_title_depth(html: BeautifulSoup) -> int:
         html: HTML to look for heading with class 'sutta-title'. Only the first found match is processed
 
     Returns:
-        Level of a found heading, None if didn't find any:
+        int: Level of a found heading, None if didn't find any:
     """
     heading: Tag = html.find(name=re.compile(f"^h[1-{MAX_HEADING_DEPTH}]"), class_="sutta-title")
-    return _get_heading_number(tag=heading)
+    return _get_heading_depth(tag=heading)
 
 
 def _collect_headings(start_depth: int = 1, *, end_depth: int, volume: BeautifulSoup) -> ResultSet:
@@ -171,7 +179,7 @@ def _nest_or_extend(headings: Iterator[Tag], file_name: str) -> Link | list | No
 
     if not current_tag:
         return None  # reached the end of list
-    elif not next_tag or _get_heading_number(current_tag) <= _get_heading_number(next_tag):
+    elif not next_tag or _get_heading_depth(current_tag) <= _get_heading_depth(next_tag):
         return _make_link(tag=current_tag, file_name=file_name)
     else:  # next heading is lower level, need to nest
         return [_make_section(tag=current_tag, file_name=file_name), [_nest_or_extend(headings, file_name)]]
@@ -182,10 +190,10 @@ def _update_index(index: list[int], tag: Tag) -> None:
 
     e.g. [1, 1, 2+1, 0, 0, 0] - added another h3
     """
-    index[_get_heading_number(tag) - 1] += 1
+    index[_get_heading_depth(tag) - 1] += 1
 
     # When adding another heading all lower level headings counters are reset
-    for i in range(_get_heading_number(tag), 6):
+    for i in range(_get_heading_depth(tag), 6):
         index[i] = 0
 
 
@@ -215,8 +223,11 @@ def _find_children_by_index(
     ]
 
 
-def make_headings_tree(chapter_headings: list[Tag]) -> dict[HeadingsIndexTreeFrozen, Tag]:
+def make_headings_tree(headings: list[Tag]) -> dict[HeadingsIndexTreeFrozen, Tag]:
     """Build a tree of headings where structure is represented by tuple of indexes
+
+    Args:
+        headings: list of headings to create a tree of
 
     Returns:
         dict[tuple,  list[Tag]]: a structure of headings as index: heading
@@ -225,7 +236,7 @@ def make_headings_tree(chapter_headings: list[Tag]) -> dict[HeadingsIndexTreeFro
 
     # Build a tree of headings where structure is represented by tuple of indexes
     headings_tree: dict[HeadingsIndexTreeFrozen, Tag] = {}
-    for heading in chapter_headings:
+    for heading in headings:
         _update_index(index=heading_index, tag=heading)
         # This freezes and copies the current state of heading_index even though it is used in further iterations
         headings_tree.update({HeadingsIndexTreeFrozen(*heading_index): heading})

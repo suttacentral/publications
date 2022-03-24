@@ -25,12 +25,7 @@ with open(file=CSS_PATH) as f:
 class EpubEdition(EditionParser):
     edition_type = EditionType.epub
 
-    # We need an overridden init to collect headings for ToC
-    def __init__(self, config: EditionConfig, data: EditionData):
-        super().__init__(config, data)
-        self.__generate_toc()
-
-    def __set_metadata(self, book: epub.EpubBook) -> None:
+    def __set_metadata(self, book: EpubBook) -> None:
         book.set_identifier(self.config.edition.edition_id)
         book.set_title(self.config.publication.translation_title)
         book.set_language(self.config.publication.translation_lang_iso)

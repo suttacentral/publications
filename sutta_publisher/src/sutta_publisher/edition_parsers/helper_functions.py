@@ -94,9 +94,9 @@ def _process_a_line(markup: str, segment_id: str, text: str, references: str, po
     return markup.format(f"{segment_id_html}{references_html}{text}")
 
 
-def _get_heading_number(tag: Tag) -> int:
+def _get_heading_depth(tag: Tag) -> int:
     """Extract heading number from html tag i.e. 'h1' -> 1"""
-    return int(re.search(f"^(h)([1-{MAX_HEADING_DEPTH}])$", heading_tag.name).group(2))  # type: ignore
+    return int(re.search(f"^(h)([1-{MAX_HEADING_DEPTH}])$", tag.name).group(2))  # type: ignore
 
 
 def _parse_main_toc_depth(depth: str, html: BeautifulSoup) -> int:

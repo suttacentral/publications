@@ -1,7 +1,7 @@
 import logging
 import os
 import tempfile
-from typing import List, Tuple
+from pathlib import Path
 
 from bs4 import BeautifulSoup, Tag
 from ebooklib import epub
@@ -16,29 +16,9 @@ from .helper_functions import HeadingsIndexTreeFrozen, _find_index_root, make_he
 
 log = logging.getLogger(__name__)
 
-_css = """
-@namespace epub "http://www.idpf.org/2007/ops";
-body {
-    font-family: Cambria, Liberation Serif, Bitstream Vera Serif, Georgia, Times, Times New Roman, serif;
-}
-h2 {
-     text-align: left;
-     text-transform: uppercase;
-     font-weight: 200;
-}
-ol {
-        list-style-type: none;
-}
-ol > li:first-child {
-        margin-top: 0.3em;
-}
-nav[epub|type~='toc'] > ol > li > ol  {
-    list-style-type:square;
-}
-nav[epub|type~='toc'] > ol > li > ol > li {
-        margin-top: 0.3em;
-}
-"""
+CSS_PATH = Path(__file__).parent / "css_stylesheets/epub.css"
+with open(file=CSS_PATH) as f:
+    EPUB_CSS = f.read()
 
 
 class EpubEdition(EditionParser):

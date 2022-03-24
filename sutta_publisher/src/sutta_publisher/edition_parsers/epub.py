@@ -6,7 +6,6 @@ from pathlib import Path
 from bs4 import BeautifulSoup, Tag
 from ebooklib.epub import EpubBook, EpubHtml, EpubItem, EpubNav, EpubNcx, Link, Section, write_epub
 
-from sutta_publisher.edition_parsers.base import EditionParser
 from sutta_publisher.edition_parsers.helper_functions import (
     HeadingsIndexTreeFrozen,
     _find_index_root,
@@ -15,11 +14,11 @@ from sutta_publisher.edition_parsers.helper_functions import (
 )
 from sutta_publisher.shared.value_objects.edition import EditionResult, EditionType
 
+from .base import EditionParser
+
 log = logging.getLogger(__name__)
 
 CSS_PATH = Path(__file__).parent / "css_stylesheets/epub.css"
-with open(file=CSS_PATH) as f:
-    EPUB_CSS = f.read()
 
 
 class EpubEdition(EditionParser):
@@ -32,6 +31,8 @@ class EpubEdition(EditionParser):
         book.add_author(self.config.publication.creator_name)
 
     def __set_styles(self, book: EpubBook) -> None:
+        with open(file=CSS_PATH) as f:
+            EPUB_CSS = f.read()
         default_css = EpubItem(
             uid="style_default", file_name="style/default.css", media_type="text/css", content=EPUB_CSS
         )
@@ -53,7 +54,6 @@ class EpubEdition(EditionParser):
         top_level_headings = [
             index for index in headings_tree.keys() if len(_find_index_root(index)) == 1
         ]  # top level headings are heading with only h1 counter != 0
-
         toc_as_list = [
             make_section_or_link(index=index, headings_tree=headings_tree, file_name=file_name)
             for index in top_level_headings
@@ -68,14 +68,11 @@ class EpubEdition(EditionParser):
 
     def __make_chapter(
         self,
-        headings: list[Tag],
         html: BeautifulSoup,
         chapter_number: int,
-        section_name: str = "",
-        make_index: bool = True,
     ) -> EpubHtml:
         file_name = f"chapter_{chapter_number}.xhtml"
-        return self.__make_chapter_content(html, file_name)
+        return self.__make_chapter_content(html=html, file_name=file_name)
 
     def __set_chapters(
         self,
@@ -86,9 +83,7 @@ class EpubEdition(EditionParser):
         section_name: str = "",
         make_index: bool = True,
     ) -> None:
-        chapter = self.__make_chapter(
-            headings=headings, html=html, chapter_number=chapter_number, section_name=section_name
-        )
+        chapter = self.__make_chapter(html=html, chapter_number=chapter_number)
         book.add_item(chapter)
         if make_index:
             toc = EpubEdition.__make_chapter_toc(
@@ -101,16 +96,14 @@ class EpubEdition(EditionParser):
         """Generate epub"""
         log.debug("Generating epub...")
 
-        frontmatters = [
-            BeautifulSoup(_, "lxml")
-            for _ in self._EditionParser__generate_frontmatter().values()
-            # type: ignore  # TODO: resolve this
-        ]
+        frontmatters = [BeautifulSoup(_, "lxml") for _ in self._EditionParser__generate_frontmatter().values()]  # type: ignore
 
         volume_number = 0
         # We loop over volumes. Each volume is a separate file
         for _config, _html, _main_toc_headings in zip(
-            self.config.edition.volumes, self.per_volume_html, self.__collect_main_toc_headings()
+            self.config.edition.volumes,
+            self.per_volume_html,
+            self._EditionParser__collect_main_toc_headings(),  # type: ignore
         ):
             book = EpubBook()
             book.spine = [

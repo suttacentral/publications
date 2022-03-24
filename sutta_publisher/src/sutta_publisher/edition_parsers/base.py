@@ -204,7 +204,7 @@ class EditionParser(ABC):
         log.debug("Generating end matters...")
 
     def collect_all(self) -> EditionResult:
-        self.__generate_html(raw_data=self.raw_data, possible_refs=self.possible_refs)
+        # self.__generate_html(raw_data=self.raw_data, possible_refs=self.possible_refs)
         self.__generate_frontmatter()
         self.__generate_endmatter()
         self.__generate_covers()

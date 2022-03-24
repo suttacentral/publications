@@ -73,17 +73,9 @@ class EpubEdition(EditionParser):
         chapter_number: int,
         section_name: str = "",
         make_index: bool = True,
-    ) -> tuple[EpubHtml, list[Link] | None]:
+    ) -> EpubHtml:
         file_name = f"chapter_{chapter_number}.xhtml"
-        chapter = self.__make_chapter_content(html, file_name)
-
-        index = (
-            EpubEdition.__make_chapter_toc(headings=headings, file_name=file_name, section_name=section_name)
-            if make_index
-            else None
-        )
-
-        return chapter, index
+        return self.__make_chapter_content(html, file_name)
 
     def __set_chapters(
         self,

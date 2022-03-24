@@ -94,12 +94,15 @@ class EpubEdition(EditionParser):
         section_name: str = "",
         make_index: bool = True,
     ) -> None:
-        chapter, index = self.__make_chapter(
-            html=html, chapter_number=chapter_number, section_name=section_name, make_index=make_index
+        chapter = self.__make_chapter(
+            headings=headings, html=html, chapter_number=chapter_number, section_name=section_name
         )
         book.add_item(chapter)
-        if index:
-            book.toc.extend(index)
+        if make_index:
+            toc = EpubEdition.__make_chapter_toc(
+                headings=headings, file_name=f"chapter_{chapter_number}.xhtml", section_name=section_name
+            )
+            book.toc.extend(toc)
         book.spine.append(chapter)
 
     def __generate_epub(self) -> None:
@@ -107,12 +110,17 @@ class EpubEdition(EditionParser):
         log.debug("Generating epub...")
 
         frontmatters = [
-            BeautifulSoup(_, "lxml") for _ in self._EditionParser__generate_frontmatter().values()  # type: ignore  # TODO: resolve this
+            BeautifulSoup(_, "lxml")
+            for _ in self._EditionParser__generate_frontmatter().values()
+            # type: ignore  # TODO: resolve this
         ]
 
         volume_number = 0
-        for _config, _html in zip(self.config.edition.volumes, self.per_volume_html):
-            book = epub.EpubBook()
+        # We loop over volumes. Each volume is a separate file
+        for _config, _html, _main_toc_headings in zip(
+            self.config.edition.volumes, self.per_volume_html, self.__collect_main_toc_headings()
+        ):
+            book = EpubBook()
             book.spine = [
                 "nav",
             ]
@@ -122,11 +130,17 @@ class EpubEdition(EditionParser):
 
             for _frontmatter in frontmatters:
                 volume_number += 1
-                self.__set_chapters(book, html=_frontmatter, chapter_number=volume_number, make_index=False)
+                self.__set_chapters(
+                    book=book,
+                    html=_frontmatter,
+                    headings=_main_toc_headings,
+                    chapter_number=volume_number,
+                    make_index=False,
+                )
 
             volume_number += 1
 
-            self.__set_chapters(book, html=_html, chapter_number=volume_number)
+            self.__set_chapters(book, html=_html, headings=_main_toc_headings, chapter_number=volume_number)
 
             # add navigation files
             book.add_item(EpubNcx())

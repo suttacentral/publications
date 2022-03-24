@@ -128,6 +128,19 @@ def collect_main_toc_depths(depth: str, all_volumes: list[BeautifulSoup]) -> lis
     return [_parse_main_toc_depth(depth=depth, html=volume) for volume in all_volumes]
 
 
+def _collect_secondary_toc_depths(
+    main_toc_depths: list[int], all_volumes: list[BeautifulSoup]
+) -> list[tuple[int, int]]:
+    """Collect depths range for secondary ToCs as (start_depth, end_depth)"""
+    toc_ranges: list[tuple[int, int]] = []
+    for _main_toc, _volume in zip(main_toc_depths, all_volumes):
+        # Secondary ToC always starts one level below deepest main ToC heading
+        # Secondary ToC always ends on level of heading with class 'sutta-title'
+        toc_ranges.append((_main_toc + 1, _find_sutta_title_depth(_volume)))
+
+    return toc_ranges
+
+
 def _find_sutta_title_depth(html: BeautifulSoup) -> int:
     """Find depth of a header, whose class is 'sutta-title'
 

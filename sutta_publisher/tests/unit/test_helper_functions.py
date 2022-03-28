@@ -1,6 +1,7 @@
 import pytest
 
 from sutta_publisher.edition_parsers.helper_functions import (
+    _convert_descriptive_toc_to_int,
     _fetch_possible_refs,
     _filter_refs,
     _flatten_list,
@@ -114,9 +115,13 @@ def test_should_check_intersection_of_two_lists() -> None:
     ],
 )
 def test_should_check_that_a_full_mainmatter_item_is_processed(
-    test_markup, test_segment, test_text, test_references, expected_line, list_of_all_refs
-):
-    
+    test_markup: str,
+    test_segment: str,
+    test_text: str,
+    test_references: str,
+    expected_line: str,
+    list_of_all_refs: list[str],
+) -> None:
     assert (
         _process_a_line(
             markup=test_markup,
@@ -127,3 +132,25 @@ def test_should_check_that_a_full_mainmatter_item_is_processed(
         )
         == expected_line
     )
+
+
+@pytest.mark.parametrize(
+    "text, expected_level",
+    [
+        ("1", 1),
+        ("2", 2),
+        ("3", 3),
+        ("4", 4),
+        ("5", 5),
+        ("6", 6),
+        ("all", 6),
+    ],
+)
+def test_should_properly_decipher_number_from_text(text: str, expected_level: int) -> None:
+    assert _convert_descriptive_toc_to_int(text) == expected_level
+
+
+@pytest.mark.parametrize("text", ["7", "something"])
+def test_should_rase_error_when_parsing_unhandled_text(text: str) -> None:
+    with pytest.raises(expected_exception=ValueError, match=f"Provided depth '{text}' not supported"):
+        _convert_descriptive_toc_to_int(text)

@@ -1,150 +1,111 @@
 import logging
 import os
-import re
 import tempfile
-from typing import List, Tuple, Union
+from pathlib import Path
 
-import bs4
-from bs4 import BeautifulSoup
-from ebooklib import epub
+from bs4 import BeautifulSoup, Tag
+from ebooklib.epub import EpubBook, EpubHtml, EpubItem, EpubNav, EpubNcx, Link, Section, write_epub
 
+from sutta_publisher.edition_parsers.helper_functions import (
+    HeadingsIndexTreeFrozen,
+    _find_index_root,
+    make_headings_tree,
+    make_section_or_link,
+)
 from sutta_publisher.shared.value_objects.edition import EditionResult, EditionType
 
 from .base import EditionParser
 
 log = logging.getLogger(__name__)
 
-
-_css = """
-@namespace epub "http://www.idpf.org/2007/ops";
-body {
-    font-family: Cambria, Liberation Serif, Bitstream Vera Serif, Georgia, Times, Times New Roman, serif;
-}
-h2 {
-     text-align: left;
-     text-transform: uppercase;
-     font-weight: 200;
-}
-ol {
-        list-style-type: none;
-}
-ol > li:first-child {
-        margin-top: 0.3em;
-}
-nav[epub|type~='toc'] > ol > li > ol  {
-    list-style-type:square;
-}
-nav[epub|type~='toc'] > ol > li > ol > li {
-        margin-top: 0.3em;
-}
-"""
+CSS_PATH = Path(__file__).parent / "css_stylesheets/epub.css"
 
 
 class EpubEdition(EditionParser):
     edition_type = EditionType.epub
 
-    def __set_metadata(self, book: epub.EpubBook) -> None:
+    def __set_metadata(self, book: EpubBook) -> None:
         book.set_identifier(self.config.edition.edition_id)
         book.set_title(self.config.publication.translation_title)
         book.set_language(self.config.publication.translation_lang_iso)
         book.add_author(self.config.publication.creator_name)
 
-    def __set_styles(self, book: epub.EpubBook) -> None:
-        default_css = epub.EpubItem(
-            uid="style_default", file_name="style/default.css", media_type="text/css", content=_css
+    def __set_styles(self, book: EpubBook) -> None:
+        with open(file=CSS_PATH) as f:
+            EPUB_CSS = f.read()
+        default_css = EpubItem(
+            uid="style_default", file_name="style/default.css", media_type="text/css", content=EPUB_CSS
         )
         book.add_item(default_css)
 
-    def __make_chapter_content(self, html: BeautifulSoup, file_name: str) -> epub.EpubHtml:
-        _chapter = epub.EpubHtml(title=self.config.publication.translation_title, file_name=file_name)
+    def __make_chapter_content(self, html: BeautifulSoup, file_name: str) -> EpubHtml:
+        _chapter = EpubHtml(title=self.config.publication.translation_title, file_name=file_name)
         _chapter.content = str(html)
         return _chapter
 
-    def __make_chapter_index(
-        self, html: BeautifulSoup, file_name: str, section_name: str = "", depth: int = 6
-    ) -> Union[List[Tuple[epub.Section, List[epub.Link]]], List[epub.Link]]:
+    @staticmethod
+    def __make_chapter_toc(
+        headings: list[Tag], file_name: str, section_name: str = ""
+    ) -> list[tuple[Section, list[list[Section] | Link]]] | list[list[Section] | Link]:
 
-        # Validate input, max depth of HTML heading is h6
-        if depth > 6:
-            depth = 6
+        headings_tree: dict[HeadingsIndexTreeFrozen, Tag] = make_headings_tree(headings=headings)
 
-        # Catch all the heading HTML tags (h1, ..., h<depth>)
-        all_headings: list[bs4.element.Tag] = [heading for heading in html.find_all(re.compile(f"^h[1-{depth}]$"))]
-
-        def _extract_heading_number(heading_tag: bs4.element.Tag) -> int:
-            """Extract heading number from html tag i.e. 'h1' -> 1"""
-            return int(re.search(f"[1-{depth}]$", heading_tag.name).group(0))  # type: ignore
-
-        def _make_link(tag: bs4.element.Tag) -> epub.Link:
-            return epub.Link(href=f"{file_name}#{tag.span['id']}", title=tag.text, uid=tag.span["id"])
-
-        def _make_section(tag: bs4.element.Tag) -> epub.Section:
-            return epub.Section(title=tag.text, href=f"{file_name}#{tag.span['id']}")
-
-        all_headings_iterable = iter(all_headings)  # type: ignore
-
-        nested_list: epub.Link | list = []
-
-        # Next build a nested lists structure of a pattern:
-        # [<h1 tag>,[<h2 tag>, <h2 tag>, [<h3 tag>], <h2 tag>], <h1 tag>, [<h2 tag>]]
-        # Each lower level heading is a nested list
-        def _nest_or_extend() -> epub.Link | list | None:
-            current_tag = next(all_headings_iterable, None)
-            next_tag = next(all_headings_iterable, None)
-
-            if not current_tag:
-                return None  # reached the end of list
-            elif not next_tag or _extract_heading_number(current_tag) <= _extract_heading_number(next_tag):
-                return _make_link(current_tag)
-            else:  # next heading is lower level, need to nest
-                return [_make_section(current_tag), [_nest_or_extend()]]
-
-        while section := _nest_or_extend():  # loop breaks when iterator next() becomes None
-            nested_list.append(section)
+        # Time to create the output list. Loop only through top level headings, subheadings will be handled recursively by the function
+        top_level_headings = [
+            index for index in headings_tree.keys() if len(_find_index_root(index)) == 1
+        ]  # top level headings are heading with only h1 counter != 0
+        toc_as_list = [
+            make_section_or_link(index=index, headings_tree=headings_tree, file_name=file_name)
+            for index in top_level_headings
+        ]
 
         if section_name:
             return [
-                (epub.Section(section_name), nested_list),
+                (Section(section_name), toc_as_list),
             ]
         else:
-            return nested_list
+            return toc_as_list
 
     def __make_chapter(
-        self, html: BeautifulSoup, chapter_number: int, section_name: str = "", make_index: bool = True
-    ) -> Tuple[epub.EpubHtml, List[epub.Link] | None]:
+        self,
+        html: BeautifulSoup,
+        chapter_number: int,
+    ) -> EpubHtml:
         file_name = f"chapter_{chapter_number}.xhtml"
-        chapter = self.__make_chapter_content(html, file_name)
-
-        index = _chapter = self.__make_chapter_index(html, file_name, section_name=section_name) if make_index else None
-
-        return chapter, index
+        return self.__make_chapter_content(html=html, file_name=file_name)
 
     def __set_chapters(
         self,
-        book: epub.EpubBook,
+        book: EpubBook,
         html: BeautifulSoup,
+        headings: list[Tag],
         chapter_number: int,
         section_name: str = "",
         make_index: bool = True,
     ) -> None:
-        chapter, index = self.__make_chapter(
-            html=html, chapter_number=chapter_number, section_name=section_name, make_index=make_index
-        )
+        chapter = self.__make_chapter(html=html, chapter_number=chapter_number)
         book.add_item(chapter)
-        if index:
-            book.toc.extend(index)
+        if make_index:
+            toc = EpubEdition.__make_chapter_toc(
+                headings=headings, file_name=f"chapter_{chapter_number}.xhtml", section_name=section_name
+            )
+            book.toc.extend(toc)
         book.spine.append(chapter)
 
     def __generate_epub(self) -> None:
         """Generate epub"""
         log.debug("Generating epub...")
 
-        _volumes_in_html = [BeautifulSoup(_, "lxml") for _ in self._EditionParser__generate_html()]  # type: ignore
-        frontmatters = [BeautifulSoup(_, "lxml") for _ in self._EditionParser__generate_frontmatter().values()]  # type: ignore # TODO: resolve this
+        frontmatters = [BeautifulSoup(_, "lxml") for _ in self._EditionParser__generate_frontmatter().values()]  # type: ignore
 
         volume_number = 0
-        for _config, _html in zip(self.config.edition.volumes, _volumes_in_html):
-            book = epub.EpubBook()
+        # We loop over volumes. Each volume is a separate file
+        for _config, _html, _main_toc_headings in zip(
+            self.config.edition.volumes,
+            self.per_volume_html,
+            self._EditionParser__collect_main_toc_headings(),  # type: ignore
+        ):
+            book = EpubBook()
             book.spine = [
                 "nav",
             ]
@@ -154,21 +115,27 @@ class EpubEdition(EditionParser):
 
             for _frontmatter in frontmatters:
                 volume_number += 1
-                self.__set_chapters(book, html=_frontmatter, chapter_number=volume_number, make_index=False)
+                self.__set_chapters(
+                    book=book,
+                    html=_frontmatter,
+                    headings=_main_toc_headings,
+                    chapter_number=volume_number,
+                    make_index=False,
+                )
 
             volume_number += 1
 
-            self.__set_chapters(book, html=_html, chapter_number=volume_number)
+            self.__set_chapters(book, html=_html, headings=_main_toc_headings, chapter_number=volume_number)
 
             # add navigation files
-            book.add_item(epub.EpubNcx())
-            book.add_item(epub.EpubNav())
+            book.add_item(EpubNcx())
+            book.add_item(EpubNav())
 
             _path = os.path.join(
                 tempfile.gettempdir(), f"{self.config.publication.translation_title} vol {volume_number}.epub"
             )
             # create epub file
-            epub.write_epub(_path, book, {})
+            write_epub(_path, book, {})
 
     def collect_all(self) -> EditionResult:
         # self.__generate_endmatter()

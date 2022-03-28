@@ -3,11 +3,12 @@ PYTHON_EXEC?=python
 COMPOSE_EXEC?=docker-compose
 
 APP_PATH = sutta_publisher/src
+TESTS_PATH = sutta_publisher/tests
 
 PROD_DOCKER_COMPOSE=./docker-compose.yml
 DEV_DOCKER_COMPOSE=./docker-compose.dev.yml
 
-LINT_PATHS = $(APP_PATH)
+LINT_PATHS = $(APP_PATH) $(TESTS_PATH)
 
 
 ##############################################################################

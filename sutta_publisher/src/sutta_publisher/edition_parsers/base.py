@@ -85,6 +85,9 @@ class EditionParser(ABC):
             )  # all main matters from each volumes as a list of html bodies' contents
         return [BeautifulSoup(volume, "lxml") for volume in publication_html_volumes_output]
 
+    def change_headings_numeration(self, volume: BeautifulSoup) -> BeautifulSoup:
+        pass
+
     def __collect_main_toc_headings(self) -> list[list[Tag]]:
         """Collect all headings, which belong to main ToCs.
 

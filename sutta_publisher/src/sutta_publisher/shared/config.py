@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 from typing import cast
 
 import requests
@@ -9,7 +8,6 @@ from pydantic import ValidationError
 
 from sutta_publisher.shared.value_objects.edition_config import EditionConfig, EditionMappingList, EditionsConfigs
 
-PAYLOADS_PATH = Path(__file__).parent / "example_payloads"
 API_URL = "http://localhost:80/api/"  # TODO: Change url for real one
 API_ENDPOINTS = {
     "editions_mapping": "publication/editions",
@@ -37,6 +35,9 @@ def get_edition_config(edition_id: str) -> EditionConfig:
     return config
 
 
+get_edition_config("mn-en-sujato_scpub3-ed2-epub_2022-02-10")
+
+
 def get_editions_configs(publication_number: str) -> EditionsConfigs:
     """Build a list of available editions config."""
     editions_id: list[str] = get_editions_ids(publication_number=publication_number)
@@ -46,7 +47,7 @@ def get_editions_configs(publication_number: str) -> EditionsConfigs:
         try:
             editions_config.append(get_edition_config(edition_id=each_id))
         except ValidationError:
-            logging.warning("Not upported edition type found. Skipping to next one.")
+            logging.warning("Unsupported edition type found. Skipping to next one.")
 
     if not editions_config:
         raise SystemExit(f"No valid edition configs found for {publication_number=}. Stopping.")

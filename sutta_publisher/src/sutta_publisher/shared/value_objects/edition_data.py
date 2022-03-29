@@ -4,6 +4,28 @@ from typing import Iterator, Optional
 from pydantic import BaseModel
 
 
+class PreheadingInfo(BaseModel):
+    uid: str
+    name: str
+    type: str
+
+
+class MainMatterPreheading(list[PreheadingInfo]):
+    """This is a collection of preheadings for a single partial mainmatter"""
+
+
+class MainMatterPreheadings(list[MainMatterPreheading]):
+    """This is a collection of preheadings for a single full mainmatter"""
+
+
+class VolumePreheadings(list[MainMatterPreheadings]):
+    """We need to return data for each MainMatter separately."""
+
+
+class EditionPreheadings(list[VolumePreheadings]):
+    """We need to return data for each volume separately."""
+
+
 class MainMatterDetails(BaseModel):
     main_text: Optional[dict[str, str]]
     markup: Optional[dict[str, str]]
@@ -32,6 +54,7 @@ class MainMatter(BaseModel):
 
 @dataclass
 class VolumeData:
+    preheadings: MainMatterPreheadings
     # Return the mainmatter for a volume mainmatter
     mainmatter: MainMatter
 

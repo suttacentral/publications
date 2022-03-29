@@ -201,7 +201,7 @@ class EditionParser(ABC):
         log.debug("Generating covers...")
 
     def __generate_backmatter(self) -> None:
-        log.debug("Generating end matters...")
+        log.debug("Generating back matters...")
 
     def collect_all(self) -> EditionResult:
         # self.__generate_html(raw_data=self.raw_data, possible_refs=self.possible_refs)

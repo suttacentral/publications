@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 from typing import Iterator
 
 from pydantic import BaseModel
@@ -31,8 +32,8 @@ class EditionDetails(BaseModel):
     publication_number: str
     publication_type: EditionType
     volumes: Volumes
-    created: str
-    updated: str
+    created: str = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    updated: str = created
     working_dir: str
     main_toc_depth: str
     secondary_toc: bool

@@ -17,14 +17,18 @@ def test_should_create_config() -> None:
     assert html_edition.edition.publication_type == EditionType.html
     assert len(html_edition.edition.volumes) == 1
     html_volume = html_edition.edition.volumes[0]
-    assert html_volume.backmatter == ["index", "notes", "author_bio"]
+    assert html_volume.backmatter == ["colophon"]
     assert html_volume.frontmatter == [
         "titlepage",
-        "copyright",
-        "toc",
+        "imprint",
+        "halftitlepage",
+        "./matter/epigraph.html",
+        "main-toc",
         "./matter/foreword.html",
+        "./matter/preface.html",
         "./matter/introduction.html",
         "./matter/acknowledgements.html",
+        "blurbs",
     ]
     assert html_volume.mainmatter == ["mn"]
 

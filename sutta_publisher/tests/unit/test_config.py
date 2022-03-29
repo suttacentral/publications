@@ -17,7 +17,7 @@ def test_should_create_config() -> None:
     assert html_edition.edition.publication_type == EditionType.html
     assert len(html_edition.edition.volumes) == 1
     html_volume = html_edition.edition.volumes[0]
-    assert html_volume.endmatter == ["index", "notes", "author_bio"]
+    assert html_volume.backmatter == ["index", "notes", "author_bio"]
     assert html_volume.frontmatter == [
         "titlepage",
         "copyright",

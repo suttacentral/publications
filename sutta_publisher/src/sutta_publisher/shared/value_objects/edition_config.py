@@ -8,7 +8,7 @@ from .edition import EditionType
 
 
 class VolumeDetail(BaseModel):
-    endmatter: list[str]
+    backmatter: list[str]
     frontmatter: list[str]
     mainmatter: list[str]
 

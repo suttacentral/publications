@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime
-from typing import Iterator
+from typing import Iterator, Optional
 
 from pydantic import BaseModel
 
@@ -33,7 +33,9 @@ class EditionDetails(BaseModel):
     publication_type: EditionType
     volumes: Volumes
     created: str = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-    updated: str = created
+    updated: Optional[
+        str
+    ]  # Upon the first publication we leave it uninitialized. This will only be initialized/changed when further changes are introduced.
     working_dir: str
     main_toc_depth: str
     secondary_toc: bool

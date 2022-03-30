@@ -138,7 +138,7 @@ class EpubEdition(EditionParser):
             write_epub(_path, book, {})
 
     def collect_all(self) -> EditionResult:
-        # self.__generate_endmatter()
+        # self.__generate_backmatter()
         # self.__generate_covers()
         self.__generate_epub()
         txt = "dummy"

@@ -22,7 +22,7 @@ class HtmlEdition(EditionParser):
         log.debug("Generating html...")
 
     def collect_all(self) -> EditionResult:
-        # self.__generate_endmatter()
+        # self.__generate_backmatter()
         self.__generate_html()
         txt = "dummy"
         result = EditionResult()

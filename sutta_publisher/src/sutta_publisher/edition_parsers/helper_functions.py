@@ -272,3 +272,14 @@ def make_section_or_link(
     # Heading is childless so it's a Link
     else:
         return _make_link(tag=heading, file_name=file_name)
+
+
+def remove_all_ul(html: BeautifulSoup) -> None:
+    """Remove all <ul>...</ul> tags from HTML (in place)"""
+    [ul.decompose() for ul in html.find_all("ul")]
+
+
+def increment_heading_by_number(by_number: int, heading: Tag) -> None:
+    """Increases an HTML heading depth by number e.g. h2 -> h4 (in place)"""
+    current_depth = _get_heading_depth(heading)
+    heading.name = f"h{current_depth + by_number}"

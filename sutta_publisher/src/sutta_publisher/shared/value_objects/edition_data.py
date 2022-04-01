@@ -1,25 +1,44 @@
 from dataclasses import dataclass
 from typing import Iterator, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
-class PreheadingInfo(BaseModel):
+class Heading(BaseModel):
+    heading_id: str = Field(alias="uid")
+    name: str
+
+    def set_name(self, name: str) -> None:
+        self.name = name
+
+
+class HeadingsGroup(list[Heading]):
+    """A group of leafs nodes that come after preheadings (usually chapter titles)"""
+
+
+class MainMatterHeadings(list[HeadingsGroup]):
+    """This is a collection of headings for a whole mainmatter (all headings for a single uid)"""
+
+
+class VolumeHeadings(list[MainMatterHeadings]):
+    """This is a collection of headings for a whole volume (all headings for a single uid)"""
+
+
+class Preheading(BaseModel):
     uid: str
     name: str
-    type: str
 
 
-class MainMatterPreheading(list[PreheadingInfo]):
-    """This is a collection of preheadings for a single partial mainmatter"""
+class PreheadingsGroup(list[Preheading]):
+    """This is a collection of preheadings for a single 'leaf' - partial mainmatter"""
 
 
-class MainMatterPreheadings(list[MainMatterPreheading]):
-    """This is a collection of preheadings for a single full mainmatter"""
+class MainMatterPreheadings(list[PreheadingsGroup]):
+    """This is a collection of preheadings for a whole mainmatter (all preheadings for a single uid)"""
 
 
 class VolumePreheadings(list[MainMatterPreheadings]):
-    """We need to return data for each MainMatter separately."""
+    """This is a collection of preheadings for a whole volume"""
 
 
 class EditionPreheadings(list[VolumePreheadings]):
@@ -54,7 +73,8 @@ class MainMatter(BaseModel):
 
 @dataclass
 class VolumeData:
-    preheadings: MainMatterPreheadings
+    preheadings: VolumePreheadings
+    headings: VolumeHeadings
     # Return the mainmatter for a volume mainmatter
     mainmatter: MainMatter
 

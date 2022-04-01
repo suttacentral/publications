@@ -17,7 +17,9 @@ from sutta_publisher.edition_parsers.helper_functions import (
     _get_heading_depth,
     _process_a_line,
     collect_main_toc_depths,
+    increment_heading_by_number,
     make_headings_tree,
+    remove_all_ul,
 )
 from sutta_publisher.shared.value_objects.edition import EditionResult, EditionType
 from sutta_publisher.shared.value_objects.edition_config import EditionConfig
@@ -36,11 +38,11 @@ class EditionParser(ABC):
         self.config: EditionConfig = config
         self.possible_refs: list[str] = _fetch_possible_refs()
         self.per_volume_html: list[BeautifulSoup] = EditionParser.__generate_html(
-            raw_data=data, possible_refs=self.possible_refs
+            raw_data=data, possible_refs=self.possible_refs, config=self.config
         )
 
     @staticmethod
-    def __generate_html(raw_data: EditionData, possible_refs: list[str]) -> list[BeautifulSoup]:
+    def __generate_html(raw_data: EditionData, possible_refs: list[str], config: EditionConfig) -> list[BeautifulSoup]:
         """Generate content of an HTML body"""
         log.debug("Generating html...")
 
@@ -83,12 +85,44 @@ class EditionParser(ABC):
             publication_html_volumes_output.append(
                 single_mainmatter_output
             )  # all main matters from each volumes as a list of html bodies' contents
-        return [BeautifulSoup(volume, "lxml") for volume in publication_html_volumes_output]
 
-    def change_headings_numeration(self, volume: BeautifulSoup) -> BeautifulSoup:
-        pass
+        volumes = [BeautifulSoup(volume, "lxml") for volume in publication_html_volumes_output]
+        EditionParser.postprocess(config=config, edition_data=raw_data, volumes_htmls=volumes)
 
-    def __collect_main_toc_headings(self) -> list[list[Tag]]:
+        return volumes
+
+    def __collect_preheading_insertion_targets(self) -> list[Tag]:
+        targets: list[Tag] = []
+
+        # TODO: refactor
+        for volume_headings, volume_html in zip(self.raw_data, self.per_volume_html):
+            for mainmatter_headings in volume_headings.headings:
+                for headings_group in mainmatter_headings:
+                    for heading in headings_group:
+                        targets.append(volume_html.find(id=heading.uid))
+
+        return targets
+
+    @staticmethod
+    def postprocess(config: EditionConfig, edition_data: EditionData, volumes_htmls: list[BeautifulSoup]) -> None:
+        for volume in volumes_htmls:
+            remove_all_ul(html=volume)
+
+        additional_depth = len(edition_data[0].preheadings[0])
+
+        volumes_headings = EditionParser.collect_main_toc_headings(config, volumes_htmls)
+        for volume in volumes_headings:
+            for heading in volume:
+                increment_heading_by_number(by_number=additional_depth, heading=heading)
+
+        for volume, html in zip(edition_data, volumes_htmls):
+            for mainmainmatter_preheadings, mainmainmatter_headings in zip(volume.preheadings, volume.headings):
+                for preheading_group, heading_group in zip(mainmainmatter_preheadings, mainmainmatter_headings):
+                    for preheading in preheading_group:
+                        html.find(heading_group[0]).insert_before(preheading)
+
+    @staticmethod
+    def collect_main_toc_headings(config: EditionConfig, volumes_htmls: list[BeautifulSoup]) -> list[list[Tag]]:
         """Collect all headings, which belong to main ToCs.
 
         The collection is divided by volume.
@@ -100,10 +134,10 @@ class EditionParser(ABC):
         log.debug("Collecting headings for the main ToCs...")
 
         per_volume_depth: list[int] = collect_main_toc_depths(
-            depth=self.config.edition.main_toc_depth, all_volumes=self.per_volume_html
+            depth=config.edition.main_toc_depth, all_volumes=volumes_htmls
         )
         main_toc_headings: list[list[Tag]] = []
-        for _depth, _volume in zip(per_volume_depth, self.per_volume_html):
+        for _depth, _volume in zip(per_volume_depth, volumes_htmls):
             main_toc_headings.append(_collect_headings(end_depth=_depth, volume=_volume))
 
         return main_toc_headings

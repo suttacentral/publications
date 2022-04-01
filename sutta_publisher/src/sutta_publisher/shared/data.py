@@ -7,11 +7,16 @@ import requests
 from sutta_publisher.shared.value_objects.edition_config import EditionConfig
 from sutta_publisher.shared.value_objects.edition_data import (
     EditionData,
+    Heading,
+    HeadingsGroup,
     MainMatter,
-    MainMatterPreheading,
+    MainMatterHeadings,
     MainMatterPreheadings,
-    PreheadingInfo,
+    Preheading,
+    PreheadingsGroup,
     VolumeData,
+    VolumeHeadings,
+    VolumePreheadings,
 )
 
 API_URL = "http://localhost:80/api/"  # TODO: Change url for real one
@@ -40,51 +45,60 @@ def get_mainmatter_data(edition_id: str, uids: list[str]) -> MainMatter:
     return result
 
 
-def get_mainmatter_preheadings(edition_id: str, uids: list[str]) -> MainMatterPreheadings:
-    all_uids_preheadings = MainMatterPreheadings()
+def get_mainmatter_preheadings(edition_id: str, uids: list[str]) -> VolumePreheadings:
+    all_matters_preheadings = VolumePreheadings()
 
     for uid in uids:
         response = requests.get(API_URL + API_ENDPOINTS["edition_mainmatter"].format(edition_id=edition_id, uid=uid))
         response.raise_for_status()
         nodes = response.json()
 
-        per_mainmatter_preheading = (
-            MainMatterPreheading()
-        )  # a collection of headings to put before <article> tag of each mainmatter
+        full_mainmatter_preheadings = (
+            MainMatterPreheadings()
+        )  # a collection of headings for a whole mainmatter (single uid)
+        single_leaf_preheadings = PreheadingsGroup()  # a collection of headings to put before each "leaf"
 
-        for node in nodes[1:]:  # we want to skip the main uid
+        for node in nodes[1:]:  # we want to skip the uid's preheading (e.g. mn)
             if node["type"] == "branch":
-                per_mainmatter_preheading.append(PreheadingInfo.parse_raw(node))
-            elif node["type"] == "leaf" and per_mainmatter_preheading:
+                single_leaf_preheadings.append(Preheading.parse_obj(node))
+            elif node["type"] == "leaf" and single_leaf_preheadings:
                 # reached the end of preheadings for one mainmatter
                 # copy the list for that mainmatter to a higher order container (with all mainmatters per uid)
-                all_uids_preheadings.append(deepcopy(per_mainmatter_preheading))
+                full_mainmatter_preheadings.append(deepcopy(single_leaf_preheadings))
                 # and reset the list - start new collection for another mainmatter
                 MainMatterPreheadings()
+            else:
+                continue  # nothing to reset, nothing to add. Continue
 
-    return all_uids_preheadings
+        all_matters_preheadings.append(deepcopy(full_mainmatter_preheadings))
+
+    return all_matters_preheadings
 
 
-# def _calculate_nesting_depth(payload: dict) -> int:
-#     nesting_depth = 0
-#     next_key = next(iter(payload))
-#     while True:
-#         if type(payload[next_key]) is list:
-#             nesting_depth += 1
-#             payload = payload[next_key][0]
-#             if type(payload[0]) is str:
-#                 break
-#             else:
-#                 next_key = next(iter(payload))
-#     return nesting_depth
-#
-#
-# def _get_child_if_collection(obj: list | dict) -> list | dict | None:
-#     if type(obj) is dict:
-#         first_key = next(iter(obj))
-#         return obj[first_key]  # type: ignore
-#     else:
-#         return obj[0]  # type: ignore
+def get_mainmatters_headings_ids(edition_id: str, uids: list[str]) -> VolumeHeadings:
+    """Only collects headings ids as the titles may be out of sync with the publication content"""
+    all_matters_headings = VolumeHeadings()
+
+    for uid in uids:
+        response = requests.get(API_URL + API_ENDPOINTS["edition_mainmatter"].format(edition_id=edition_id, uid=uid))
+        response.raise_for_status()
+        nodes = response.json()
+
+        full_mainmatter_headings = MainMatterHeadings()
+        leaves_group = HeadingsGroup()
+
+        for node in nodes:
+            if node["type"] == "leaf":
+                leaves_group.append(Heading.parse_obj(node))
+            elif node["type"] == "branch" and leaves_group:
+                full_mainmatter_headings.append(deepcopy(leaves_group))
+                leaves_group = HeadingsGroup()
+            else:
+                continue
+
+        all_matters_headings.append(deepcopy(full_mainmatter_headings))
+
+    return all_matters_headings
 
 
 def get_extras_data(edition_id: str) -> dict:
@@ -101,10 +115,16 @@ def get_edition_data(edition_config: EditionConfig) -> EditionData:
             edition_id=edition_config.edition.edition_id,
             uids=volume_details.mainmatter,
         )
+        headings_ids = get_mainmatters_headings_ids(
+            edition_id=edition_config.edition.edition_id,
+            uids=volume_details.mainmatter,
+        )
         mainmatter = get_mainmatter_data(
             edition_id=edition_config.edition.edition_id,
             uids=volume_details.mainmatter,
         )
         extras = get_extras_data(edition_id=edition_config.edition.edition_id)
-        edition_data.append(VolumeData(preheadings=preheadings, mainmatter=mainmatter, extras=extras))
+        edition_data.append(
+            VolumeData(preheadings=preheadings, headings=headings_ids, mainmatter=mainmatter, extras=extras)
+        )
     return edition_data

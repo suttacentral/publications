@@ -10,13 +10,16 @@ import requests
 from bs4 import BeautifulSoup, Tag
 
 from sutta_publisher.edition_parsers.helper_functions import (
-    _collect_headings,
+    _collect_actual_headings,
     _collect_secondary_toc_depths,
+    _create_html_heading_with_id,
     _fetch_possible_refs,
     _find_children_by_index,
+    _find_sutta_title_depth,
     _get_heading_depth,
     _process_a_line,
     collect_main_toc_depths,
+    find_all_headings,
     increment_heading_by_number,
     make_headings_tree,
     remove_all_ul,
@@ -94,7 +97,6 @@ class EditionParser(ABC):
     def __collect_preheading_insertion_targets(self) -> list[Tag]:
         targets: list[Tag] = []
 
-        # TODO: refactor
         for volume_headings, volume_html in zip(self.raw_data, self.per_volume_html):
             for mainmatter_headings in volume_headings.headings:
                 for headings_group in mainmatter_headings:
@@ -103,23 +105,74 @@ class EditionParser(ABC):
 
         return targets
 
+    # TODO: shouldn't be static
     @staticmethod
     def postprocess(config: EditionConfig, edition_data: EditionData, volumes_htmls: list[BeautifulSoup]) -> None:
-        for volume in volumes_htmls:
-            remove_all_ul(html=volume)
 
-        additional_depth = len(edition_data[0].preheadings[0])
+        # Remove all <ul></ul> tags
+        for html in volumes_htmls:
+            remove_all_ul(html=html)
 
-        volumes_headings = EditionParser.collect_main_toc_headings(config, volumes_htmls)
-        for volume in volumes_headings:
-            for heading in volume:
+        # Change numbers of all headings according to how many additional preheadings are. If there are 2 preheadings h1's become h3's
+        for volume, html in zip(edition_data, volumes_htmls):
+            additional_depth = len(volume.preheadings[0][0])
+            for heading in find_all_headings(html):
                 increment_heading_by_number(by_number=additional_depth, heading=heading)
 
+        # Insert preheadings
         for volume, html in zip(edition_data, volumes_htmls):
             for mainmainmatter_preheadings, mainmainmatter_headings in zip(volume.preheadings, volume.headings):
                 for preheading_group, heading_group in zip(mainmainmatter_preheadings, mainmainmatter_headings):
-                    for preheading in preheading_group:
-                        html.find(heading_group[0]).insert_before(preheading)
+
+                    target = html.find(id=heading_group[0].heading_id)
+
+                    for level, preheading in enumerate(preheading_group):
+                        # Why this crazy logic?
+                        # 1. +1: because list enumeration is 0-based (1, 2, 3, ...) and HTML headings are 1-based (h1, h2, h3, ...)
+                        # 2. len(volume.preheadings[0][0]) - len(preheading_group): because preheadings tree looks like this
+                        #      [main preheadings group] - main preheading                                              (h1)
+                        #      [main preheadings group]    - another preheading, before each group of suttas           (h2)
+                        #      [main preheadings group]        - yet another preheading, before each group of suttas   (h3)
+                        #                                             - sutta                                          (h4 class="sutta-title")
+                        #                                             - sutta                                          (h4 class="sutta-title")
+                        #                                             - (...)                                          (h4 class="sutta-title")
+                        # [secondary preheadings group] - another preheading, before each group of suttas              (h2)
+                        # [secondary preheadings group]        - yet another preheading, before each group of suttas   (h3)
+                        #                                             - sutta                                          (h4 class="sutta-title")
+                        #                                             - sutta                                          (h4 class="sutta-title")
+                        #                                             - (...)                                          (h4 class="sutta-title")
+                        #      [main preheadings group] - main preheading                                              (h1)
+                        #      [main preheadings group]    - another preheading, before each group of suttas           (h2)
+                        #      [main preheadings group]        - yet another preheading, before each group of suttas   (h3)
+                        #                                             - sutta                                          (h4 class="sutta-title")
+                        #                                             - sutta                                          (h4 class="sutta-title")
+                        #                                             - (...)                                          (h4 class="sutta-title")
+                        # DEPTH OF PREHEADINGS VARIES! (not only between publications but between parts of a single publication)
+                        main_preheadings_depth = len(volume.preheadings[0][0])
+                        secondary_preheadings_depth = len(preheading_group)
+                        _level = level + 1 + main_preheadings_depth - secondary_preheadings_depth
+
+                        target.insert_before(
+                            _create_html_heading_with_id(
+                                html=html, depth=_level, text=preheading.name, id=preheading.uid
+                            )
+                        )
+
+        # Add class "heading" for all HTML headings between h1 and hX which has class "sutta-title"
+        for html in volumes_htmls:
+            depth = _find_sutta_title_depth(html)
+            headings = _collect_actual_headings(end_depth=depth, volume=html)
+
+            for heading in headings:
+                heading["class"] = heading.get("class", []) + ["heading"]
+
+        # Add class "subheading" for all HTML headings below hX with class "sutta-title"
+        for html in volumes_htmls:
+            start_depth = _find_sutta_title_depth(html) + 1
+            headings = _collect_actual_headings(start_depth=start_depth, end_depth=999, volume=html)
+
+            for heading in headings:
+                heading["class"] = heading.get("class", []) + ["subheading"]
 
     @staticmethod
     def collect_main_toc_headings(config: EditionConfig, volumes_htmls: list[BeautifulSoup]) -> list[list[Tag]]:
@@ -138,7 +191,8 @@ class EditionParser(ABC):
         )
         main_toc_headings: list[list[Tag]] = []
         for _depth, _volume in zip(per_volume_depth, volumes_htmls):
-            main_toc_headings.append(_collect_headings(end_depth=_depth, volume=_volume))
+            _ = _volume.find(id="mn-mulapariyayavagga")
+            main_toc_headings.append(_collect_actual_headings(end_depth=_depth, volume=_volume))
 
         return main_toc_headings
 
@@ -153,7 +207,7 @@ class EditionParser(ABC):
         toc_targets: list[list[Tag]] = []
         # Headings are in lists within a main list. Different list for each volume
         for _depth, _volume in zip(main_toc_depths, self.per_volume_html):
-            toc_targets.append(_collect_headings(start_depth=_depth, end_depth=_depth, volume=_volume))
+            toc_targets.append(_collect_actual_headings(start_depth=_depth, end_depth=_depth, volume=_volume))
         return toc_targets
 
     def __collect_secondary_toc(self) -> list[dict[Tag, list[Tag]]]:
@@ -179,7 +233,7 @@ class EditionParser(ABC):
             ] = {}  # mapping is reset for each volume. We deepcopy it to a list with all volumes
             # In each volume matching the right parent heading with its deeper level headings/children is important. After all these children will create secondary ToC and the parent will be a target for it's insertion
             tree = make_headings_tree(
-                headings=_collect_headings(start_depth=_depth[0] - 1, end_depth=_depth[1], volume=_volume)
+                headings=_collect_actual_headings(start_depth=_depth[0] - 1, end_depth=_depth[1], volume=_volume)
             )
             parents = [
                 (index, heading) for (index, heading) in tree.items() if _get_heading_depth(heading) == _depth[0]

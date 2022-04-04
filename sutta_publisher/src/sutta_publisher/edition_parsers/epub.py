@@ -103,7 +103,7 @@ class EpubEdition(EditionParser):
         for _config, _html, _main_toc_headings in zip(
             self.config.edition.volumes,
             self.per_volume_html,
-            self._EditionParser__collect_main_toc_headings(),  # type: ignore
+            self.collect_main_toc_headings(self.config, self.per_volume_html),
         ):
             book = EpubBook()
             book.spine = [

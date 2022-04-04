@@ -1,6 +1,6 @@
 import re
 from collections import namedtuple
-from typing import Any, Iterator, cast
+from typing import Any, Iterator
 
 import requests
 from bs4 import BeautifulSoup, Tag
@@ -96,7 +96,7 @@ def _process_a_line(markup: str, segment_id: str, text: str, references: str, po
 
 def _get_heading_depth(tag: Tag) -> int:
     """Extract heading number from html tag i.e. 'h1' -> 1"""
-    return int(re.search(f"^(h)([1-{MAX_HEADING_DEPTH}])$", tag.name).group(2))  # type: ignore
+    return int(re.search(f"^(h)(\d+)$", tag.name).group(2))  # type: ignore
 
 
 def _parse_main_toc_depth(depth: str, html: BeautifulSoup) -> int:
@@ -150,11 +150,11 @@ def _find_sutta_title_depth(html: BeautifulSoup) -> int:
     Returns:
         int: Level of a found heading, None if didn't find any:
     """
-    heading: Tag = html.find(name=re.compile(f"^h[1-{MAX_HEADING_DEPTH}]"), class_="sutta-title")
+    heading: Tag = html.find(name=re.compile(f"^h\d+$"), class_="sutta-title")
     return _get_heading_depth(tag=heading)
 
 
-def _collect_headings(start_depth: int = 1, *, end_depth: int, volume: BeautifulSoup) -> ResultSet:
+def _collect_actual_headings(start_depth: int = 1, *, end_depth: int, volume: BeautifulSoup) -> ResultSet:
     """Collect all heading from range h<start_depth>...h<end_depth>
 
     Args:
@@ -165,7 +165,8 @@ def _collect_headings(start_depth: int = 1, *, end_depth: int, volume: Beautiful
     Returns:
         ResultSet: A collection of headings with a specified depth range
     """
-    return cast(ResultSet, volume.find_all(name=re.compile(f"^h[{start_depth}-{end_depth}]$")))
+
+    return volume.find_all(name=re.compile(f"^h[{start_depth}-{end_depth}]$"))
 
 
 def _make_link(tag: Tag, file_name: str) -> Link:
@@ -281,5 +282,32 @@ def remove_all_ul(html: BeautifulSoup) -> None:
 
 def increment_heading_by_number(by_number: int, heading: Tag) -> None:
     """Increases an HTML heading depth by number e.g. h2 -> h4 (in place)"""
+
     current_depth = _get_heading_depth(heading)
     heading.name = f"h{current_depth + by_number}"
+
+
+def find_all_headings(html: BeautifulSoup) -> list[Tag]:
+    """Get a list of all hX element from HTML"""
+    return list(html.find_all(name=re.compile("h\d+")))
+
+
+def _create_html_heading_with_id(html: BeautifulSoup, *, depth: int, text: str, id: str) -> Tag:
+    """Create new tag of format:  <h1><span id="some-id"></span>Some Title</h1>,
+
+    Args:
+        html: an HTML, for which to build a heading
+        depth: a depth of heading e.g. 1 for "h1", 2 for "h2" etc.
+        text: a title for the heading
+        id: an id property to assign to the new tag
+
+    Returns:
+        Tag: an HTML tag with id ready to insert
+    """
+    nt = html.new_tag(name=f"h{depth}")
+    nt.string = text
+
+    nt_inner = html.new_tag(name="span", id=id)
+    nt.insert(position=0, new_child=nt_inner)
+
+    return nt

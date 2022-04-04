@@ -66,7 +66,7 @@ def get_mainmatter_preheadings(edition_id: str, uids: list[str]) -> VolumePrehea
                 # copy the list for that mainmatter to a higher order container (with all mainmatters per uid)
                 full_mainmatter_preheadings.append(deepcopy(single_leaf_preheadings))
                 # and reset the list - start new collection for another mainmatter
-                MainMatterPreheadings()
+                single_leaf_preheadings.clear()
             else:
                 continue  # nothing to reset, nothing to add. Continue
 

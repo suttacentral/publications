@@ -46,7 +46,7 @@ def _segment_id_to_html(segment_id: str) -> str:
     displayable: bool = False
     class_ = "class='sc-main'" if displayable else " "
     # Catch two groups. First: 1 or more lowercase letters, second: everything except lowercase letters (one or more)
-    regex = re.match("^([a-z]+)([^a-z]+)$", segment_id)
+    regex = re.match(r"^([a-z]+)([^a-z]+)$", segment_id)
     # If not matched, will be None
     if not regex:
         raise KeyError(f"Invalid or unsupported segment ID {segment_id}")
@@ -96,7 +96,7 @@ def _process_a_line(markup: str, segment_id: str, text: str, references: str, po
 
 def _get_heading_depth(tag: Tag) -> int:
     """Extract heading number from html tag i.e. 'h1' -> 1"""
-    return int(re.search(f"^(h)(\d+)$", tag.name).group(2))  # type: ignore
+    return int(re.search(r"^(h)(\d+)$", tag.name).group(2))  # type: ignore
 
 
 def _parse_main_toc_depth(depth: str, html: BeautifulSoup) -> int:
@@ -112,7 +112,7 @@ def _parse_main_toc_depth(depth: str, html: BeautifulSoup) -> int:
     if depth == "all":  # Means ToC goes down from h1 to hX with class='sutta-title'
         return _find_sutta_title_depth(html)
     else:  # Else depth given explicitly.ToC made of h1...h<depth> range of headings
-        return int(re.match(f"^[1-{depth}]$", depth).group(0))  # type: ignore
+        return int(re.match(rf"^[1-{depth}]$", depth).group(0))  # type: ignore
 
 
 def collect_main_toc_depths(depth: str, all_volumes: list[BeautifulSoup]) -> list[int]:
@@ -150,7 +150,7 @@ def _find_sutta_title_depth(html: BeautifulSoup) -> int:
     Returns:
         int: Level of a found heading, None if didn't find any:
     """
-    heading: Tag = html.find(name=re.compile(f"^h\d+$"), class_="sutta-title")
+    heading: Tag = html.find(name=re.compile(r"^h\d+$"), class_="sutta-title")
     return _get_heading_depth(tag=heading)
 
 
@@ -166,7 +166,7 @@ def _collect_actual_headings(start_depth: int = 1, *, end_depth: int, volume: Be
         ResultSet: A collection of headings with a specified depth range
     """
 
-    return volume.find_all(name=re.compile(f"^h[{start_depth}-{end_depth}]$"))
+    return volume.find_all(name=re.compile(rf"^h[{start_depth}-{end_depth}]$"))
 
 
 def _make_link(tag: Tag, file_name: str) -> Link:
@@ -289,7 +289,7 @@ def increment_heading_by_number(by_number: int, heading: Tag) -> None:
 
 def find_all_headings(html: BeautifulSoup) -> list[Tag]:
     """Get a list of all hX element from HTML"""
-    return list(html.find_all(name=re.compile("h\d+")))
+    return list(html.find_all(name=re.compile(r"h\d+")))
 
 
 def _create_html_heading_with_id(html: BeautifulSoup, *, depth: int, text: str, id: str) -> Tag:

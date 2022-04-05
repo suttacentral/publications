@@ -6,10 +6,6 @@ from pydantic import BaseModel, Field
 
 class Heading(BaseModel):
     heading_id: str = Field(alias="uid")
-    name: str
-
-    def set_name(self, name: str) -> None:
-        self.name = name
 
 
 class HeadingsGroup(list[Heading]):

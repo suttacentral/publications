@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import ast
+import os
 from copy import deepcopy
 
 import requests
@@ -19,11 +21,8 @@ from sutta_publisher.shared.value_objects.edition_data import (
     VolumePreheadings,
 )
 
-API_URL = "http://localhost:80/api/"  # TODO: Change url for real one
-API_ENDPOINTS = {
-    "edition_mainmatter": "publication/edition/{edition_id}/{uid}",
-    "edition_files": "publication/edition/{edition_id}/files",
-}
+API_URL = os.getenv("API_URL")
+API_ENDPOINTS = ast.literal_eval(os.getenv("API_ENDPOINTS", ""))
 
 
 def get_mainmatter_data(edition_id: str, uids: list[str]) -> MainMatter:

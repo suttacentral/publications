@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ast
 import logging
+import os
 from abc import ABC
 from copy import deepcopy
 from typing import Type
@@ -32,6 +33,8 @@ log = logging.getLogger(__name__)
 
 
 class EditionParser(ABC):
+    FRONTMATTER_URL = os.getenv("FRONTMATTER_URL", "")
+
     config: EditionConfig
     raw_data: EditionData
     edition_type: EditionType
@@ -259,17 +262,12 @@ class EditionParser(ABC):
         frontmatter = ast.literal_eval(self.config.edition.volumes.json())[0].get("frontmatter")
         working_dir = self.config.edition.working_dir.removeprefix("/opt/sc/sc-flask/sc-data")
 
-        # TODO[45]: move to .env
-        url = (
-            "https://raw.githubusercontent.com/suttacentral/sc-data/master" + "{working_dir}" + "{matter}"
-        )  # Don't worry it will be moved to .env, it's covered by another ticket ;)
-
         matter_paths = [elem.removeprefix(".") for elem in frontmatter if elem.startswith("./")]
 
         matters_dict = dict()
 
         for suffix in matter_paths:
-            response = requests.get(url.format(matter=suffix, working_dir=working_dir))
+            response = requests.get(self.FRONTMATTER_URL.format(matter=suffix, working_dir=working_dir))
             response.raise_for_status()
 
             match suffix:

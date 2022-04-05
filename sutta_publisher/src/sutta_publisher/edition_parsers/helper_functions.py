@@ -1,3 +1,5 @@
+import ast
+import os
 import re
 from collections import namedtuple
 from typing import Any, Iterator
@@ -7,8 +9,8 @@ from bs4 import BeautifulSoup, Tag
 from bs4.element import ResultSet
 from ebooklib.epub import Link, Section
 
-ALL_REFERENCES_URL = "https://raw.githubusercontent.com/suttacentral/sc-data/master/misc/pali_reference_edition.json"
-ACCEPTED_REFERENCES = ["bj", "pts-vp-pli"]
+ALL_REFERENCES_URL = os.getenv("ALL_REFERENCES_URL", "")
+ACCEPTED_REFERENCES = ast.literal_eval(os.getenv("ACCEPTED_REFERENCES", ""))
 MAX_HEADING_DEPTH = 6
 
 HeadingsIndexTreeFrozen = namedtuple(

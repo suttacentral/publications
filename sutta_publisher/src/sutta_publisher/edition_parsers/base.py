@@ -259,7 +259,7 @@ class EditionParser(ABC):
         frontmatter = ast.literal_eval(self.config.edition.volumes.json())[0].get("frontmatter")
         working_dir = self.config.edition.working_dir.removeprefix("/opt/sc/sc-flask/sc-data")
 
-        # TODO: move to .env
+        # TODO[45]: move to .env
         url = (
             "https://raw.githubusercontent.com/suttacentral/sc-data/master" + "{working_dir}" + "{matter}"
         )  # Don't worry it will be moved to .env, it's covered by another ticket ;)

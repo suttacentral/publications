@@ -48,7 +48,7 @@ class EditionParser(ABC):
         self.possible_refs: list[str] = fetch_possible_refs()
         self.per_volume_html: list[BeautifulSoup] = self.__generate_html()
         self.mainmatter_postprocess()
-        self.frontmatters: list[dict[str, BeautifulSoup | list[list[Tag]]]] = self.generate_frontmatter()
+        self.per_volume_frontmatters: list[dict[str, BeautifulSoup | list[list[Tag]]]] = self.generate_frontmatter()
 
     def __generate_html(self) -> list[BeautifulSoup]:
         """Generate content of an HTML body"""

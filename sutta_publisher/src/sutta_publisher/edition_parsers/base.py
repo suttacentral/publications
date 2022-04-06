@@ -253,35 +253,48 @@ class EditionParser(ABC):
 
         return all_volumes_tocs
 
-    def __generate_frontmatter(self) -> dict[str, str]:
-        log.debug("Generating covers...")
-        frontmatter = ast.literal_eval(self.config.edition.volumes.json())[0].get("frontmatter")
-        working_dir = self.config.edition.working_dir.removeprefix("/opt/sc/sc-flask/sc-data")
+    def generate_frontmatter(self) -> list[dict[str, BeautifulSoup | list[list[Tag]]]]:
+        """Fetch a list of frontmatter components and their contents from API, return a dictionary with {<component_name>: <content>} mapping.
+        The output is returned for each volume of a publication.
+        """
+        log.debug("Generating FrontMatters...")
 
-        matter_paths = [elem.removeprefix(".") for elem in frontmatter if elem.startswith("./")]
+        PREFIX = "/opt/sc/sc-flask/sc-data"
 
-        matters_dict = dict()
+        per_volume_list: list[dict[str, BeautifulSoup | list[list[Tag]]]] = []
 
-        for suffix in matter_paths:
-            response = requests.get(self.FRONTMATTER_URL.format(matter=suffix, working_dir=working_dir))
-            response.raise_for_status()
+        # Parse list of frontmatters for this publication
+        for volume, toc_headings in zip(
+            ast.literal_eval(self.config.edition.volumes.json()), self.collect_main_toc_headings()
+        ):
 
-            match suffix:
-                case "/matter/foreword.html":
-                    matters_dict["foreword"] = response.text
+            frontmatter: list[str] = volume.get("frontmatter")
+            working_dir: str = self.config.edition.working_dir.removeprefix(PREFIX)
+            matter_paths = [elem.removeprefix(".") for elem in frontmatter if elem.startswith("./")]
+            matters_dict: dict[str, BeautifulSoup | list[list[Tag]]] = {}
 
-                case "/matter/introduction.html":
-                    matters_dict["introduction"] = response.text
+            for suffix in matter_paths:
+                # Fetch actual frontmatters content from API
+                response = requests.get(self.FRONTMATTER_URL.format(matter=suffix, working_dir=working_dir))
+                response.raise_for_status()
 
-                case "/matter/acknowledgements.html":
-                    matters_dict["acknowledgements"] = response.text
+                if match := re.search(r"^(/matter/)(?P<matter_name>\w+).html$", suffix):
+                    matter = BeautifulSoup(response.text, "lxml")
+                    remove_all_ul(matter)
+                    matters_dict[match.group("matter_name")] = matter
+                elif match := re.search(r"^(?P<titlepage>titlepage)$", suffix):
+                    pass  # TODO [61]: implement collecting titlepage data
+                elif match := re.search(r"^(?P<imprint>imprint)$", suffix):
+                    pass  # TODO [61]: implement collecting imprint data
+                elif match := re.search(r"^(?P<halftitlepage>halftitlepage)$", suffix):
+                    pass  # TODO [61]: implement collecting halftitlepage data
+                elif match := re.search(r"^(?P<main_toc>main-toc)$", suffix):
+                    matters_dict[match.group("main-toc")] = toc_headings
+                elif match := re.search(r"^(?P<blurbs>blurbs)$", suffix):
+                    pass  # TODO [61]: implement collecting blurbs data
 
-                case _:
-                    # TODO [62]: This must stay commented out until implementation covers all possible frontmatter htmls, otherwise we cannot generate test files without an error
-                    # raise ValueError("Not supported frontmatter type")
-                    pass
-
-        return matters_dict
+            per_volume_list.append(matters_dict)
+        return per_volume_list
 
     def __generate_covers(self) -> None:
         log.debug("Generating covers...")

@@ -1,13 +1,13 @@
 import pytest
 
 from sutta_publisher.edition_parsers.helper_functions import (
-    _fetch_possible_refs,
     _filter_refs,
     _flatten_list,
-    _process_a_line,
     _reference_to_html,
     _segment_id_to_html,
     _split_ref_and_number,
+    fetch_possible_refs,
+    process_a_line,
 )
 
 
@@ -81,7 +81,7 @@ def test_should_check_that_list_is_flattened() -> None:
 
 @pytest.mark.vcr()
 def test_should_check_that_list_of_refs_is_fetched(list_of_all_refs: list[str]) -> None:
-    assert _fetch_possible_refs() == list_of_all_refs
+    assert fetch_possible_refs() == list_of_all_refs
 
 
 def test_should_check_intersection_of_two_lists() -> None:
@@ -122,7 +122,7 @@ def test_should_check_that_a_full_mainmatter_item_is_processed(
     list_of_all_refs: list[str],
 ) -> None:
     assert (
-        _process_a_line(
+        process_a_line(
             markup=test_markup,
             segment_id=test_segment,
             text=test_text,

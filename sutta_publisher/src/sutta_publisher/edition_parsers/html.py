@@ -8,12 +8,13 @@ log = logging.getLogger(__name__)
 
 
 class HtmlEdition(EditionParser):
+    CSS_PATH = os.path.dirname(__file__) + "/css_stylesheets/standalone_html.css"
     edition_type = EditionType.html
 
-    def __get_standalone_html_css(self) -> str:
+    def __get_css(self) -> str:
         """Returns css stylesheet as a string"""
 
-        with open(os.path.dirname(__file__) + "/css_stylesheets/standalone_html.css", "r") as css_file:
+        with open(self.CSS_PATH, "r") as css_file:
             content = css_file.read()
 
         return content

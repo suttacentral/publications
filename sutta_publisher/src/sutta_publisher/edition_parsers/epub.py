@@ -96,14 +96,15 @@ class EpubEdition(EditionParser):
         """Generate epub"""
         log.debug("Generating epub...")
 
-        frontmatters = [BeautifulSoup(_, "lxml") for _ in self._EditionParser__generate_frontmatter().values()]  # type: ignore
-
+        volumes_frontmatters = self.generate_frontmatter()
         volume_number = 0
+
         # We loop over volumes. Each volume is a separate file
-        for _config, _html, _main_toc_headings in zip(
+        for _frontmatters, _config, _html, _main_toc_headings in zip(
+            volumes_frontmatters,
             self.config.edition.volumes,
             self.per_volume_html,
-            self.collect_main_toc_headings(self.config, self.per_volume_html),
+            self.collect_main_toc_headings(),
         ):
             book = EpubBook()
             book.spine = [
@@ -113,7 +114,7 @@ class EpubEdition(EditionParser):
             self.__set_metadata(book)
             self.__set_styles(book)
 
-            for _frontmatter in frontmatters:
+            for _frontmatter in _frontmatters:
                 volume_number += 1
                 self.__set_chapters(
                     book=book,

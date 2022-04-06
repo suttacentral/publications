@@ -3,6 +3,7 @@ from __future__ import annotations
 import ast
 import logging
 import os
+import re
 from abc import ABC
 from copy import deepcopy
 from typing import Type
@@ -11,18 +12,19 @@ import requests
 from bs4 import BeautifulSoup, Tag
 
 from sutta_publisher.edition_parsers.helper_functions import (
-    _collect_actual_headings,
-    _collect_secondary_toc_depths,
-    _create_html_heading_with_id,
-    _fetch_possible_refs,
-    _find_children_by_index,
-    _find_sutta_title_depth,
-    _get_heading_depth,
-    _process_a_line,
+    add_class,
+    collect_actual_headings,
     collect_main_toc_depths,
+    collect_secondary_toc_depths,
+    create_html_heading_with_id,
+    fetch_possible_refs,
     find_all_headings,
+    find_children_by_index,
+    find_sutta_title_depth,
+    get_heading_depth,
     increment_heading_by_number,
     make_headings_tree,
+    process_a_line,
     remove_all_ul,
 )
 from sutta_publisher.shared.value_objects.edition import EditionResult, EditionType
@@ -40,21 +42,21 @@ class EditionParser(ABC):
     edition_type: EditionType
 
     def __init__(self, config: EditionConfig, data: EditionData) -> None:
+        # Order of execution matters a great deal here as functions depends on instance fields being initialised upon their call.
         self.raw_data: EditionData = data
         self.config: EditionConfig = config
-        self.possible_refs: list[str] = _fetch_possible_refs()
-        self.per_volume_html: list[BeautifulSoup] = EditionParser.__generate_html(
-            raw_data=data, possible_refs=self.possible_refs, config=self.config
-        )
+        self.possible_refs: list[str] = fetch_possible_refs()
+        self.per_volume_html: list[BeautifulSoup] = self.__generate_html()
+        self.mainmatter_postprocess()
+        self.frontmatters: list[dict[str, BeautifulSoup | list[list[Tag]]]] = self.generate_frontmatter()
 
-    @staticmethod
-    def __generate_html(raw_data: EditionData, possible_refs: list[str], config: EditionConfig) -> list[BeautifulSoup]:
+    def __generate_html(self) -> list[BeautifulSoup]:
         """Generate content of an HTML body"""
         log.debug("Generating html...")
 
         # Publication is separated into volumes
         publication_html_volumes_output: list[str] = []
-        for volume in raw_data:
+        for volume in self.raw_data:
             # Each volume's mainmatter is separated into a list of mainmatter sub-entities (MainMatterDetails class)
             processed_single_mainmatter_subentity: list[str] = []
             for mainmatter_info in volume.mainmatter:
@@ -66,13 +68,13 @@ class EditionParser(ABC):
                     # Each mainmatter sub-entity (MainMatterDetails) have dictionaries with text lines, markup lines and references. Keys are always segment IDs
                     for segment_id in segment_ids:
                         processed_mainmatter_single_lines.append(
-                            _process_a_line(
+                            process_a_line(
                                 markup=mainmatter_info.mainmatter.markup.get(segment_id),
                                 segment_id=segment_id,
                                 text=mainmatter_info.mainmatter.main_text.get(segment_id, ""),
                                 references=mainmatter_info.mainmatter.reference.get(segment_id, ""),
                                 # references are provides as: "single, comma, separated, string". We take care of splitting it in helper functions
-                                possible_refs=possible_refs,
+                                possible_refs=self.possible_refs,
                             )
                         )
                 except AttributeError:
@@ -93,7 +95,6 @@ class EditionParser(ABC):
             )  # all main matters from each volumes as a list of html bodies' contents
 
         volumes = [BeautifulSoup(volume, "lxml") for volume in publication_html_volumes_output]
-        EditionParser.postprocess(config=config, edition_data=raw_data, volumes_htmls=volumes)
 
         return volumes
 
@@ -108,22 +109,21 @@ class EditionParser(ABC):
 
         return targets
 
-    # TODO: shouldn't be static
-    @staticmethod
-    def postprocess(config: EditionConfig, edition_data: EditionData, volumes_htmls: list[BeautifulSoup]) -> None:
+    def mainmatter_postprocess(self) -> None:
+        """Apply some additional postprocessing steps and insert additional headings to the generated crude mainmatters"""
 
         # Remove all <ul></ul> tags
-        for html in volumes_htmls:
+        for html in self.per_volume_html:
             remove_all_ul(html=html)
 
         # Change numbers of all headings according to how many additional preheadings are. If there are 2 preheadings h1's become h3's
-        for volume, html in zip(edition_data, volumes_htmls):
+        for volume, html in zip(self.raw_data, self.per_volume_html):
             additional_depth = len(volume.preheadings[0][0])
             for heading in find_all_headings(html):
                 increment_heading_by_number(by_number=additional_depth, heading=heading)
 
         # Insert preheadings
-        for volume, html in zip(edition_data, volumes_htmls):
+        for volume, html in zip(self.raw_data, self.per_volume_html):
             for mainmainmatter_preheadings, mainmainmatter_headings in zip(volume.preheadings, volume.headings):
                 for preheading_group, heading_group in zip(mainmainmatter_preheadings, mainmainmatter_headings):
 
@@ -156,29 +156,26 @@ class EditionParser(ABC):
                         _level = level + 1 + main_preheadings_depth - secondary_preheadings_depth
 
                         target.insert_before(
-                            _create_html_heading_with_id(
+                            create_html_heading_with_id(
                                 html=html, depth=_level, text=preheading.name, id=preheading.uid
                             )
                         )
 
         # Add class "heading" for all HTML headings between h1 and hX which has class "sutta-title"
-        for html in volumes_htmls:
-            depth = _find_sutta_title_depth(html)
-            headings = _collect_actual_headings(end_depth=depth, volume=html)
+        for html in self.per_volume_html:
+            depth = find_sutta_title_depth(html)
+            headings = collect_actual_headings(end_depth=depth, volume=html)
 
-            for heading in headings:
-                heading["class"] = heading.get("class", []) + ["heading"]
+            add_class(tags=headings, class_="heading")
 
         # Add class "subheading" for all HTML headings below hX with class "sutta-title"
-        for html in volumes_htmls:
-            start_depth = _find_sutta_title_depth(html) + 1
-            headings = _collect_actual_headings(start_depth=start_depth, end_depth=999, volume=html)
+        for html in self.per_volume_html:
+            start_depth = find_sutta_title_depth(html) + 1
+            headings = collect_actual_headings(start_depth=start_depth, end_depth=999, volume=html)
 
-            for heading in headings:
-                heading["class"] = heading.get("class", []) + ["subheading"]
+            add_class(tags=headings, class_="subheading")
 
-    @staticmethod
-    def collect_main_toc_headings(config: EditionConfig, volumes_htmls: list[BeautifulSoup]) -> list[list[Tag]]:
+    def collect_main_toc_headings(self) -> list[list[Tag]]:
         """Collect all headings, which belong to main ToCs.
 
         The collection is divided by volume.
@@ -190,12 +187,11 @@ class EditionParser(ABC):
         log.debug("Collecting headings for the main ToCs...")
 
         per_volume_depth: list[int] = collect_main_toc_depths(
-            depth=config.edition.main_toc_depth, all_volumes=volumes_htmls
+            depth=self.config.edition.main_toc_depth, all_volumes=self.per_volume_html
         )
         main_toc_headings: list[list[Tag]] = []
-        for _depth, _volume in zip(per_volume_depth, volumes_htmls):
-            _ = _volume.find(id="mn-mulapariyayavagga")
-            main_toc_headings.append(_collect_actual_headings(end_depth=_depth, volume=_volume))
+        for _depth, _volume in zip(per_volume_depth, self.per_volume_html):
+            main_toc_headings.append(collect_actual_headings(end_depth=_depth, volume=_volume))
 
         return main_toc_headings
 
@@ -210,7 +206,7 @@ class EditionParser(ABC):
         toc_targets: list[list[Tag]] = []
         # Headings are in lists within a main list. Different list for each volume
         for _depth, _volume in zip(main_toc_depths, self.per_volume_html):
-            toc_targets.append(_collect_actual_headings(start_depth=_depth, end_depth=_depth, volume=_volume))
+            toc_targets.append(collect_actual_headings(start_depth=_depth, end_depth=_depth, volume=_volume))
         return toc_targets
 
     def __collect_secondary_toc(self) -> list[dict[Tag, list[Tag]]]:
@@ -225,7 +221,7 @@ class EditionParser(ABC):
             depth=self.config.edition.main_toc_depth, all_volumes=self.per_volume_html
         )
         per_volume_targets = self.__collect_secondary_toc_targets(main_toc_depths)
-        per_volume_depths: list[tuple[int, int]] = _collect_secondary_toc_depths(
+        per_volume_depths: list[tuple[int, int]] = collect_secondary_toc_depths(
             main_toc_depths=main_toc_depths, all_volumes=self.per_volume_html
         )
 
@@ -236,10 +232,10 @@ class EditionParser(ABC):
             ] = {}  # mapping is reset for each volume. We deepcopy it to a list with all volumes
             # In each volume matching the right parent heading with its deeper level headings/children is important. After all these children will create secondary ToC and the parent will be a target for it's insertion
             tree = make_headings_tree(
-                headings=_collect_actual_headings(start_depth=_depth[0] - 1, end_depth=_depth[1], volume=_volume)
+                headings=collect_actual_headings(start_depth=_depth[0] - 1, end_depth=_depth[1], volume=_volume)
             )
             parents = [
-                (index, heading) for (index, heading) in tree.items() if _get_heading_depth(heading) == _depth[0]
+                (index, heading) for (index, heading) in tree.items() if get_heading_depth(heading) == _depth[0]
             ]  # parents (targets) are all highest level headings from this collection
 
             # We got indexed headings and filtered out (indexed) parents, so all there is to do is find parent's children by index and build a mapping for each volume
@@ -248,7 +244,7 @@ class EditionParser(ABC):
                     {
                         _target: [
                             tree[child_index]
-                            for child_index in _find_children_by_index(index=_index, headings_tree=tree)
+                            for child_index in find_children_by_index(index=_index, headings_tree=tree)
                         ]
                     }
                 )
@@ -295,7 +291,7 @@ class EditionParser(ABC):
 
     def collect_all(self) -> EditionResult:
         # self.__generate_html(raw_data=self.raw_data, possible_refs=self.possible_refs)
-        self.__generate_frontmatter()
+        self.generate_frontmatter()
         self.__generate_backmatter()
         self.__generate_covers()
         txt = "dummy"

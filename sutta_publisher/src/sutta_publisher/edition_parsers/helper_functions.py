@@ -18,7 +18,7 @@ HeadingsIndexTreeFrozen = namedtuple(
 )  # this is needed for dictionary building, as dictionary keys must be immutable
 
 
-def _fetch_possible_refs() -> list[str]:
+def fetch_possible_refs() -> list[str]:
     response = requests.get(ALL_REFERENCES_URL)
     jsons_list = response.json()
     irregular_list_of_refs = [json["includes"] for json in jsons_list]
@@ -80,7 +80,7 @@ def _reference_to_html(reference: tuple[str, str]) -> str:
     return f"<a class='{ref_type}' id='{ref_type}{ref_id}'>{ref_type.upper()} {ref_id}</a>"
 
 
-def _process_a_line(markup: str, segment_id: str, text: str, references: str, possible_refs: list[str]) -> str:
+def process_a_line(markup: str, segment_id: str, text: str, references: str, possible_refs: list[str]) -> str:
     segment_id_html: str = _segment_id_to_html(segment_id)
     # references are passed as a string such as: "ref1, ref2, ref3"
     split_references: list[str] = [r.strip() for r in references.split(",")]
@@ -96,7 +96,7 @@ def _process_a_line(markup: str, segment_id: str, text: str, references: str, po
     return markup.format(f"{segment_id_html}{references_html}{text}")
 
 
-def _get_heading_depth(tag: Tag) -> int:
+def get_heading_depth(tag: Tag) -> int:
     """Extract heading number from html tag i.e. 'h1' -> 1"""
     return int(re.search(r"^(h)(\d+)$", tag.name).group(2))  # type: ignore
 
@@ -112,7 +112,7 @@ def _parse_main_toc_depth(depth: str, html: BeautifulSoup) -> int:
         int: A level of a found heading
     """
     if depth == "all":  # Means ToC goes down from h1 to hX with class='sutta-title'
-        return _find_sutta_title_depth(html)
+        return find_sutta_title_depth(html)
     else:  # Else depth given explicitly.ToC made of h1...h<depth> range of headings
         return int(re.match(rf"^[1-{depth}]$", depth).group(0))  # type: ignore
 
@@ -130,20 +130,18 @@ def collect_main_toc_depths(depth: str, all_volumes: list[BeautifulSoup]) -> lis
     return [_parse_main_toc_depth(depth=depth, html=volume) for volume in all_volumes]
 
 
-def _collect_secondary_toc_depths(
-    main_toc_depths: list[int], all_volumes: list[BeautifulSoup]
-) -> list[tuple[int, int]]:
+def collect_secondary_toc_depths(main_toc_depths: list[int], all_volumes: list[BeautifulSoup]) -> list[tuple[int, int]]:
     """Collect depths range for secondary ToCs as (start_depth, end_depth)"""
     toc_ranges: list[tuple[int, int]] = []
     for _main_toc, _volume in zip(main_toc_depths, all_volumes):
         # Secondary ToC always starts one level below deepest main ToC heading
         # Secondary ToC always ends on level of heading with class 'sutta-title'
-        toc_ranges.append((_main_toc + 1, _find_sutta_title_depth(_volume)))
+        toc_ranges.append((_main_toc + 1, find_sutta_title_depth(_volume)))
 
     return toc_ranges
 
 
-def _find_sutta_title_depth(html: BeautifulSoup) -> int:
+def find_sutta_title_depth(html: BeautifulSoup) -> int:
     """Find depth of a header, whose class is 'sutta-title'
 
     Args:
@@ -153,10 +151,10 @@ def _find_sutta_title_depth(html: BeautifulSoup) -> int:
         int: Level of a found heading, None if didn't find any:
     """
     heading: Tag = html.find(name=re.compile(r"^h\d+$"), class_="sutta-title")
-    return _get_heading_depth(tag=heading)
+    return get_heading_depth(tag=heading)
 
 
-def _collect_actual_headings(start_depth: int = 1, *, end_depth: int, volume: BeautifulSoup) -> ResultSet:
+def collect_actual_headings(start_depth: int = 1, *, end_depth: int, volume: BeautifulSoup) -> ResultSet:
     """Collect all heading from range h<start_depth>...h<end_depth>
 
     Args:
@@ -195,7 +193,7 @@ def _nest_or_extend(headings: Iterator[Tag], file_name: str) -> Link | list | No
 
     if not current_tag:
         return None  # reached the end of list
-    elif not next_tag or _get_heading_depth(current_tag) <= _get_heading_depth(next_tag):
+    elif not next_tag or get_heading_depth(current_tag) <= get_heading_depth(next_tag):
         return _make_link(tag=current_tag, file_name=file_name)
     else:  # next heading is lower level, need to nest
         return [_make_section(tag=current_tag, file_name=file_name), [_nest_or_extend(headings, file_name)]]
@@ -206,10 +204,10 @@ def _update_index(index: list[int], tag: Tag) -> None:
 
     e.g. [1, 1, 2+1, 0, 0, 0] - added another h3
     """
-    index[_get_heading_depth(tag) - 1] += 1
+    index[get_heading_depth(tag) - 1] += 1
 
     # When adding another heading all lower level headings counters are reset
-    for i in range(_get_heading_depth(tag), 6):
+    for i in range(get_heading_depth(tag), 6):
         index[i] = 0
 
 
@@ -226,7 +224,7 @@ def _compare_index_with_root(index: HeadingsIndexTreeFrozen, root: tuple[int, ..
     return True
 
 
-def _find_children_by_index(
+def find_children_by_index(
     index: HeadingsIndexTreeFrozen, headings_tree: dict[HeadingsIndexTreeFrozen, Tag]
 ) -> list[HeadingsIndexTreeFrozen]:
     """Based on parents index, find all children and return their indices"""
@@ -264,7 +262,7 @@ def make_section_or_link(
     index: HeadingsIndexTreeFrozen, headings_tree: dict[HeadingsIndexTreeFrozen, Tag], file_name: str
 ) -> list[Section] | Link:
     """Look up heading's children and accordingly create link or section recursively"""
-    children: list[HeadingsIndexTreeFrozen] = _find_children_by_index(index=index, headings_tree=headings_tree)
+    children: list[HeadingsIndexTreeFrozen] = find_children_by_index(index=index, headings_tree=headings_tree)
     heading: Tag = headings_tree[index]
     # Heading has children (subheadings), so it's a Section
     if children:
@@ -285,7 +283,7 @@ def remove_all_ul(html: BeautifulSoup) -> None:
 def increment_heading_by_number(by_number: int, heading: Tag) -> None:
     """Increases an HTML heading depth by number e.g. h2 -> h4 (in place)"""
 
-    current_depth = _get_heading_depth(heading)
+    current_depth = get_heading_depth(heading)
     heading.name = f"h{current_depth + by_number}"
 
 
@@ -294,7 +292,7 @@ def find_all_headings(html: BeautifulSoup) -> list[Tag]:
     return list(html.find_all(name=re.compile(r"h\d+")))
 
 
-def _create_html_heading_with_id(html: BeautifulSoup, *, depth: int, text: str, id: str) -> Tag:
+def create_html_heading_with_id(html: BeautifulSoup, *, depth: int, text: str, id: str) -> Tag:
     """Create new tag of format:  <h1><span id="some-id"></span>Some Title</h1>,
 
     Args:
@@ -313,3 +311,9 @@ def _create_html_heading_with_id(html: BeautifulSoup, *, depth: int, text: str, 
     nt.insert(position=0, new_child=nt_inner)
 
     return nt
+
+
+def add_class(tags: list[Tag], class_: str) -> None:
+    """Sdd class to a collection of HTML tags"""
+    for tag in tags:
+        tag["class"] = tag.get("class", []) + [class_]

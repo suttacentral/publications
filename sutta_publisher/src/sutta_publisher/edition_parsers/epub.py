@@ -96,7 +96,7 @@ class EpubEdition(EditionParser):
         """Generate epub"""
         log.debug("Generating epub...")
 
-        volumes_frontmatters = self.generate_frontmatter()
+        volumes_frontmatters = self.per_volume_frontmatters
         volume_number = 0
 
         # We loop over volumes. Each volume is a separate file
@@ -139,6 +139,7 @@ class EpubEdition(EditionParser):
             write_epub(_path, book, {})
 
     def collect_all(self) -> EditionResult:
+        super().collect_all()
         # self.__generate_backmatter()
         # self.__generate_covers()
         self.__generate_epub()

@@ -3,13 +3,13 @@ from __future__ import annotations
 import ast
 import logging
 import os
-import re
 from abc import ABC
 from copy import deepcopy
 from typing import Type
 
 import requests
 from bs4 import BeautifulSoup, Tag
+from jinja2 import Template
 
 from sutta_publisher.edition_parsers.helper_functions import (
     add_class,
@@ -24,6 +24,7 @@ from sutta_publisher.edition_parsers.helper_functions import (
     get_heading_depth,
     increment_heading_by_number,
     make_headings_tree,
+    map_template_to_variables,
     process_a_line,
     remove_all_ul,
 )
@@ -35,22 +36,20 @@ log = logging.getLogger(__name__)
 
 
 class EditionParser(ABC):
-    FRONTMATTER_URL = os.getenv("FRONTMATTER_URL", "")
-
     config: EditionConfig
     raw_data: EditionData
     edition_type: EditionType
+    possible_refs: list[str]
+    per_volume_html: list[BeautifulSoup] = None  # type: ignore
+    per_volume_frontmatters: list[dict[str, BeautifulSoup]] = None  # type: ignore
 
     def __init__(self, config: EditionConfig, data: EditionData) -> None:
         # Order of execution matters a great deal here as functions depends on instance fields being initialised upon their call.
         self.raw_data: EditionData = data
         self.config: EditionConfig = config
         self.possible_refs: list[str] = fetch_possible_refs()
-        self.per_volume_html: list[BeautifulSoup] = self.__generate_html()
-        self.mainmatter_postprocess()
-        self.per_volume_frontmatters: list[dict[str, BeautifulSoup | list[list[Tag]]]] = self.generate_frontmatter()
 
-    def __generate_html(self) -> list[BeautifulSoup]:
+    def __generate_mainmatter(self) -> None:
         """Generate content of an HTML body"""
         log.debug("Generating html...")
 
@@ -96,7 +95,7 @@ class EditionParser(ABC):
 
         volumes = [BeautifulSoup(volume, "lxml") for volume in publication_html_volumes_output]
 
-        return volumes
+        self.per_volume_html = volumes
 
     def __collect_preheading_insertion_targets(self) -> list[Tag]:
         targets: list[Tag] = []
@@ -109,7 +108,7 @@ class EditionParser(ABC):
 
         return targets
 
-    def mainmatter_postprocess(self) -> None:
+    def __mainmatter_postprocess(self) -> None:
         """Apply some additional postprocessing steps and insert additional headings to the generated crude mainmatters"""
 
         # Remove all <ul></ul> tags
@@ -124,8 +123,8 @@ class EditionParser(ABC):
 
         # Insert preheadings
         for volume, html in zip(self.raw_data, self.per_volume_html):
-            for mainmainmatter_preheadings, mainmainmatter_headings in zip(volume.preheadings, volume.headings):
-                for preheading_group, heading_group in zip(mainmainmatter_preheadings, mainmainmatter_headings):
+            for mainmatter_preheadings, mainmatter_headings in zip(volume.preheadings, volume.headings):
+                for preheading_group, heading_group in zip(mainmatter_preheadings, mainmatter_headings):
 
                     target = html.find(id=heading_group[0].heading_id)
 
@@ -253,13 +252,74 @@ class EditionParser(ABC):
 
         return all_volumes_tocs
 
-    def generate_frontmatter(self) -> list[dict[str, BeautifulSoup | list[list[Tag]]]]:
+    @staticmethod
+    def _is_html_matter(matter: str) -> bool:
+        return matter.startswith("./matter/")
+
+    @staticmethod
+    def _process_html_matter(matter: str, working_dir: str) -> BeautifulSoup:
+        matter = matter.removeprefix(".")
+
+        if not (FRONTMATTER_URL := os.getenv("FRONTMATTER_URL")):
+            log.error("Missing FRONTMATTER_URL, fix the .env_public file.")
+            raise EnvironmentError("Missing FRONTMATTER_URL")
+        else:
+            response = requests.get(FRONTMATTER_URL.format(matter=matter, working_dir=working_dir))
+            response.raise_for_status()
+            return BeautifulSoup(response.text, "lxml")
+
+    def _process_raw_matter(self, matter: str) -> BeautifulSoup:
+        # Match names of matters in API with the name of templates on github: https://github.com/suttacentral/publications/tree/sujato-templates/templates
+        MATTERS_TO_TEMPLATES_NAMES_MAPPING: dict[str, str] = ast.literal_eval(
+            os.getenv("MATTERS_TO_TEMPLATES_NAMES_MAPPING")  # type: ignore
+        )
+        TEMPLATES_URL = os.getenv("TEMPLATES_URL")
+
+        if not MATTERS_TO_TEMPLATES_NAMES_MAPPING:
+            raise EnvironmentError(
+                "Missing .env_public file or the file lacks required variable MATTERS_TO_TEMPLATES_NAMES_MAPPING."
+            )
+        if not TEMPLATES_URL:
+            raise EnvironmentError("Missing .env_public file or the file lacks required variable TEMPLATES_URL.")
+
+        else:
+            try:
+                # Get template filename associated with that matter
+                _template_name: str = MATTERS_TO_TEMPLATES_NAMES_MAPPING[matter]
+
+                # Generate url to fetch Jinja template for that matter
+                _url = TEMPLATES_URL.format(matter=_template_name)
+
+                # Fetch Jinja template from GitHub
+                response = requests.get(_url)
+                response.raise_for_status()
+                _template_raw = response.text
+                template = Template(_template_raw)
+
+                # Map template with associated variables
+                _template_variables_names: list[str] = map_template_to_variables(template=_template_name)
+                # Collect these variables from config into a dictionary of <variable name>: <value(s)> pairs
+                _template_variables_dict: dict[str, str | list[str]] = {}
+                for variable in _template_variables_names:
+                    _template_variables_dict[variable] = None  # type: ignore
+
+                matter_html = BeautifulSoup(template.render(**_template_variables_dict), "lxml")
+
+                return matter_html
+
+            except KeyError:
+                log.warning(f"Matter {matter} is not supported.")
+
+    def __generate_frontmatter(self) -> None:
         """Fetch a list of frontmatter components and their contents from API, return a dictionary with {<component_name>: <content>} mapping.
         The output is returned for each volume of a publication.
         """
         log.debug("Generating FrontMatters...")
+        # pprint(self.config)
+        # sys.exit()
 
         PREFIX = "/opt/sc/sc-flask/sc-data"
+        working_dir: str = self.config.edition.working_dir.removeprefix(PREFIX)
 
         per_volume_list: list[dict[str, BeautifulSoup | list[list[Tag]]]] = []
 
@@ -269,32 +329,42 @@ class EditionParser(ABC):
         ):
 
             frontmatter: list[str] = volume.get("frontmatter")
-            working_dir: str = self.config.edition.working_dir.removeprefix(PREFIX)
-            matter_paths = [elem.removeprefix(".") for elem in frontmatter if elem.startswith("./")]
-            matters_dict: dict[str, BeautifulSoup | list[list[Tag]]] = {}
+            matter_types = [(matter, self._is_html_matter(matter)) for matter in frontmatter]
+            # print(matter_types)
+            processed_matters: list[BeautifulSoup] = []
 
-            for suffix in matter_paths:
-                # Fetch actual frontmatters content from API
-                response = requests.get(self.FRONTMATTER_URL.format(matter=suffix, working_dir=working_dir))
-                response.raise_for_status()
+            for matter, is_html in matter_types:
+                if is_html:
+                    processed_matters.append(EditionParser._process_html_matter(matter=matter, working_dir=working_dir))
+                else:
+                    processed_matters.append(self._process_raw_matter(matter))
 
-                if match := re.search(r"^(/matter/)(?P<matter_name>\w+).html$", suffix):
-                    matter = BeautifulSoup(response.text, "lxml")
-                    remove_all_ul(matter)
-                    matters_dict[match.group("matter_name")] = matter
-                elif match := re.search(r"^(?P<titlepage>titlepage)$", suffix):
-                    pass  # TODO [61]: implement collecting titlepage data
-                elif match := re.search(r"^(?P<imprint>imprint)$", suffix):
-                    pass  # TODO [61]: implement collecting imprint data
-                elif match := re.search(r"^(?P<halftitlepage>halftitlepage)$", suffix):
-                    pass  # TODO [61]: implement collecting halftitlepage data
-                elif match := re.search(r"^(?P<main_toc>main-toc)$", suffix):
-                    matters_dict[match.group("main-toc")] = toc_headings
-                elif match := re.search(r"^(?P<blurbs>blurbs)$", suffix):
-                    pass  # TODO [61]: implement collecting blurbs data
+            # for _matter_path in frontmatter:
+            #     if _matter_path.startswith("./"):
+            #         setattr(__obj=_matter_path, __name=????, __value=_matter_path.removeprefix("."))
+            #
+            # matter_paths = [elem.removeprefix(".") for elem in frontmatter if elem.startswith("./")]
+            # matters_dict: dict[str, BeautifulSoup | list[list[Tag]]] = {}
 
-            per_volume_list.append(matters_dict)
-        return per_volume_list
+            # for suffix in matter_paths:
+            #     # Fetch actual frontmatters content from API
+            #     response = requests.get(self.FRONTMATTER_URL.format(matter=suffix, working_dir=working_dir))
+            #     response.raise_for_status()
+            #
+            #     if match := re.search(r"^(/matter/)(?P<matter_name>\w+).html$", suffix):
+            #         matter = BeautifulSoup(response.text, "lxml")
+            #         remove_all_ul(matter)
+            #         matters_dict[match.group("matter_name")] = matter
+            #     else:
+            #         try:
+            #             config_templates_name_mapping[suffix]
+            #             print("@" * 20)
+            #             pprint(response.text)
+            #         except KeyError as e:
+            #             log.warning(f"Matter {suffix} is  not supported.")
+
+        #     per_volume_list.append(matters_dict)
+        self.per_volume_frontmatters = per_volume_list
 
     def __generate_covers(self) -> None:
         log.debug("Generating covers...")
@@ -303,8 +373,9 @@ class EditionParser(ABC):
         log.debug("Generating back matters...")
 
     def collect_all(self) -> EditionResult:
-        # self.__generate_html(raw_data=self.raw_data, possible_refs=self.possible_refs)
-        self.generate_frontmatter()
+        self.__generate_mainmatter()
+        self.__mainmatter_postprocess()
+        self.__generate_frontmatter()
         self.__generate_backmatter()
         self.__generate_covers()
         txt = "dummy"

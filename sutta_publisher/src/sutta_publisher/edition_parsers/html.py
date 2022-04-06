@@ -42,6 +42,7 @@ class HtmlEdition(EditionParser):
                 f.write(output_volume)
 
     def collect_all(self) -> EditionResult:
+        super().collect_all()
         # self.__generate_backmatter()
         self.__generate_standalone_html()
         txt = "dummy"

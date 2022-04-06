@@ -317,3 +317,42 @@ def add_class(tags: list[Tag], class_: str) -> None:
     """Sdd class to a collection of HTML tags"""
     for tag in tags:
         tag["class"] = tag.get("class", []) + [class_]
+
+
+def map_template_to_variables(template: str) -> list:
+    try:
+        template_variables_mapping = {
+            "titlepage": ["translation_title", "creator_name", "volume_number"],
+            "imprint": [
+                "translation_title",
+                "root_title",
+                "creator_name",
+                "first_published",
+                "created",
+                "updated",
+                "publication_type",
+                "edition_number",
+                "number_of_volumes",
+                "publication_isbn",
+                "volume_isbn",
+                "editions_url",
+                "source_url",
+                "publication_number",
+            ],
+            "halftitlepage": [
+                "translation_title",
+                "translation_subtitle",
+                "creator_name",
+                "volume_number",
+                "volume_acronym",
+                "volume_translation_title",
+                "volume_root_title",
+            ],
+            "main-toc": ["main_toc"],
+            "secondary-toc": ["secondary_toc"],
+            "blurbs": ["blurbs", "translation_name", "root_name", "acronym"],
+        }
+
+        return template_variables_mapping[template]
+    except KeyError:
+        raise KeyError(f"Unsupported template type {template}.")

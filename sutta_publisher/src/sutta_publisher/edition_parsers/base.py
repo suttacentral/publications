@@ -39,7 +39,7 @@ class EditionParser(ABC):
     config: EditionConfig
     raw_data: EditionData
     edition_type: EditionType
-    possible_refs: list[str]
+    possible_refs: set[str]
     per_volume_html: list[BeautifulSoup] = None  # type: ignore
     per_volume_frontmatters: list[dict[str, BeautifulSoup]] = None  # type: ignore
 
@@ -47,7 +47,7 @@ class EditionParser(ABC):
         # Order of execution matters a great deal here as functions depends on instance fields being initialised upon their call.
         self.raw_data: EditionData = data
         self.config: EditionConfig = config
-        self.possible_refs: list[str] = fetch_possible_refs()
+        self.possible_refs: set[str] = fetch_possible_refs()
 
     def __generate_mainmatter(self) -> None:
         """Generate content of an HTML body"""
@@ -195,7 +195,8 @@ class EditionParser(ABC):
         return main_toc_headings
 
     def __collect_secondary_toc_targets(self, main_toc_depths: list[int]) -> list[list[Tag]]:
-        """Collect list of targets (heading), under them secondary tables of contents will be inserted.
+        """Collect list of targets, under which secondary tables of contents will be inserted.
+        The output is returned for each volume of a publication.
 
         Returns:
             list[list[Tag]]: A list of headings for each volume

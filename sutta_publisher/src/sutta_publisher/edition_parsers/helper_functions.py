@@ -18,15 +18,15 @@ HeadingsIndexTreeFrozen = namedtuple(
 )  # this is needed for dictionary building, as dictionary keys must be immutable
 
 
-def fetch_possible_refs() -> list[str]:
+def fetch_possible_refs() -> set[str]:
     response = requests.get(ALL_REFERENCES_URL)
     jsons_list = response.json()
     irregular_list_of_refs = [json["includes"] for json in jsons_list]
-    return _flatten_list(irregular_list_of_refs)
+    return set(_flatten_list(irregular_list_of_refs))
 
 
 def _filter_refs(references: list[tuple[str, str]], accepted_references: list[str]) -> list[tuple[str, str]]:
-    """Filters out unaccepted references from a list"""
+    """Filter out unaccepted references from a list."""
     return [value for value in references if value[0] in accepted_references]
 
 
@@ -42,8 +42,8 @@ def _flatten_list(irregular_list: list[Any]) -> list[Any]:
 
 
 def _segment_id_to_html(segment_id: str) -> str:
-    """Convert segment id strings such as 'mn138:1.5' into HTML anchors"""
-    # TODO: [#27] Implement logic for toggling visibility of segment ID
+    """Convert segment id strings such as 'mn138:1.5' into HTML anchors."""
+    # TODO: [27] Implement logic for toggling visibility of segment ID
     tag = "span"
     displayable: bool = False
     class_ = "class='sc-main'" if displayable else " "
@@ -60,8 +60,8 @@ def _segment_id_to_html(segment_id: str) -> str:
         return f"<{tag} {class_} id='{segment_id}'>{segment_id_displayable}</{tag}>"
 
 
-def _split_ref_and_number(reference: str, possible_refs: list[str]) -> tuple[str, str] | None:
-    """Split reference strings such as "bj7.1" into tuples e.g. ("bj", "7.1")"""
+def _split_ref_and_number(reference: str, possible_refs: set[str]) -> tuple[str, str] | None:
+    """Split reference strings such as "bj7.1" into tuples e.g. `("bj", "7.1")`."""
     # TODO: [28] Simplify and optimise this function
     # Returns None for each ref type from POSSIBLE_REFS not present in reference string
     matches = [re.match(rf"^({ref_type})(\d+\.?\d*)", reference, flags=re.IGNORECASE) for ref_type in possible_refs]
@@ -74,13 +74,13 @@ def _split_ref_and_number(reference: str, possible_refs: list[str]) -> tuple[str
 
 
 def _reference_to_html(reference: tuple[str, str]) -> str:
-    """Return HTML element made of a reference tuple i.e. ("bj", "7,9")"""
+    """Return HTML element made of a reference tuple i.e. `("bj", "7,9")`."""
     ref_type, ref_id = reference
     # E.g. <a class='bj' id='bj7.2'>BJ 7.2</a>
     return f"<a class='{ref_type}' id='{ref_type}{ref_id}'>{ref_type.upper()} {ref_id}</a>"
 
 
-def process_a_line(markup: str, segment_id: str, text: str, references: str, possible_refs: list[str]) -> str:
+def process_a_line(markup: str, segment_id: str, text: str, references: str, possible_refs: set[str]) -> str:
     segment_id_html: str = _segment_id_to_html(segment_id)
     # references are passed as a string such as: "ref1, ref2, ref3"
     split_references: list[str] = [r.strip() for r in references.split(",")]
@@ -97,12 +97,12 @@ def process_a_line(markup: str, segment_id: str, text: str, references: str, pos
 
 
 def get_heading_depth(tag: Tag) -> int:
-    """Extract heading number from html tag i.e. 'h1' -> 1"""
+    """Extract heading number from html tag i.e. 'h1' -> 1."""
     return int(re.search(r"^(h)(\d+)$", tag.name).group(2))  # type: ignore
 
 
 def _parse_main_toc_depth(depth: str, html: BeautifulSoup) -> int:
-    """Analyse data from config.edition.main_toc_depth and return actual number hor heading depth for ToC
+    """Analyse data from config.edition.main_toc_depth and return actual number hor heading depth for ToC.
 
     Args:
         depth: depth of ToC headings tree provided as: "all" | "1" | "2".
@@ -118,7 +118,7 @@ def _parse_main_toc_depth(depth: str, html: BeautifulSoup) -> int:
 
 
 def collect_main_toc_depths(depth: str, all_volumes: list[BeautifulSoup]) -> list[int]:
-    """Collect ToC depths for all volumes
+    """Collect ToC depths for all volumes.
 
     Args:
         depth: unparsed input from configuration (such as: "all", "1")
@@ -200,7 +200,7 @@ def _nest_or_extend(headings: Iterator[Tag], file_name: str) -> Link | list | No
 
 
 def _update_index(index: list[int], tag: Tag) -> None:
-    """Increment index for this heading level *IN PLACE*
+    """Increment index for this heading level **IN PLACE**
 
     e.g. [1, 1, 2+1, 0, 0, 0] - added another h3
     """
@@ -292,14 +292,14 @@ def find_all_headings(html: BeautifulSoup) -> list[Tag]:
     return list(html.find_all(name=re.compile(r"h\d+")))
 
 
-def create_html_heading_with_id(html: BeautifulSoup, *, depth: int, text: str, id: str) -> Tag:
+def create_html_heading_with_id(html: BeautifulSoup, *, depth: int, text: str, id_: str) -> Tag:
     """Create new tag of format:  <h1><span id="some-id"></span>Some Title</h1>,
 
     Args:
         html: an HTML, for which to build a heading
         depth: a depth of heading e.g. 1 for "h1", 2 for "h2" etc.
         text: a title for the heading
-        id: an id property to assign to the new tag
+        id_: an id property to assign to the new tag
 
     Returns:
         Tag: an HTML tag with id ready to insert
@@ -307,7 +307,7 @@ def create_html_heading_with_id(html: BeautifulSoup, *, depth: int, text: str, i
     nt = html.new_tag(name=f"h{depth}")
     nt.string = text
 
-    nt_inner = html.new_tag(name="span", id=id)
+    nt_inner = html.new_tag(name="span", id=id_)
     nt.insert(position=0, new_child=nt_inner)
 
     return nt
@@ -317,42 +317,3 @@ def add_class(tags: list[Tag], class_: str) -> None:
     """Sdd class to a collection of HTML tags"""
     for tag in tags:
         tag["class"] = tag.get("class", []) + [class_]
-
-
-def map_template_to_variables(template: str) -> list:
-    try:
-        template_variables_mapping = {
-            "titlepage": ["translation_title", "creator_name", "volume_number"],
-            "imprint": [
-                "translation_title",
-                "root_title",
-                "creator_name",
-                "first_published",
-                "created",
-                "updated",
-                "publication_type",
-                "edition_number",
-                "number_of_volumes",
-                "publication_isbn",
-                "volume_isbn",
-                "editions_url",
-                "source_url",
-                "publication_number",
-            ],
-            "halftitlepage": [
-                "translation_title",
-                "translation_subtitle",
-                "creator_name",
-                "volume_number",
-                "volume_acronym",
-                "volume_translation_title",
-                "volume_root_title",
-            ],
-            "main-toc": ["main_toc"],
-            "secondary-toc": ["secondary_toc"],
-            "blurbs": ["blurbs", "translation_name", "root_name", "acronym"],
-        }
-
-        return template_variables_mapping[template]
-    except KeyError:
-        raise KeyError(f"Unsupported template type {template}.")

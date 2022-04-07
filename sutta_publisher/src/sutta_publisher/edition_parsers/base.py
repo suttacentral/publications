@@ -4,8 +4,8 @@ import ast
 import logging
 import os
 from abc import ABC
-from copy import deepcopy
-from typing import Type
+from copy import copy, deepcopy
+from typing import Any, Type
 
 import requests
 from bs4 import BeautifulSoup, Tag
@@ -24,12 +24,11 @@ from sutta_publisher.edition_parsers.helper_functions import (
     get_heading_depth,
     increment_heading_by_number,
     make_headings_tree,
-    map_template_to_variables,
     process_a_line,
     remove_all_ul,
 )
 from sutta_publisher.shared.value_objects.edition import EditionResult, EditionType
-from sutta_publisher.shared.value_objects.edition_config import EditionConfig
+from sutta_publisher.shared.value_objects.edition_config import EditionConfig, VolumeDetail
 from sutta_publisher.shared.value_objects.edition_data import EditionData
 
 log = logging.getLogger(__name__)
@@ -41,7 +40,7 @@ class EditionParser(ABC):
     edition_type: EditionType
     possible_refs: set[str]
     per_volume_html: list[BeautifulSoup] = None  # type: ignore
-    per_volume_frontmatters: list[dict[str, BeautifulSoup]] = None  # type: ignore
+    per_volume_frontmatters: list[dict[str, Any]] = None  # type: ignore
 
     def __init__(self, config: EditionConfig, data: EditionData) -> None:
         # Order of execution matters a great deal here as functions depends on instance fields being initialised upon their call.
@@ -111,9 +110,9 @@ class EditionParser(ABC):
     def __mainmatter_postprocess(self) -> None:
         """Apply some additional postprocessing steps and insert additional headings to the generated crude mainmatters"""
 
-        # Remove all <ul></ul> tags
+        # Remove all <ul></ul> tags from <header></header> element
         for html in self.per_volume_html:
-            remove_all_ul(html=html)
+            remove_all_ul(html=html.find("header"))
 
         # Change numbers of all headings according to how many additional preheadings are. If there are 2 preheadings h1's become h3's
         for volume, html in zip(self.raw_data, self.per_volume_html):
@@ -156,7 +155,7 @@ class EditionParser(ABC):
 
                         target.insert_before(
                             create_html_heading_with_id(
-                                html=html, depth=_level, text=preheading.name, id=preheading.uid
+                                html=html, depth=_level, text=preheading.name, id_=preheading.uid
                             )
                         )
 
@@ -209,8 +208,8 @@ class EditionParser(ABC):
             toc_targets.append(collect_actual_headings(start_depth=_depth, end_depth=_depth, volume=_volume))
         return toc_targets
 
-    def __collect_secondary_toc(self) -> list[dict[Tag, list[Tag]]]:
-        """Based on main ToC headings generate a collection secondary ToCs headings for each volume
+    def collect_secondary_toc(self) -> list[dict[Tag, list[Tag]]]:
+        """Based on main ToC headings generate a collection secondary ToCs headings for each volume.
 
         Returns:
             list[dict[Tag, list[Tag]]]: for each volume a separate mapping is created. List of mappings for all volumes is returned. Mapping associates a heading in text where secondary ToC needs to be inserted with a list of headings required to build this ToC.
@@ -253,6 +252,53 @@ class EditionParser(ABC):
 
         return all_volumes_tocs
 
+    def _get_blurbs_for_publication(self) -> list[str]:
+        """Collect all blurbs across all volumes of a publication and return them as a flat list."""
+        blurbs: list[str] = []
+
+        for blurb in self.raw_data:
+            for node in blurb.mainmatter:
+                blurbs.append(node.blurb)
+
+        return blurbs
+
+    # @cache
+    def _match_template_variables_with_config(
+        self, volume: VolumeDetail, main_toc: list[Tag], secondary_toc: list[Tag]
+    ) -> dict[str, str | list[str] | None | int]:
+        return {
+            "acronym": None,  # TODO: implement - where do I get it from?
+            "blurbs": self._get_blurbs_for_publication(),
+            "created": self.config.edition.created,
+            "creation_process": self.config.publication.creation_process,
+            "creator_biography": None,  # TODO: implement - where do I get it from?
+            "creator_name": self.config.publication.creator_name,
+            "edition_number": self.config.edition.edition_number,
+            "editions_url": self.config.publication.editions_url,
+            "first_published": self.config.publication.first_published,
+            "main_toc": main_toc,
+            "number_of_volumes": len(
+                self.raw_data
+            ),  # raw_data is a list of VolumeData, so it matches the number of volumes
+            "publication_isbn": self.config.edition.publication_isbn,
+            "publication_number": self.config.edition.publication_number,
+            "publication_type": self.config.edition.publication_type,
+            "root_name": self.config.publication.root_lang_name,  # TODO: verify if root_lang_name or root_lang_iso should be here. Or maybe something else (don't see "root_name" in the API response)
+            "root_title": self.config.publication.root_title,
+            "secondary_toc": secondary_toc,
+            "source_url": self.config.publication.source_url,
+            "text_description": self.config.publication.text_description,
+            "translation_name": self.config.publication.translation_lang_name,  # TODO: verify if translation_lang_name or translation_lang_iso should be here. Or maybe something else (don't see "translation_name" in the API response)
+            "translation_subtitle": self.config.publication.translation_subtitle,
+            "translation_title": self.config.publication.translation_title,
+            "updated": self.config.edition.updated,
+            "volume_acronym": volume.volume_acronym if volume.volume_acronym else None,
+            "volume_isbn": volume.volume_isbn if volume.volume_isbn else None,
+            "volume_number": volume.volume_number if volume.volume_number else None,
+            "volume_root_title": None,  # TODO: implement - where do I get it from?
+            "volume_translation_title": None,  # TODO: implement - where do I get it from?
+        }
+
     @staticmethod
     def _is_html_matter(matter: str) -> bool:
         return matter.startswith("./matter/")
@@ -269,7 +315,9 @@ class EditionParser(ABC):
             response.raise_for_status()
             return BeautifulSoup(response.text, "lxml")
 
-    def _process_raw_matter(self, matter: str) -> BeautifulSoup:
+    def _process_raw_matter(
+        self, matter: str, volume: VolumeDetail, main_toc: list[Tag], secondary_toc: list[Tag]
+    ) -> BeautifulSoup:
         # Match names of matters in API with the name of templates on github: https://github.com/suttacentral/publications/tree/sujato-templates/templates
         MATTERS_TO_TEMPLATES_NAMES_MAPPING: dict[str, str] = ast.literal_eval(
             os.getenv("MATTERS_TO_TEMPLATES_NAMES_MAPPING")  # type: ignore
@@ -289,7 +337,7 @@ class EditionParser(ABC):
                 _template_name: str = MATTERS_TO_TEMPLATES_NAMES_MAPPING[matter]
 
                 # Generate url to fetch Jinja template for that matter
-                _url = TEMPLATES_URL.format(matter=_template_name)
+                _url = TEMPLATES_URL.format(template_name=_template_name)
 
                 # Fetch Jinja template from GitHub
                 response = requests.get(_url)
@@ -297,18 +345,15 @@ class EditionParser(ABC):
                 _template_raw = response.text
                 template = Template(_template_raw)
 
-                # Map template with associated variables
-                _template_variables_names: list[str] = map_template_to_variables(template=_template_name)
-                # Collect these variables from config into a dictionary of <variable name>: <value(s)> pairs
-                _template_variables_dict: dict[str, str | list[str]] = {}
-                for variable in _template_variables_names:
-                    _template_variables_dict[variable] = None  # type: ignore
+                variables: dict[str, str | list[str] | None | int] = self._match_template_variables_with_config(
+                    volume=volume, main_toc=main_toc, secondary_toc=secondary_toc
+                )
 
-                matter_html = BeautifulSoup(template.render(**_template_variables_dict), "lxml")
+                matter_html = BeautifulSoup(template.render(**variables), "lxml")
 
                 return matter_html
 
-            except KeyError:
+            except FileExistsError:
                 log.warning(f"Matter {matter} is not supported.")
 
     def __generate_frontmatter(self) -> None:
@@ -316,64 +361,41 @@ class EditionParser(ABC):
         The output is returned for each volume of a publication.
         """
         log.debug("Generating FrontMatters...")
-        # pprint(self.config)
-        # sys.exit()
 
         PREFIX = "/opt/sc/sc-flask/sc-data"
         working_dir: str = self.config.edition.working_dir.removeprefix(PREFIX)
 
-        per_volume_list: list[dict[str, BeautifulSoup | list[list[Tag]]]] = []
+        per_volume_frontmatters: list[dict[str, Any]] = []
 
         # Parse list of frontmatters for this publication
-        for volume, toc_headings in zip(
-            ast.literal_eval(self.config.edition.volumes.json()), self.collect_main_toc_headings()
+        for _volume, _main_toc, _secondary_toc in zip(
+            self.config.edition.volumes, self.collect_main_toc_headings(), self.collect_secondary_toc()
         ):
 
-            frontmatter: list[str] = volume.get("frontmatter")
+            frontmatter: list[str] = _volume.frontmatter
             matter_types = [(matter, self._is_html_matter(matter)) for matter in frontmatter]
-            # print(matter_types)
-            processed_matters: list[BeautifulSoup] = []
+            processed_matters: dict[str, Any] = {}
 
             for matter, is_html in matter_types:
                 if is_html:
-                    processed_matters.append(EditionParser._process_html_matter(matter=matter, working_dir=working_dir))
+                    processed_matters[matter] = self._process_html_matter(matter=matter, working_dir=working_dir)
                 else:
-                    processed_matters.append(self._process_raw_matter(matter))
+                    processed_matters[matter] = self._process_raw_matter(matter=matter, volume=_volume, main_toc=_main_toc, secondary_toc=None)  # type: ignore # TODO: implement the secondary ToC
 
-            # for _matter_path in frontmatter:
-            #     if _matter_path.startswith("./"):
-            #         setattr(__obj=_matter_path, __name=????, __value=_matter_path.removeprefix("."))
-            #
-            # matter_paths = [elem.removeprefix(".") for elem in frontmatter if elem.startswith("./")]
-            # matters_dict: dict[str, BeautifulSoup | list[list[Tag]]] = {}
+            per_volume_frontmatters.append(copy(processed_matters))
 
-            # for suffix in matter_paths:
-            #     # Fetch actual frontmatters content from API
-            #     response = requests.get(self.FRONTMATTER_URL.format(matter=suffix, working_dir=working_dir))
-            #     response.raise_for_status()
-            #
-            #     if match := re.search(r"^(/matter/)(?P<matter_name>\w+).html$", suffix):
-            #         matter = BeautifulSoup(response.text, "lxml")
-            #         remove_all_ul(matter)
-            #         matters_dict[match.group("matter_name")] = matter
-            #     else:
-            #         try:
-            #             config_templates_name_mapping[suffix]
-            #             print("@" * 20)
-            #             pprint(response.text)
-            #         except KeyError as e:
-            #             log.warning(f"Matter {suffix} is  not supported.")
-
-        #     per_volume_list.append(matters_dict)
-        self.per_volume_frontmatters = per_volume_list
+        self.per_volume_frontmatters = per_volume_frontmatters
 
     def __generate_covers(self) -> None:
         log.debug("Generating covers...")
+        # TODO [58]: implement
 
     def __generate_backmatter(self) -> None:
         log.debug("Generating back matters...")
+        # TODO [65]: implement
 
     def collect_all(self) -> EditionResult:
+        # Order of execution matters here
         self.__generate_mainmatter()
         self.__mainmatter_postprocess()
         self.__generate_frontmatter()

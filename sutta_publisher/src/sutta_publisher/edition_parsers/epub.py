@@ -93,7 +93,6 @@ class EpubEdition(EditionParser):
         book.spine.append(chapter)
 
     def __generate_epub(self) -> None:
-        """Generate epub"""
         log.debug("Generating epub...")
 
         volumes_frontmatters = self.per_volume_frontmatters

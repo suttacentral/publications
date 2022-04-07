@@ -9,6 +9,9 @@ from .edition import EditionType
 
 
 class VolumeDetail(BaseModel):
+    volume_number: bool | str
+    volume_isbn: bool | str
+    volume_acronym: bool | str
     backmatter: list[str]
     frontmatter: list[str]
     mainmatter: list[str]
@@ -39,6 +42,8 @@ class EditionDetails(BaseModel):
     working_dir: str
     main_toc_depth: str
     secondary_toc: bool
+    edition_number: str
+    publication_isbn: str
 
     class Config:
         extra = "ignore"
@@ -49,6 +54,14 @@ class PublicationDetails(BaseModel):
     translation_subtitle: str
     translation_title: str
     translation_lang_iso: str
+    creation_process: str
+    editions_url: str
+    first_published: str
+    root_lang_name: str
+    root_title: str
+    source_url: str
+    text_description: str
+    translation_lang_name: str
 
     class Config:
         extra = "ignore"

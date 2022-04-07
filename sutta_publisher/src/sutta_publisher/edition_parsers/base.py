@@ -24,6 +24,7 @@ from sutta_publisher.edition_parsers.helper_functions import (
     get_heading_depth,
     increment_heading_by_number,
     make_headings_tree,
+    make_html_link_to_heading,
     process_a_line,
     remove_all_ul,
 )
@@ -264,7 +265,7 @@ class EditionParser(ABC):
 
     # @cache
     def _match_template_variables_with_config(
-        self, volume: VolumeDetail, main_toc: list[Tag], secondary_toc: list[Tag]
+        self, volume: VolumeDetail, main_toc: str, secondary_toc: str
     ) -> dict[str, str | list[str] | None | int]:
         return {
             "acronym": None,  # TODO: implement - where do I get it from?
@@ -316,7 +317,7 @@ class EditionParser(ABC):
             return BeautifulSoup(response.text, "lxml")
 
     def _process_raw_matter(
-        self, matter: str, volume: VolumeDetail, main_toc: list[Tag], secondary_toc: list[Tag]
+        self, matter: str, volume: VolumeDetail, main_toc: str, secondary_toc: str
     ) -> BeautifulSoup:
         # Match names of matters in API with the name of templates on github: https://github.com/suttacentral/publications/tree/sujato-templates/templates
         MATTERS_TO_TEMPLATES_NAMES_MAPPING: dict[str, str] = ast.literal_eval(
@@ -344,9 +345,10 @@ class EditionParser(ABC):
                 response.raise_for_status()
                 _template_raw = response.text
                 template = Template(_template_raw)
+                _main_toc_anchors: str = "".join([make_html_link_to_heading(tag) for tag in main_toc])
 
                 variables: dict[str, str | list[str] | None | int] = self._match_template_variables_with_config(
-                    volume=volume, main_toc=main_toc, secondary_toc=secondary_toc
+                    volume=volume, main_toc=_main_toc_anchors, secondary_toc=secondary_toc
                 )
 
                 matter_html = BeautifulSoup(template.render(**variables), "lxml")
@@ -373,7 +375,7 @@ class EditionParser(ABC):
         ):
 
             frontmatter: list[str] = _volume.frontmatter
-            matter_types = [(matter, self._is_html_matter(matter)) for matter in frontmatter]
+            matter_types: list[tuple[str, bool]] = [(matter, self._is_html_matter(matter)) for matter in frontmatter]
             processed_matters: dict[str, Any] = {}
 
             for matter, is_html in matter_types:

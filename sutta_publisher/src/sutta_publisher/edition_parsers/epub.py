@@ -113,11 +113,11 @@ class EpubEdition(EditionParser):
             self.__set_metadata(book)
             self.__set_styles(book)
 
-            for _frontmatter in _frontmatters:
+            for _matter in _frontmatters:
                 volume_number += 1
                 self.__set_chapters(
                     book=book,
-                    html=_frontmatter,
+                    html=_matter,
                     headings=_main_toc_headings,
                     chapter_number=volume_number,
                     make_index=False,

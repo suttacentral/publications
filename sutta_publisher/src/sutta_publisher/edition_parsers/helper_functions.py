@@ -317,3 +317,7 @@ def add_class(tags: list[Tag], class_: str) -> None:
     """Sdd class to a collection of HTML tags"""
     for tag in tags:
         tag["class"] = tag.get("class", []) + [class_]
+
+
+def make_html_link_to_heading(tag: Tag) -> str:
+    return f"<a href='#{tag.span.get('id')}'>{tag.text}</a>"

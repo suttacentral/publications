@@ -35,11 +35,14 @@ class HtmlEdition(EditionParser):
             output_volume = template.render(css=css, frontmatters=_frontmatters.values(), mainmatter=_volume)
 
             _path = os.path.join(
-                tempfile.gettempdir(), f"{self.config.publication.translation_title} vol {_vol_nr}.epub"
+                tempfile.gettempdir(), f"{self.config.publication.translation_title} vol {_vol_nr + 1}.html"
             )
 
-            with open(file=_path, mode="w") as f:
-                f.write(output_volume)
+            try:
+                with open(file=_path, mode="w") as f:
+                    f.write(output_volume)
+            except IOError as e:
+                log.error(f"Failed to write {_path} due to IO error: {e}")
 
     def collect_all(self) -> EditionResult:
         super().collect_all()

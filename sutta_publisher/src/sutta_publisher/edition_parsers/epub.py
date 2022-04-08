@@ -18,7 +18,7 @@ from .base import EditionParser
 
 log = logging.getLogger(__name__)
 
-CSS_PATH = Path(__file__).parent / "css_stylesheets/epub.css"
+CSS_PATH = Path(__file__).parent.parent / "css_stylesheets/epub.css"
 
 
 class EpubEdition(EditionParser):

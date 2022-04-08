@@ -319,5 +319,11 @@ def add_class(tags: list[Tag], class_: str) -> None:
         tag["class"] = tag.get("class", []) + [class_]
 
 
-def make_html_link_to_heading(tag: Tag) -> str:
+def _make_html_link_to_heading(tag: Tag) -> str:
     return f"<a href='#{tag.span.get('id')}'>{tag.text}</a>"
+
+
+def generate_html_toc(headings: list[Tag]) -> str:
+    _anchors = [_make_html_link_to_heading(heading) for heading in headings]
+    _list_items = [f"<li>{link}</li>" for link in _anchors]
+    return f"<ol>{''.join(_list_items)}</ol>"

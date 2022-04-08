@@ -21,10 +21,10 @@ from sutta_publisher.edition_parsers.helper_functions import (
     find_all_headings,
     find_children_by_index,
     find_sutta_title_depth,
+    generate_html_toc,
     get_heading_depth,
     increment_heading_by_number,
     make_headings_tree,
-    make_html_link_to_heading,
     process_a_line,
     remove_all_ul,
 )
@@ -265,47 +265,54 @@ class EditionParser(ABC):
 
     # @cache
     def _match_template_variables_with_config(
-        self, volume: VolumeDetail, main_toc: str, secondary_toc: str
-    ) -> dict[str, str | list[str] | None | int]:
-        return {
-            "acronym": None,  # TODO: implement - where do I get it from?
+        self, volume: VolumeDetail, main_toc: str, secondary_toc: str | None
+    ) -> dict[str, str | list[str]]:
+        variables = {
+            "acronym": "",  # TODO: implement - where do I get it from?
             "blurbs": self._get_blurbs_for_publication(),
             "created": self.config.edition.created,
             "creation_process": self.config.publication.creation_process,
-            "creator_biography": None,  # TODO: implement - where do I get it from?
+            "creator_biography": "",  # TODO: implement - where do I get it from?
             "creator_name": self.config.publication.creator_name,
             "edition_number": self.config.edition.edition_number,
             "editions_url": self.config.publication.editions_url,
             "first_published": self.config.publication.first_published,
             "main_toc": main_toc,
-            "number_of_volumes": len(
-                self.raw_data
+            "number_of_volumes": str(
+                len(self.raw_data)
             ),  # raw_data is a list of VolumeData, so it matches the number of volumes
             "publication_isbn": self.config.edition.publication_isbn,
             "publication_number": self.config.edition.publication_number,
             "publication_type": self.config.edition.publication_type,
             "root_name": self.config.publication.root_lang_name,  # TODO: verify if root_lang_name or root_lang_iso should be here. Or maybe something else (don't see "root_name" in the API response)
             "root_title": self.config.publication.root_title,
-            "secondary_toc": secondary_toc,
+            "secondary_toc": secondary_toc if secondary_toc else "",
             "source_url": self.config.publication.source_url,
             "text_description": self.config.publication.text_description,
             "translation_name": self.config.publication.translation_lang_name,  # TODO: verify if translation_lang_name or translation_lang_iso should be here. Or maybe something else (don't see "translation_name" in the API response)
             "translation_subtitle": self.config.publication.translation_subtitle,
             "translation_title": self.config.publication.translation_title,
             "updated": self.config.edition.updated,
-            "volume_acronym": volume.volume_acronym if volume.volume_acronym else None,
-            "volume_isbn": volume.volume_isbn if volume.volume_isbn else None,
-            "volume_number": volume.volume_number if volume.volume_number else None,
-            "volume_root_title": None,  # TODO: implement - where do I get it from?
-            "volume_translation_title": None,  # TODO: implement - where do I get it from?
+            "volume_acronym": volume.volume_acronym,
+            "volume_isbn": volume.volume_isbn,
+            "volume_number": volume.volume_number,
+            "volume_root_title": "",  # TODO: implement - where do I get it from?
+            "volume_translation_title": "",  # TODO: implement - where do I get it from?
         }
+
+        # Convert all falsy values (especially None's) to empty strings
+        for _var, _value in variables.items():
+            if not _value:
+                variables[_var] = ""
+
+        return variables
 
     @staticmethod
     def _is_html_matter(matter: str) -> bool:
         return matter.startswith("./matter/")
 
     @staticmethod
-    def _process_html_matter(matter: str, working_dir: str) -> BeautifulSoup:
+    def _process_html_matter(matter: str, working_dir: str) -> str:
         matter = matter.removeprefix(".")
 
         if not (FRONTMATTER_URL := os.getenv("FRONTMATTER_URL")):
@@ -314,11 +321,11 @@ class EditionParser(ABC):
         else:
             response = requests.get(FRONTMATTER_URL.format(matter=matter, working_dir=working_dir))
             response.raise_for_status()
-            return BeautifulSoup(response.text, "lxml")
+            return response.text
 
-    def _process_raw_matter(
-        self, matter: str, volume: VolumeDetail, main_toc: str, secondary_toc: str
-    ) -> BeautifulSoup:
+    def _process_raw_matter(  # type: ignore
+        self, matter: str, volume: VolumeDetail, main_toc: list[Tag] | None, secondary_toc: list[Tag] | None
+    ) -> str:
         # Match names of matters in API with the name of templates on github: https://github.com/suttacentral/publications/tree/sujato-templates/templates
         MATTERS_TO_TEMPLATES_NAMES_MAPPING: dict[str, str] = ast.literal_eval(
             os.getenv("MATTERS_TO_TEMPLATES_NAMES_MAPPING")  # type: ignore
@@ -345,17 +352,18 @@ class EditionParser(ABC):
                 response.raise_for_status()
                 _template_raw = response.text
                 template = Template(_template_raw)
-                _main_toc_anchors: str = "".join([make_html_link_to_heading(tag) for tag in main_toc])
+                _main_toc_html: str = generate_html_toc(headings=main_toc) if main_toc else ""
+                _secondary_toc_html: str = generate_html_toc(headings=secondary_toc) if secondary_toc else ""
 
-                variables: dict[str, str | list[str] | None | int] = self._match_template_variables_with_config(
-                    volume=volume, main_toc=_main_toc_anchors, secondary_toc=secondary_toc
+                variables: dict[str, str | list[str]] = self._match_template_variables_with_config(
+                    volume=volume, main_toc=_main_toc_html, secondary_toc=_secondary_toc_html
                 )
 
-                matter_html = BeautifulSoup(template.render(**variables), "lxml")
+                matter_html = template.render(**variables)
 
                 return matter_html
 
-            except FileExistsError:
+            except FileNotFoundError:
                 log.warning(f"Matter {matter} is not supported.")
 
     def __generate_frontmatter(self) -> None:
@@ -377,12 +385,16 @@ class EditionParser(ABC):
             frontmatter: list[str] = _volume.frontmatter
             matter_types: list[tuple[str, bool]] = [(matter, self._is_html_matter(matter)) for matter in frontmatter]
             processed_matters: dict[str, Any] = {}
+            _main_toc_ = _main_toc if "main-toc" in frontmatter else None
+            _secondary_toc_ = list(_secondary_toc.values()) if "secondary-toc" in frontmatter else None
 
             for matter, is_html in matter_types:
                 if is_html:
                     processed_matters[matter] = self._process_html_matter(matter=matter, working_dir=working_dir)
                 else:
-                    processed_matters[matter] = self._process_raw_matter(matter=matter, volume=_volume, main_toc=_main_toc, secondary_toc=None)  # type: ignore # TODO: implement the secondary ToC
+                    processed_matters[matter] = self._process_raw_matter(
+                        matter=matter, volume=_volume, main_toc=_main_toc_, secondary_toc=_secondary_toc_
+                    )
 
             per_volume_frontmatters.append(copy(processed_matters))
 

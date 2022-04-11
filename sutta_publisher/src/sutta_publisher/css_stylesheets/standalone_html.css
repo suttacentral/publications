@@ -1,215 +1,322 @@
-main {
-  --primary-text-color: #222;
-  --secondary-text-color: #757575;
-  --primary-background-color: white;
-  --secondary-background-color: #efefef;
-  --border-color: rgba(0, 0, 0, 0.1);
-  --link-color: #e60026;
+html {
+    --primary-text-color: #222;
+    --secondary-text-color: #757575;
+    --primary-background-color: #fefefe;
+    --secondary-background-color: #efefef;
+    --tertiary-background-color: #dfdfdf;
+    --border-color: rgba(0, 0, 0, 0.1);
+    --link-color: #e60026;
 }
 
 * {
-  box-sizing: border-box;
-  margin: 0;
+    box-sizing: border-box;
+    margin: 0;
 }
 
 body {
-  font-family: serif;
-  line-height: 1.5;
-
-  width: 100%;
-  height: 100%;
+    font-family: 'source serif 4', 'source serif pro', serif;
+    font-size: 20px;
+    line-height: 1.5;
+    width: 100%;
+    height: 100%;
+    color: var(--primary-text-color);
+    background-color: var(--primary-background-color);
 }
 
 main {
-  width: 100%;
-  margin-top: -32px;
-
-  color: var(--primary-text-color);
-  background-color: var(--primary-background-color);
+    width: 100%;
+    margin-top: -32px;
+    color: var(--primary-text-color);
+    background-color: var(--primary-background-color);
 }
 
 #frontmatter,
 #mainmatter,
 #backmatter {
-  max-width: 40em;
-  margin: 2em auto;
+    max-width: 40em;
+    margin: 2em auto;
 }
 
 article {
-  width: 100%;
-  padding: 0 0 8em 0;
+    width: 100%;
+    padding: 0 0 8em 0;
 }
 
 a {
-  text-decoration: none;
-
-  color: var(--link-color);
-
-  overflow-wrap: anywhere;
+    text-decoration: none;
+    color: var(--link-color);
+    overflow-wrap: anywhere;
 }
 
 a:hover {
-  text-decoration: underline;
-
-  text-underline-offset: .09em;
-  text-decoration-thickness: from-font;
+    text-decoration: underline;
+    text-underline-offset: .09em;
+    text-decoration-thickness: from-font;
 }
 
 #mainmatter .ref {
-  font-size: small;
-  font-weight: normal;
-
-  margin-right: 1ex;
-
-  display: none;
+    font-size: small;
+    font-weight: normal;
+    display: none;
+    margin-right: 1ex;
 }
-
-/*
-#mainmatter .sc-main.ref
-{
-   display:  inline;
-}
-*/
 
 article {
-  position: relative;
+    position: relative;
 }
 
-* + * {
-  margin-top: 1em;
-}
-
-body,
-li,
-ol ul,
-ol ol,
-ul ul,
-dl ul,
-nav ul,
-ol dl,
-ul dl,
-dd,
-dt {
-  margin-top: 0;
+p,
+ul,
+ol,
+dl,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    margin-top: 1em;
 }
 
 ul,
 ol {
-  padding-left: 2rem;
+    padding-left: 2rem;
 }
 
 blockquote {
-  margin: 1em 1.5em;
+    margin: 1em 1.5em;
+}
+
+.contents {
+    margin: 2em 0;
 }
 
 #toc li,
 .contents li {
-  margin: .5em 0;
+    margin: .5em 0;
 }
 
-#title-page {
-  line-height: 1;
-
-  display: flex;
-  flex-direction: column;
-
-  width: 100%;
-  height: 100vh;
-
-  text-align: center;
-
-  justify-content: space-between;
-  align-content: center;
+#titlepage,
+#halftitlepage {
+    line-height: 1;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100vh;
+    text-align: center;
+    justify-content: space-between;
+    align-content: center;
 }
 
-.title-page-main {
-  display: flex;
-  flex-direction: column;
-
-  height: 80vh;
-
-  justify-content: space-between;
+.front-top {
+    display: flex;
+    flex-direction: column;
+    height: 80vh;
+    justify-content: space-between;
 }
 
 .translation_title {
-  font-size: 4rem;
-
-  margin-top: 8rem;
+    font-size: 4rem;
+    line-height: 1.1;
+    margin-top: 8rem;
+    text-align: center;
 }
 
 .translation_subtitle {
-  font-size: 1.5em;
-  font-style: italic;
+    font-size: 1.5em;
+    font-style: italic;
+    line-height: 1.2;
+    margin-top: 1em;
+    text-align: center;
 }
 
-.author_name {
-  font-size: 2em;
-
-  margin-bottom: 8rem;
+.creator_name {
+    font-size: 2em;
+    line-height: 1.2;
+    margin-bottom: 8rem;
+    text-align: center;
 }
 
 .title-page-foot {
-  display: flex;
-  flex-direction: row;
-
-  height: 20vh;
-  padding: 0 6em;
-
-  color: var(--link-color);
-
-  justify-content: space-between;
-  align-items: center;
+    display: flex;
+    flex-direction: row;
+    height: 20vh;
+    padding: 0 6em;
+    color: var(--link-color);
+    justify-content: space-between;
+    align-items: center;
 }
 
-#license {
-  padding: 2em;
+#imprint {
+    font-size: .8rem;
+    padding: 2em;
+    border: 1px solid #ccc;
+    border-radius: 1em;
+    background-color: var(--secondary-background-color);
+}
 
-  border: 1px solid var(--border-color);
-  border-radius: 1em;
-  background-color: var(--secondary-background-color);
+.license {
+    margin: 2em 0;
+    padding: 1em;
+    background-color: var(--tertiary-background-color);
+}
+
+.license-statement {
+    margin: 1em 2em;
+    text-align: center;
+}
+
+#imprint td {
+    padding-right: 1em;
+}
+
+.byline {
+    font-style: italic;
+    margin-bottom: 1em;
+}
+
+.front-creator {
+    text-align: center;
+}
+
+.volume-details {
+    text-align: center;
+}
+
+.epigraph {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100vh;
+    text-align: center;
+    justify-content: center;
+    align-content: center;
+}
+
+.epigraph-attribution {
+    font-style: italic;
 }
 
 nav ul {
-  list-style-type: none;
+    list-style-type: none;
+}
+
+.toc-title {
+    font-size: 2rem;
+    width: 100%;
+    margin-bottom: 2em;
+    text-align: center;
+}
+
+.toc-uid {
+    display: inline-block;
+    margin-right: 1em;
+}
+
+nav ul {
+    font-weight: bold;
+}
+
+nav ul ul {
+    font-weight: normal;
+}
+
+nav li {
+    padding: .5em 0;
 }
 
 header {
-  text-align: center;
+    text-align: center;
 }
 
 header ul {
-  list-style-type: none;
+    margin-bottom: .5em;
+    padding: 0;
+    list-style-type: none;
+}
+
+header ul li {
+    display: none;
+}
+
+header ul li:nth-of-type(1) {
+    display: list-item;
+}
+
+.sutta-title {
+    margin: 0 0 2em 0;
+    text-align: center;
+}
+
+article {
+    margin-top: 4em;
 }
 
 h1 {
-  font-size: 2rem;
-
-  width: 100%;
-  margin-bottom: 1em;
-
-  text-align: center;
+    font-size: 3em;
+    font-weight: normal;
+    line-height: 1.2;
+    width: 100%;
+    margin-bottom: 1em;
+    text-align: center;
 }
 
 h2 {
-  font-size: 1.5rem;
+    font-size: 2em;
+    line-height: 1.3;
+    text-align: center;
 }
 
 h3 {
-  font-size: 1.33rem;
+    font-size: 1.5em;
+    line-height: 1.4;
+    text-align: left;
 }
 
 h4 {
-  font-size: 1.25rem;
+    font-size: 1.33em;
+    line-height: 1.4;
+    text-align: left;
 }
 
 h5 {
-  font-size: 1rem;
+    font-size: 1.25em;
+    text-align: left;
+}
+
+h6 {
+    font-size: 1em;
+    text-align: left;
+}
+
+.namo {
+    font-style: italic;
+    margin: 2em;
+    text-align: center;
+}
+
+.endsutta,
+.endsection,
+.end {
+    font-style: italic;
+    text-align: center;
+}
+
+.endbook {
+    font-weight: bold;
+    text-align: center;
+    letter-spacing: .05em;
+    text-transform: uppercase;
 }
 
 dd {
-  margin-left: 2em;
+    margin-left: 2em;
 }
 
-section + section {
-  margin-top: 6rem;
+section+section {
+    margin-top: 6rem;
+}
+
+.verse-line {
+    display: block;
 }

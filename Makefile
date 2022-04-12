@@ -43,15 +43,16 @@ build-dev:
 
 
 test: build-dev
-	$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) -f $(DEV_DOCKER_COMPOSE) run publisher pytest /tests -vv
+	$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) -f $(DEV_DOCKER_COMPOSE) run publisher pytest --vcr-record=new_episodes /tests -vv
 
-test-ci:
-	$(PYTHON_EXEC) -m autoflake --check --recursive --ignore-init-module-imports --remove-duplicate-keys --remove-unused-variables --remove-all-unused-imports $(LINT_PATHS) > /dev/null
-	$(PYTHON_EXEC) -m isort --check-only $(LINT_PATHS)
-	$(PYTHON_EXEC) -m black --check $(LINT_PATHS)
-	$(PYTHON_EXEC) -m mypy $(APP_PATH) --ignore-missing-imports
-	$(PYTHON_EXEC) -m bandit -r -q $(APP_PATH)
-	$(PYTHON_EXEC) -m coverage run -m pytest sutta_publisher/tests
+# TODO: [67] Reimplement using already defined `make lint` job and **in container**
+test-ci: test
+#	$(PYTHON_EXEC) -m autoflake --check --recursive --ignore-init-module-imports --remove-duplicate-keys --remove-unused-variables --remove-all-unused-imports $(LINT_PATHS) > /dev/null
+#	$(PYTHON_EXEC) -m isort --check-only $(LINT_PATHS)
+#	$(PYTHON_EXEC) -m black --check $(LINT_PATHS)
+#	$(PYTHON_EXEC) -m mypy $(APP_PATH) --ignore-missing-imports
+#	$(PYTHON_EXEC) -m bandit -r -q $(APP_PATH)
+#	$(PYTHON_EXEC) -m coverage run -m pytest --vcr-record=new_episodes sutta_publisher/tests
 
 
 ##############################################################################

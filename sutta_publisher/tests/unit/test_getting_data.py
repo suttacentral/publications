@@ -42,5 +42,5 @@ def test_should_return_data_for_edition() -> None:
         "./matter/introduction.html",
     }
 
-    # Check for if `volume_details.mainmatter` has more elements than only one
+    # Check if `volume_details.mainmatter` has more elements than only one
     assert len(edition_data[-1].mainmatter) == 171

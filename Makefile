@@ -43,7 +43,7 @@ build-dev:
 
 
 test: build-dev
-	$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) -f $(DEV_DOCKER_COMPOSE) run publisher pytest --vcr-record=new_episodes /tests -vv
+	$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) -f $(DEV_DOCKER_COMPOSE) run publisher pytest /tests -vv
 
 # TODO: [67] Reimplement using already defined `make lint` job and **in container**
 test-ci: test

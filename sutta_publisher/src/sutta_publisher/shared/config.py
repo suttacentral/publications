@@ -3,7 +3,6 @@ from __future__ import annotations
 import ast
 import logging
 import os
-from typing import cast
 
 import requests
 from pydantic import ValidationError
@@ -21,7 +20,7 @@ def get_editions_ids(publication_number: str) -> list[str]:
     payload = response.content
 
     editions = EditionMappingList.parse_raw(payload)
-    return cast(list[str], editions.get_editions_id(publication_number=publication_number))
+    return editions.get_editions_id(publication_number=publication_number)  # type: ignore
 
 
 def get_edition_config(edition_id: str) -> EditionConfig:

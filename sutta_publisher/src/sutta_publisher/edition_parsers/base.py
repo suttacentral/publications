@@ -5,7 +5,7 @@ import logging
 import os
 from abc import ABC
 from copy import copy, deepcopy
-from typing import Any, Type
+from typing import Any, Sequence, Type
 
 import requests
 from bs4 import BeautifulSoup, Tag
@@ -62,16 +62,16 @@ class EditionParser(ABC):
                 processed_mainmatter_single_lines: list[str] = []
                 try:
                     # Only store segment_id if it has matching text (prune empty strings: "")
-                    segment_ids = [segment_id for segment_id, _ in mainmatter_info.mainmatter.markup.items()]
+                    segment_ids = [segment_id for segment_id, _ in mainmatter_info.mainmatter.markup.items()]  # type: ignore # - this scenario is handled by try-except
 
                     # Each mainmatter sub-entity (MainMatterDetails) have dictionaries with text lines, markup lines and references. Keys are always segment IDs
                     for segment_id in segment_ids:
                         processed_mainmatter_single_lines.append(
                             process_a_line(
-                                markup=mainmatter_info.mainmatter.markup.get(segment_id),
+                                markup=mainmatter_info.mainmatter.markup.get(segment_id),  # type: ignore # - this scenario is handled by try-except
                                 segment_id=segment_id,
-                                text=mainmatter_info.mainmatter.main_text.get(segment_id, ""),
-                                references=mainmatter_info.mainmatter.reference.get(segment_id, ""),
+                                text=mainmatter_info.mainmatter.main_text.get(segment_id, ""),  # type: ignore # - this scenario is handled by try-except
+                                references=mainmatter_info.mainmatter.reference.get(segment_id, ""),  # type: ignore # - this scenario is handled by try-except
                                 # references are provides as: "single, comma, separated, string". We take care of splitting it in helper functions
                                 possible_refs=self.possible_refs,
                             )
@@ -104,7 +104,7 @@ class EditionParser(ABC):
             for mainmatter_headings in volume_headings.headings:
                 for headings_group in mainmatter_headings:
                     for heading in headings_group:
-                        targets.append(volume_html.find(id=heading.uid))
+                        targets.append(volume_html.find(id=heading.heading_id))
 
         return targets
 
@@ -258,15 +258,14 @@ class EditionParser(ABC):
         blurbs: list[str] = []
 
         for blurb in self.raw_data:
-            for node in blurb.mainmatter:
-                blurbs.append(node.blurb)
+            blurbs.extend([node.blurb for node in blurb.mainmatter if node.blurb])
 
         return blurbs
 
     # @cache
     def _match_template_variables_with_config(
         self, volume: VolumeDetail, main_toc: str, secondary_toc: str | None
-    ) -> dict[str, str | list[str]]:
+    ) -> dict[str, str | Sequence[str] | bool]:
         variables = {
             "acronym": "",  # TODO: implement - where do I get it from?
             "blurbs": self._get_blurbs_for_publication(),
@@ -283,10 +282,10 @@ class EditionParser(ABC):
             ),  # raw_data is a list of VolumeData, so it matches the number of volumes
             "publication_isbn": self.config.edition.publication_isbn,
             "publication_number": self.config.edition.publication_number,
-            "publication_type": self.config.edition.publication_type,
+            "publication_type": self.config.edition.publication_type.name,
             "root_name": self.config.publication.root_lang_name,  # TODO: verify if root_lang_name or root_lang_iso should be here. Or maybe something else (don't see "root_name" in the API response)
             "root_title": self.config.publication.root_title,
-            "secondary_toc": secondary_toc if secondary_toc else "",
+            "secondary_toc": secondary_toc,
             "source_url": self.config.publication.source_url,
             "text_description": self.config.publication.text_description,
             "translation_name": self.config.publication.translation_lang_name,  # TODO: verify if translation_lang_name or translation_lang_iso should be here. Or maybe something else (don't see "translation_name" in the API response)
@@ -305,7 +304,7 @@ class EditionParser(ABC):
             if not _value:
                 variables[_var] = ""
 
-        return variables
+        return variables  # type: ignore
 
     @staticmethod
     def _is_html_matter(matter: str) -> bool:
@@ -353,9 +352,9 @@ class EditionParser(ABC):
                 _template_raw = response.text
                 template = Template(_template_raw)
                 _main_toc_html: str = generate_html_toc(headings=main_toc) if main_toc else ""
-                _secondary_toc_html: str = generate_html_toc(headings=secondary_toc) if secondary_toc else ""
+                _secondary_toc_html: str | None = generate_html_toc(headings=secondary_toc) if secondary_toc else None
 
-                variables: dict[str, str | list[str]] = self._match_template_variables_with_config(
+                variables: dict[str, str | Sequence[str] | bool] = self._match_template_variables_with_config(
                     volume=volume, main_toc=_main_toc_html, secondary_toc=_secondary_toc_html
                 )
 
@@ -366,6 +365,7 @@ class EditionParser(ABC):
             except FileNotFoundError:
                 log.warning(f"Matter {matter} is not supported.")
 
+    # TODO: insert parameter front|back-matter and parametrize func accordingly
     def __generate_frontmatter(self) -> None:
         """Fetch a list of frontmatter components and their contents from API, return a dictionary with {<component_name>: <content>} mapping.
         The output is returned for each volume of a publication.
@@ -407,6 +407,21 @@ class EditionParser(ABC):
     def __generate_backmatter(self) -> None:
         log.debug("Generating back matters...")
         # TODO [65]: implement
+
+    # def generate_filenames(self):
+    #     volumes_filenames: list[str] = []
+    #     _base_name = f"{self.config.publication.translation_title.replace(__old=' ', __new='-')}
+    #     for _num, _volume in enumerate(self.per_volume_html:
+    #         if self.config.edition.volumes[_vol_nr].volume_number is False:
+    #             _filename = pass
+    #             volumes_filenames.append(_filename)
+    #         else:
+    #             _filename = f"{self.config.publication.translation_title.replace(__old=' ', __new='-')} vol {_vol_nr + 1}.html"
+    #
+    #         _path = os.path.join(
+    #             tempfile.gettempdir(),
+    #             _filename
+    #         )
 
     def collect_all(self) -> EditionResult:
         # Order of execution matters here

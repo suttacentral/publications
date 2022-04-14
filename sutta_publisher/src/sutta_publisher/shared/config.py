@@ -11,6 +11,7 @@ from sutta_publisher.shared.value_objects.edition_config import EditionConfig, E
 
 API_URL = os.getenv("API_URL", "")
 API_ENDPOINTS = ast.literal_eval(os.getenv("API_ENDPOINTS", ""))
+CREATOR_BIOS_URL = os.getenv("CREATOR_BIOS_URL", "")
 
 
 def get_editions_ids(publication_number: str) -> list[str]:
@@ -30,10 +31,16 @@ def get_edition_config(edition_id: str) -> EditionConfig:
     payload = response.content.decode("utf-8")
 
     config = EditionConfig.parse_raw(payload)
+
+    # We need to set creator_bio separately as it comes from a different source
+    bios_response = requests.get(CREATOR_BIOS_URL)
+    bios_response.raise_for_status()
+    creators_bios: list[dict[str, str]] = bios_response.json()
+    (target_bio,) = [creator for creator in creators_bios if creator["creator_uid"] == config.publication.creator_uid]
+
+    config.publication.creator_bio = target_bio
+
     return config
-
-
-get_edition_config("mn-en-sujato_scpub3-ed2-epub_2022-02-10")
 
 
 def get_editions_configs(publication_number: str) -> EditionsConfigs:

@@ -123,7 +123,16 @@ def get_edition_data(edition_config: EditionConfig) -> EditionData:
             uids=volume_details.mainmatter,
         )
         extras = get_extras_data(edition_id=edition_config.edition.edition_id)
+
+        acronym_response = requests.get(
+            API_URL + API_ENDPOINTS["config_with_acronym"].format(uid=volume_details.mainmatter[0])
+        )
+        acronym_response.raise_for_status()
+        acronym = acronym_response.json()["acronym"]
+
         edition_data.append(
-            VolumeData(preheadings=preheadings, headings=headings_ids, mainmatter=mainmatter, extras=extras)
+            VolumeData(
+                preheadings=preheadings, headings=headings_ids, mainmatter=mainmatter, extras=extras, acronym=acronym
+            )
         )
     return edition_data

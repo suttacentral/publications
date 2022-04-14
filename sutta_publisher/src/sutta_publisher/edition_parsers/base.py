@@ -5,11 +5,13 @@ import logging
 import os
 from abc import ABC
 from copy import copy, deepcopy
-from typing import Any, Sequence, Type
+from functools import cache
+from pathlib import Path
+from typing import Any, Callable, Type
 
+import jinja2
 import requests
 from bs4 import BeautifulSoup, Tag
-from jinja2 import Template
 
 from sutta_publisher.edition_parsers.helper_functions import (
     add_class,
@@ -31,23 +33,113 @@ from sutta_publisher.edition_parsers.helper_functions import (
 from sutta_publisher.shared.value_objects.edition import EditionResult, EditionType
 from sutta_publisher.shared.value_objects.edition_config import EditionConfig, VolumeDetail
 from sutta_publisher.shared.value_objects.edition_data import EditionData
+from sutta_publisher.shared.value_objects.parser_objects import Edition, Volume
 
 log = logging.getLogger(__name__)
 
 
 class EditionParser(ABC):
+    HTML_TEMPLATES_DIR = Path(__file__).parent.parent / "templates"
     config: EditionConfig
     raw_data: EditionData
     edition_type: EditionType
     possible_refs: set[str]
     per_volume_html: list[BeautifulSoup] = None  # type: ignore
     per_volume_frontmatters: list[dict[str, Any]] = None  # type: ignore
+    per_volume_backmatters: list[dict[str, Any]] = None  # type: ignore
 
     def __init__(self, config: EditionConfig, data: EditionData) -> None:
         # Order of execution matters a great deal here as functions depends on instance fields being initialised upon their call.
         self.raw_data: EditionData = data
         self.config: EditionConfig = config
         self.possible_refs: set[str] = fetch_possible_refs()
+
+    def create_edition_skeleton(self) -> Edition:
+        """Creates a collection of empty volumes to work on."""
+        # We need to set up volume numbers here to be able to match volume in raw data from API to output volume.
+        # We need to be extra careful because:
+        # (1) volume_number may be None so raw_data[volume_number] won't work
+        # (2) volume_number is 1-based, whereas, raw_data is a list, so it has 0-based index
+        if len(self.raw_data) == 1:  # means only 1 volume
+            volumes = Volume(volume_number=None)
+        else:
+            volumes = [Volume(volume_number=num + 1) for num, _ in enumerate(self.raw_data)]
+        return Edition(volumes=volumes)
+
+    @staticmethod
+    def _get_true_index(volume: Volume) -> int:
+        """Get actual `volume`'s index (i.e. where it is in the volumes list of raw_data and edition (volume-specific) config."""
+        if volume.volume_number is None:
+            return 0  # means there's only 1 volume, so index is 0
+        else:
+            return volume.volume_number - 1  # type: ignore # volume_number is 1-based index, whereas, lists have 0-based index
+
+    @staticmethod
+    def on_each_volume(edition: Edition, operation: Callable) -> None:
+        """Loops over each volume in the `edition` and applies the `operation` to it."""
+        [operation(volume) for volume in edition]
+
+    @cache
+    def _collect_metadata(self, volume: Volume) -> dict[str, str | int | list[str]]:
+        index = EditionParser._get_true_index(volume)
+        return {
+            "acronym": self.raw_data[index].acronym,
+            "blurbs": self._get_blurbs_for_publication(),
+            "created": self.config.edition.created,
+            "creation_process": self.config.publication.creation_process,
+            "creator_biography": self.config.publication.creator_bio,
+            "creator_name": self.config.publication.creator_name,
+            "edition_number": self.config.edition.edition_number,
+            "editions_url": self.config.publication.editions_url,
+            "first_published": self.config.publication.first_published,
+            "number_of_volumes": len(self.raw_data),
+            "publication_isbn": self.config.edition.publication_isbn,
+            "publication_number": self.config.edition.publication_number,
+            "publication_type": self.config.edition.publication_type.name,
+            "root_name": self.config.publication.root_lang_name,
+            "root_title": self.config.publication.root_title,
+            "source_url": self.config.publication.source_url,
+            "text_description": self.config.publication.text_description,
+            "translation_name": self.config.publication.translation_lang_name,
+            "translation_subtitle": self.config.publication.translation_subtitle,
+            "translation_title": self.config.publication.translation_title,
+            "updated": self.config.edition.updated,
+            "volume_acronym": self.config.edition.volumes[index].volume_acronym,
+            "volume_isbn": self.config.edition.volumes[index].volume_isbn,
+            "volume_root_title": "",  # TODO: implement - where do I get it from?
+            "volume_translation_title": "",  # TODO: implement - where do I get it from?
+        }
+
+    def _set_volume_metadata(self, volume: Volume) -> None:
+        """Set fields with metadata in a `volume`. If attribute name is unknown (no such field in `Volume` definition) skip it."""
+        metadata = self._collect_metadata(volume)
+
+        for _attr, _value in metadata.items():
+            try:
+                setattr(volume, _attr, _value)
+            except ValueError:
+                continue
+
+    def _set_mainmatter(self, volume: Volume) -> None:
+        pass
+
+    def _set_frontmatter(self, volume: Volume) -> None:
+        pass
+
+    def _set_backmatter(self, volume: Volume) -> None:
+        pass
+
+    def _set_filename(self, volume: Volume) -> None:
+        _translation_title = volume.translation_title.replace(__old=" ", __new="-")
+        _date = volume.updated if volume.updated else volume.created
+        _date = _date.strftime("%Y-%m-%d")
+        _volume_number = f"-{volume.volume_number}" if volume.volume_number else ""
+        _file_extension = self.edition_type.name
+
+        volume.filename = f"{_translation_title}-{volume.creator_uid}-{_date}{_volume_number}.{_file_extension}"
+
+    def _set_main_toc(self, volume: Volume) -> None:
+        pass
 
     def __generate_mainmatter(self) -> None:
         """Generate content of an HTML body"""
@@ -62,16 +154,21 @@ class EditionParser(ABC):
                 processed_mainmatter_single_lines: list[str] = []
                 try:
                     # Only store segment_id if it has matching text (prune empty strings: "")
-                    segment_ids = [segment_id for segment_id, _ in mainmatter_info.mainmatter.markup.items()]  # type: ignore # - this scenario is handled by try-except
+                    segment_ids = [
+                        segment_id for segment_id, _ in mainmatter_info.mainmatter.markup.items()
+                    ]  # type: ignore # - this scenario is handled by try-except
 
                     # Each mainmatter sub-entity (MainMatterDetails) have dictionaries with text lines, markup lines and references. Keys are always segment IDs
                     for segment_id in segment_ids:
                         processed_mainmatter_single_lines.append(
                             process_a_line(
-                                markup=mainmatter_info.mainmatter.markup.get(segment_id),  # type: ignore # - this scenario is handled by try-except
+                                markup=mainmatter_info.mainmatter.markup.get(segment_id),
+                                # type: ignore # - this scenario is handled by try-except
                                 segment_id=segment_id,
-                                text=mainmatter_info.mainmatter.main_text.get(segment_id, ""),  # type: ignore # - this scenario is handled by try-except
-                                references=mainmatter_info.mainmatter.reference.get(segment_id, ""),  # type: ignore # - this scenario is handled by try-except
+                                text=mainmatter_info.mainmatter.main_text.get(segment_id, ""),
+                                # type: ignore # - this scenario is handled by try-except
+                                references=mainmatter_info.mainmatter.reference.get(segment_id, ""),
+                                # type: ignore # - this scenario is handled by try-except
                                 # references are provides as: "single, comma, separated, string". We take care of splitting it in helper functions
                                 possible_refs=self.possible_refs,
                             )
@@ -262,49 +359,8 @@ class EditionParser(ABC):
 
         return blurbs
 
-    # @cache
-    def _match_template_variables_with_config(
-        self, volume: VolumeDetail, main_toc: str, secondary_toc: str | None
-    ) -> dict[str, str | Sequence[str] | bool]:
-        variables = {
-            "acronym": "",  # TODO: implement - where do I get it from?
-            "blurbs": self._get_blurbs_for_publication(),
-            "created": self.config.edition.created,
-            "creation_process": self.config.publication.creation_process,
-            "creator_biography": "",  # TODO: implement - where do I get it from?
-            "creator_name": self.config.publication.creator_name,
-            "edition_number": self.config.edition.edition_number,
-            "editions_url": self.config.publication.editions_url,
-            "first_published": self.config.publication.first_published,
-            "main_toc": main_toc,
-            "number_of_volumes": str(
-                len(self.raw_data)
-            ),  # raw_data is a list of VolumeData, so it matches the number of volumes
-            "publication_isbn": self.config.edition.publication_isbn,
-            "publication_number": self.config.edition.publication_number,
-            "publication_type": self.config.edition.publication_type.name,
-            "root_name": self.config.publication.root_lang_name,  # TODO: verify if root_lang_name or root_lang_iso should be here. Or maybe something else (don't see "root_name" in the API response)
-            "root_title": self.config.publication.root_title,
-            "secondary_toc": secondary_toc,
-            "source_url": self.config.publication.source_url,
-            "text_description": self.config.publication.text_description,
-            "translation_name": self.config.publication.translation_lang_name,  # TODO: verify if translation_lang_name or translation_lang_iso should be here. Or maybe something else (don't see "translation_name" in the API response)
-            "translation_subtitle": self.config.publication.translation_subtitle,
-            "translation_title": self.config.publication.translation_title,
-            "updated": self.config.edition.updated,
-            "volume_acronym": volume.volume_acronym,
-            "volume_isbn": volume.volume_isbn,
-            "volume_number": volume.volume_number,
-            "volume_root_title": "",  # TODO: implement - where do I get it from?
-            "volume_translation_title": "",  # TODO: implement - where do I get it from?
-        }
-
-        # Convert all falsy values (especially None's) to empty strings
-        for _var, _value in variables.items():
-            if not _value:
-                variables[_var] = ""
-
-        return variables  # type: ignore
+    def _collect_matters(self, volume: Volume) -> dict[str, Any]:
+        pass
 
     @staticmethod
     def _is_html_matter(matter: str) -> bool:
@@ -323,42 +379,40 @@ class EditionParser(ABC):
             return response.text
 
     def _process_raw_matter(  # type: ignore
-        self, matter: str, volume: VolumeDetail, main_toc: list[Tag] | None, secondary_toc: list[Tag] | None
+        self,
+        matter: str,
+        volume: VolumeDetail,
+        main_toc: list[Tag] | None = None,
+        secondary_toc: list[Tag] | None = None,
     ) -> str:
         # Match names of matters in API with the name of templates on github: https://github.com/suttacentral/publications/tree/sujato-templates/templates
         MATTERS_TO_TEMPLATES_NAMES_MAPPING: dict[str, str] = ast.literal_eval(
             os.getenv("MATTERS_TO_TEMPLATES_NAMES_MAPPING")  # type: ignore
         )
-        TEMPLATES_URL = os.getenv("TEMPLATES_URL")
 
         if not MATTERS_TO_TEMPLATES_NAMES_MAPPING:
             raise EnvironmentError(
                 "Missing .env_public file or the file lacks required variable MATTERS_TO_TEMPLATES_NAMES_MAPPING."
             )
-        if not TEMPLATES_URL:
-            raise EnvironmentError("Missing .env_public file or the file lacks required variable TEMPLATES_URL.")
-
         else:
             try:
                 # Get template filename associated with that matter
                 _template_name: str = MATTERS_TO_TEMPLATES_NAMES_MAPPING[matter]
 
-                # Generate url to fetch Jinja template for that matter
-                _url = TEMPLATES_URL.format(template_name=_template_name)
+                # Fetch Jinja template from file
+                template_loader = jinja2.FileSystemLoader(searchpath=EditionParser.HTML_TEMPLATES_DIR)
+                template_env = jinja2.Environment(loader=template_loader, autoescape=True)
+                template = template_env.get_template(name=_template_name)
 
-                # Fetch Jinja template from GitHub
-                response = requests.get(_url)
-                response.raise_for_status()
-                _template_raw = response.text
-                template = Template(_template_raw)
                 _main_toc_html: str = generate_html_toc(headings=main_toc) if main_toc else ""
                 _secondary_toc_html: str | None = generate_html_toc(headings=secondary_toc) if secondary_toc else None
 
-                variables: dict[str, str | Sequence[str] | bool] = self._match_template_variables_with_config(
-                    volume=volume, main_toc=_main_toc_html, secondary_toc=_secondary_toc_html
-                )
+                # variables: dict[str, str | Sequence[str] | bool] = self._match_template_variables_with_config(
+                #     volume=volume, main_toc=_main_toc_html, secondary_toc=_secondary_toc_html
+                # )
+                variables = ""  # TODO
 
-                matter_html = template.render(**variables)
+                matter_html = template.render(**variables)  # type: ignore
 
                 return matter_html
 
@@ -382,11 +436,11 @@ class EditionParser(ABC):
             self.config.edition.volumes, self.collect_main_toc_headings(), self.collect_secondary_toc()
         ):
 
-            frontmatter: list[str] = _volume.frontmatter
-            matter_types: list[tuple[str, bool]] = [(matter, self._is_html_matter(matter)) for matter in frontmatter]
+            _frontmatter: list[str] = _volume.frontmatter
+            matter_types: list[tuple[str, bool]] = [(matter, self._is_html_matter(matter)) for matter in _frontmatter]
             processed_matters: dict[str, Any] = {}
-            _main_toc_ = _main_toc if "main-toc" in frontmatter else None
-            _secondary_toc_ = list(_secondary_toc.values()) if "secondary-toc" in frontmatter else None
+            _main_toc_ = _main_toc if "main-toc" in _frontmatter else None
+            _secondary_toc_ = list(_secondary_toc.values()) if "secondary-toc" in _frontmatter else None
 
             for matter, is_html in matter_types:
                 if is_html:
@@ -405,36 +459,44 @@ class EditionParser(ABC):
         # TODO [58]: implement
 
     def __generate_backmatter(self) -> None:
-        log.debug("Generating back matters...")
-        # TODO [65]: implement
+        log.debug("Generating BackMatters...")
 
-    # def generate_filenames(self):
-    #     volumes_filenames: list[str] = []
-    #     _base_name = f"{self.config.publication.translation_title.replace(__old=' ', __new='-')}
-    #     for _num, _volume in enumerate(self.per_volume_html:
-    #         if self.config.edition.volumes[_vol_nr].volume_number is False:
-    #             _filename = pass
-    #             volumes_filenames.append(_filename)
-    #         else:
-    #             _filename = f"{self.config.publication.translation_title.replace(__old=' ', __new='-')} vol {_vol_nr + 1}.html"
-    #
-    #         _path = os.path.join(
-    #             tempfile.gettempdir(),
-    #             _filename
-    #         )
+        PREFIX = "/opt/sc/sc-flask/sc-data"
+        working_dir: str = self.config.edition.working_dir.removeprefix(PREFIX)
+
+        per_volume_backmatters: list[dict[str, Any]] = []
+
+        # Parse list of backmatters for this publication
+        for _volume in self.config.edition.volumes:
+
+            _backmatter: list[str] = _volume.backmatter
+            matter_types: list[tuple[str, bool]] = [(matter, self._is_html_matter(matter)) for matter in _backmatter]
+            processed_matters: dict[str, Any] = {}
+
+            for matter, is_html in matter_types:
+                if is_html:
+                    processed_matters[matter] = self._process_html_matter(matter=matter, working_dir=working_dir)
+                else:
+                    processed_matters[matter] = self._process_raw_matter(matter=matter, volume=_volume)
+
+            per_volume_backmatters.append(copy(processed_matters))
+
+        self.per_volume_backmatters = per_volume_backmatters
 
     def collect_all(self) -> EditionResult:
         # Order of execution matters here
-        self.__generate_mainmatter()
-        self.__mainmatter_postprocess()
-        self.__generate_frontmatter()
-        self.__generate_backmatter()
-        self.__generate_covers()
-        txt = "dummy"
-        result = EditionResult()
-        result.write(txt)
-        result.seek(0)
-        return result
+        self.create_edition_skeleton()
+
+        # self.__generate_mainmatter()    # 1.
+        # self.__mainmatter_postprocess() # 2.
+        # self.__generate_frontmatter()   # 3.
+        # self.__generate_backmatter()    # 3.
+        # self.__generate_covers()        # 3.
+        # txt = "dummy"
+        # result = EditionResult()
+        # result.write(txt)
+        # result.seek(0)
+        # return result
 
     @classmethod
     def get_edition_mapping(cls) -> dict[EditionType, Type[EditionParser]]:

@@ -1,6 +1,4 @@
 import logging
-import os
-import tempfile
 from pathlib import Path
 
 import jinja2
@@ -14,7 +12,6 @@ log = logging.getLogger(__name__)
 
 class HtmlEdition(EditionParser):
     CSS_PATH = Path(__file__).parent.parent / "css_stylesheets/standalone_html.css"
-    HTML_TEMPLATES_DIR = Path(__file__).parent.parent / "templates"
     edition_type = EditionType.html
 
     def __get_css(self) -> str:
@@ -33,18 +30,9 @@ class HtmlEdition(EditionParser):
         template = template_env.get_template(name="standalone_template.html")
         css: str = self.__get_css()
 
+        # Generating output HTML
         for _frontmatters, (_vol_nr, _volume) in zip(self.per_volume_frontmatters, enumerate(self.per_volume_html)):
             output_volume = template.render(css=css, frontmatters=list(_frontmatters.values()), mainmatter=_volume)
-
-            _path = os.path.join(
-                tempfile.gettempdir(), f"{self.config.publication.translation_title} vol {_vol_nr + 1}.html"
-            )
-
-            try:
-                with open(file=_path, mode="w") as f:
-                    f.write(output_volume)
-            except IOError as e:
-                log.error(f"Failed to write {_path} due to IO error: {e}")
 
     def collect_all(self) -> EditionResult:
         super().collect_all()

@@ -110,7 +110,7 @@ class EditionParser(ABC):
             "volume_translation_title": "",  # TODO: implement - where do I get it from?
         }
 
-    def _set_volume_metadata(self, volume: Volume) -> None:
+    def set_metadata(self, volume: Volume) -> None:
         """Set fields with metadata in a `volume`. If attribute name is unknown (no such field in `Volume` definition) skip it."""
         metadata = self._collect_metadata(volume)
 
@@ -120,13 +120,13 @@ class EditionParser(ABC):
             except ValueError:
                 continue
 
-    def _set_mainmatter(self, volume: Volume) -> None:
+    def set_mainmatter(self, volume: Volume) -> None:
         pass
 
-    def _set_frontmatter(self, volume: Volume) -> None:
+    def set_frontmatter(self, volume: Volume) -> None:
         pass
 
-    def _set_backmatter(self, volume: Volume) -> None:
+    def set_backmatter(self, volume: Volume) -> None:
         pass
 
     def _set_filename(self, volume: Volume) -> None:
@@ -138,7 +138,7 @@ class EditionParser(ABC):
 
         volume.filename = f"{_translation_title}-{volume.creator_uid}-{_date}{_volume_number}.{_file_extension}"
 
-    def _set_main_toc(self, volume: Volume) -> None:
+    def set_main_toc(self, volume: Volume) -> None:
         pass
 
     def __generate_mainmatter(self) -> None:
@@ -485,7 +485,10 @@ class EditionParser(ABC):
 
     def collect_all(self) -> EditionResult:
         # Order of execution matters here
-        self.create_edition_skeleton()
+        edition: Edition = self.create_edition_skeleton()
+        EditionParser.on_each_volume(edition=edition, operation=self.set_metadata)
+        EditionParser.on_each_volume(edition=edition, operation=self.set_mainmatter)
+        EditionParser.on_each_volume(edition=edition, operation=self.set_frontmatter)
 
         # self.__generate_mainmatter()    # 1.
         # self.__mainmatter_postprocess() # 2.

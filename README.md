@@ -22,7 +22,7 @@ Install pre-commit git hooks:
 1. First install dependencies (libraries responsible for formatting). You fill find them in Makefile#lint
 e.g.
     ```bash
-    pip install black isort mypy bandit`
+    pip install black isort mypy bandit autoflake`
     ```
 2. Then install the actual pre-commit hook
     ```bash
@@ -45,10 +45,10 @@ make build-dev
 make run-dev bash
 
 # Tests
-make test
+make test or make test-ci
 
 # Lint code
-make run-dev 'make lint'
+make make lint
 ```
 
 ### Production stack

@@ -2,7 +2,7 @@ import ast
 import os
 import re
 from collections import namedtuple
-from typing import Any, Iterator
+from typing import Any, Iterator, cast
 
 import requests
 from bs4 import BeautifulSoup, Tag
@@ -80,7 +80,7 @@ def _reference_to_html(reference: tuple[str, str]) -> str:
     return f"<a class='{ref_type}' id='{ref_type}{ref_id}'>{ref_type.upper()} {ref_id}</a>"
 
 
-def process_a_line(markup: str, segment_id: str, text: str, references: str, possible_refs: set[str]) -> str:
+def process_line(markup: str, segment_id: str, text: str, references: str, possible_refs: set[str]) -> str:
     segment_id_html: str = _segment_id_to_html(segment_id)
     # references are passed as a string such as: "ref1, ref2, ref3"
     split_references: list[str] = [r.strip() for r in references.split(",")]
@@ -101,7 +101,7 @@ def get_heading_depth(tag: Tag) -> int:
     return int(re.search(r"^(h)(\d+)$", tag.name).group(2))  # type: ignore
 
 
-def _parse_main_toc_depth(depth: str, html: BeautifulSoup) -> int:
+def parse_main_toc_depth(depth: str, html: BeautifulSoup) -> int:
     """Analyse data from config.edition.main_toc_depth and return actual number hor heading depth for ToC.
 
     Args:
@@ -117,28 +117,17 @@ def _parse_main_toc_depth(depth: str, html: BeautifulSoup) -> int:
         return int(re.match(rf"^[1-{depth}]$", depth).group(0))  # type: ignore
 
 
-def collect_main_toc_depths(depth: str, all_volumes: list[BeautifulSoup]) -> list[int]:
-    """Collect ToC depths for all volumes.
-
-    Args:
-        depth: unparsed input from configuration (such as: "all", "1")
-        all_volumes: HTML for each volume
-
-    Returns:
-        list[int]: list of depths for each volume
-    """
-    return [_parse_main_toc_depth(depth=depth, html=volume) for volume in all_volumes]
-
-
-def collect_secondary_toc_depths(main_toc_depths: list[int], all_volumes: list[BeautifulSoup]) -> list[tuple[int, int]]:
-    """Collect depths range for secondary ToCs as (start_depth, end_depth)"""
-    toc_ranges: list[tuple[int, int]] = []
-    for _main_toc, _volume in zip(main_toc_depths, all_volumes):
-        # Secondary ToC always starts one level below deepest main ToC heading
-        # Secondary ToC always ends on level of heading with class 'sutta-title'
-        toc_ranges.append((_main_toc + 1, find_sutta_title_depth(_volume)))
-
-    return toc_ranges
+# def collect_main_toc_depth(depth: str, all_volumes: list[BeautifulSoup]) -> list[int]:
+#     """Collect ToC depths for all volumes.
+#
+#     Args:
+#         depth: unparsed input from configuration (such as: "all", "1")
+#         all_volumes: HTML for each volume
+#
+#     Returns:
+#         list[int]: list of depths for each volume
+#     """
+#     return [_parse_main_toc_depth(depth=depth, html=volume) for volume in all_volumes]
 
 
 def find_sutta_title_depth(html: BeautifulSoup) -> int:
@@ -154,19 +143,19 @@ def find_sutta_title_depth(html: BeautifulSoup) -> int:
     return get_heading_depth(tag=heading)
 
 
-def collect_actual_headings(start_depth: int = 1, *, end_depth: int, volume: BeautifulSoup) -> ResultSet:
+def collect_actual_headings(start_depth: int = 1, *, end_depth: int, html: BeautifulSoup) -> list[Tag]:
     """Collect all heading from range h<start_depth>...h<end_depth>
 
     Args:
         start_depth: Minimal heading depth, the default is h1
         end_depth: Maximal heading depth
-        volume: A html to search in
+        html: A html to search in
 
     Returns:
         ResultSet: A collection of headings with a specified depth range
     """
 
-    return volume.find_all(name=re.compile(rf"^h[{start_depth}-{end_depth}]$"))
+    return cast(list[Tag], html.find_all(name=re.compile(rf"^h[{start_depth}-{end_depth}]$")))
 
 
 def _make_link(tag: Tag, file_name: str) -> Link:
@@ -327,3 +316,10 @@ def generate_html_toc(headings: list[Tag]) -> str:
     _anchors = [_make_html_link_to_heading(heading) for heading in headings]
     _list_items = [f"<li>{link}</li>" for link in _anchors]
     return f"<ol>{''.join(_list_items)}</ol>"
+
+
+def back_to_str(html: BeautifulSoup) -> str:
+    """Retrieve content of the HTML body.
+    Useful for converting back and forth between str and HTML (`BeautifulSoup`),
+    so that in final concatenated HTML we don't end up with multiple <head>-s."""
+    return cast(str, str(html.find("body")))

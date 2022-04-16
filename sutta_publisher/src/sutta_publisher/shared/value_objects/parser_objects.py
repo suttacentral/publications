@@ -12,7 +12,7 @@ they will be more manageable and would have better control over chain of operati
 from datetime import datetime
 from typing import Any
 
-from bs4 import BeautifulSoup, Tag
+from bs4 import Tag
 from pydantic import BaseModel
 
 
@@ -37,6 +37,15 @@ class SecondaryTablesOfContents(BaseModel):
 
 
 class Volume(BaseModel):
+    """Container object for grouping data in processes of transforming from raw payloads from API into output format.
+
+    All fields have None or None-equivalent default values because we start with creating completely empty objects
+    and gradually fill the data in a chain of operations.
+
+    The important remark is that the attribute names must match variable names in Jinja templates, because eventually
+    they will be passed in as a dictionary to the templates and all non-matching keys will simply be ignored.
+    """
+
     # Per volume metadata
     filename: str = ""
     volume_acronym: str = ""
@@ -46,10 +55,10 @@ class Volume(BaseModel):
     volume_translation_title: str = ""
 
     # Content
-    main_toc: MainTableOfContents | None = None
+    main_toc: list[Tag] = []
     secondary_toc: SecondaryTablesOfContents | None = None
     frontmatter: list[Matter] = []
-    mainmatter: list[BeautifulSoup] = []
+    mainmatter: str = ""
     backmatter: list[Matter] = []
 
     # Edition metadata (common for all volumes)

@@ -2,7 +2,7 @@ import pytest
 
 from sutta_publisher.shared.config import get_edition_config
 from sutta_publisher.shared.data import get_edition_data
-from sutta_publisher.shared.value_objects.edition_data import MainMatterDetails
+from sutta_publisher.shared.value_objects.edition_data import NodeDetails
 
 
 @pytest.mark.vcr()
@@ -19,7 +19,7 @@ def test_should_return_data_for_edition() -> None:
 
     first_mainmatter_chunk = first_edition_data.mainmatter[0]
     assert first_mainmatter_chunk.blurb is not None
-    assert first_mainmatter_chunk.mainmatter == MainMatterDetails(main_text=None, markup=None, reference=None)
+    assert first_mainmatter_chunk.mainmatter == NodeDetails(main_text=None, markup=None, reference=None)
     assert first_mainmatter_chunk.name == "Middle Discourses Collection"
     assert first_mainmatter_chunk.type == "branch"
 

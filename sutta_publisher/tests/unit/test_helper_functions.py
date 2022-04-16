@@ -7,7 +7,7 @@ from sutta_publisher.edition_parsers.helper_functions import (
     _segment_id_to_html,
     _split_ref_and_number,
     fetch_possible_refs,
-    process_a_line,
+    process_line,
 )
 
 
@@ -122,7 +122,7 @@ def test_should_check_that_a_full_mainmatter_item_is_processed(
     list_of_all_refs: list[str],
 ) -> None:
     assert (
-        process_a_line(
+        process_line(
             markup=test_markup,
             segment_id=test_segment,
             text=test_text,

@@ -10,7 +10,7 @@ in pydantic objects, they will be more manageable and would have better control 
 on an object.
 """
 
-from datetime import datetime
+from typing import Any
 
 from bs4 import Tag
 from jinja2 import Template
@@ -25,6 +25,9 @@ class MainTableOfContents(BaseModel):
     def to_html_str(self, template: Template) -> str:
         return template.render(main_toc=generate_html_toc(self.headings))
 
+    class Config:
+        arbitrary_types_allowed = True
+
 
 class SecondaryTablesOfContents(BaseModel):
     headings: dict[Tag, list[Tag]]
@@ -36,6 +39,9 @@ class SecondaryTablesOfContents(BaseModel):
             tocs[_target] = template.render(secondary_toc=generate_html_toc(_toc))
 
         return tocs
+
+    class Config:
+        arbitrary_types_allowed = True
 
 
 class Volume(BaseModel):
@@ -57,6 +63,7 @@ class Volume(BaseModel):
     volume_translation_title: str = ""
 
     # Content
+    cover: Any = None
     main_toc: MainTableOfContents | None = None
     secondary_toc: SecondaryTablesOfContents | None = None
     frontmatter: list[str] = []
@@ -65,7 +72,7 @@ class Volume(BaseModel):
 
     # Edition metadata (common for all volumes)
     acronym: str = ""
-    created: datetime | None = None
+    created: str = "None"
     creation_process: str = ""
     creator_biography: str = ""
     creator_name: str = ""
@@ -84,23 +91,7 @@ class Volume(BaseModel):
     translation_name: str = ""
     translation_subtitle: str = ""
     translation_title: str = ""
-    updated: datetime | None = None
-
-    # def get_printable_values(self) -> dict[str, str | list[str] | int]:
-    #     """Returns a dictionary of all"""
-    #     output: dict[str, str | int | datetime | list | MainTableOfContents | SecondaryTablesOfContents] = self.__dict__
-    #
-    #     for _key, _value in output.items():
-    #         if isinstance(_value, datetime):
-    #             output[_key] = _value.strftime("%Y-%m-%d")
-    #         elif isinstance(_value, list):
-    #             output[_key] = [str(item) for item in _value]
-    #         elif isinstance(_value, (MainTableOfContents, SecondaryTablesOfContents)):
-    #             output[_key] = _value.to_html_str()
-    #         elif not _value:
-    #             output[_key] = ""
-    #
-    #     return output  # type: ignore
+    updated: str = ""
 
 
 class Edition(BaseModel):

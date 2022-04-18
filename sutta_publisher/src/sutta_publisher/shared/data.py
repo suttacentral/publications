@@ -13,6 +13,7 @@ from sutta_publisher.shared.value_objects.edition_data import (
     HeadingsGroup,
     MainMatter,
     MainMatterHeadings,
+    MainMatterPart,
     MainMatterPreheadings,
     Preheading,
     PreheadingsGroup,
@@ -26,22 +27,22 @@ API_ENDPOINTS = ast.literal_eval(os.getenv("API_ENDPOINTS", ""))
 
 
 def get_mainmatter_data(edition_id: str, uids: list[str]) -> MainMatter:
-    all_matters = []
+    _all_parts: list[MainMatterPart] = []
 
     for uid in uids:
         response = requests.get(API_URL + API_ENDPOINTS["edition_mainmatter"].format(edition_id=edition_id, uid=uid))
         response.raise_for_status()
         payload = response.content
 
-        all_matters.append(MainMatter.parse_raw(payload))
+        _all_parts.append(MainMatterPart.parse_raw(payload))
 
-    result = all_matters[0]
+    # result = all_matters[0]
+    #
+    # if the_rest := all_matters[1:]:
+    #     # Move all to the first result
+    #     result.__root__.extend(*the_rest)
 
-    if the_rest := all_matters[1:]:
-        # Move all to the first result
-        result.__root__.extend(*the_rest)
-
-    return result
+    return MainMatter.parse_obj(_all_parts)
 
 
 def get_mainmatter_preheadings(edition_id: str, uids: list[str]) -> VolumePreheadings:
@@ -109,30 +110,34 @@ def get_extras_data(edition_id: str) -> dict:
 
 def get_edition_data(edition_config: EditionConfig) -> EditionData:
     edition_data = EditionData()
-    for volume_details in edition_config.edition.volumes:
-        preheadings = get_mainmatter_preheadings(
+    for _volume_details in edition_config.edition.volumes:
+        _preheadings = get_mainmatter_preheadings(
             edition_id=edition_config.edition.edition_id,
-            uids=volume_details.mainmatter,
+            uids=_volume_details.mainmatter,
         )
-        headings_ids = get_mainmatters_headings_ids(
+        _headings_ids = get_mainmatters_headings_ids(
             edition_id=edition_config.edition.edition_id,
-            uids=volume_details.mainmatter,
+            uids=_volume_details.mainmatter,
         )
-        mainmatter = get_mainmatter_data(
+        _mainmatter = get_mainmatter_data(
             edition_id=edition_config.edition.edition_id,
-            uids=volume_details.mainmatter,
+            uids=_volume_details.mainmatter,
         )
-        extras = get_extras_data(edition_id=edition_config.edition.edition_id)
+        _extras = get_extras_data(edition_id=edition_config.edition.edition_id)
 
-        acronym_response = requests.get(
-            API_URL + API_ENDPOINTS["config_with_acronym"].format(uid=volume_details.mainmatter[0])
+        _acronym_response = requests.get(
+            API_URL + API_ENDPOINTS["config_with_acronym"].format(uid=_volume_details.mainmatter[0])
         )
-        acronym_response.raise_for_status()
-        acronym = acronym_response.json()["acronym"]
+        _acronym_response.raise_for_status()
+        _acronym = _acronym_response.json()[0]["acronym"]
 
         edition_data.append(
             VolumeData(
-                preheadings=preheadings, headings=headings_ids, mainmatter=mainmatter, extras=extras, acronym=acronym
+                preheadings=_preheadings,
+                headings=_headings_ids,
+                mainmatter=_mainmatter,
+                extras=_extras,
+                acronym=_acronym,
             )
         )
     return edition_data

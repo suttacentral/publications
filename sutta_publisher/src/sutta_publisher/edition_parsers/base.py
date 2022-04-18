@@ -5,7 +5,7 @@ import logging
 import os
 from abc import ABC
 from pathlib import Path
-from typing import Callable, Type, cast
+from typing import Any, Callable, Type, cast
 
 import jinja2
 import requests
@@ -65,9 +65,10 @@ class EditionParser(ABC):
         # (2) volume_number is 1-based, whereas, raw_data is a list, so it has 0-based index
         # hence the method _get_true_index is used created
         if len(self.raw_data) == 1:  # means only 1 volume
-            volumes = Volume(volume_number=None)
+            volumes = [Volume(volume_number=None)]
         else:
             volumes = [Volume(volume_number=num + 1) for num, _ in enumerate(self.raw_data)]
+
         return Edition(volumes=volumes)
 
     @staticmethod
@@ -81,9 +82,9 @@ class EditionParser(ABC):
             return cast(int, volume.volume_number - 1)
 
     @staticmethod
-    def _on_each_volume(edition: Edition, operation: Callable) -> None:
+    def on_each_volume(edition: Edition, operation: Callable) -> None:
         """Perform an operation on each volume in edition"""
-        [operation(volume) for volume in edition]
+        [operation(volume) for volume in edition.volumes]
 
     # --- operations on metadata
     def _collect_metadata(self, volume: Volume) -> dict[str, str | int | list[str]]:
@@ -149,9 +150,8 @@ class EditionParser(ABC):
 
     def set_filename(self, volume: Volume) -> None:
         """Generate and assigns a proper name for output file to a volume"""
-        _translation_title = volume.translation_title.replace(__old=" ", __new="-")
+        _translation_title = volume.translation_title.replace(" ", "-")
         _date = volume.updated if volume.updated else volume.created
-        _date = _date.strftime("%Y-%m-%d")
         _volume_number = f"-{volume.volume_number}" if volume.volume_number else ""
         _file_extension = self.edition_type.name
 
@@ -217,7 +217,7 @@ class EditionParser(ABC):
         single_lines: list[str] = []
 
         # Some nodes are branches not leaves - they contain preheadings/headings but no mainmatter, we skip them.
-        if not node.mainmatter:
+        if not node.mainmatter.markup:
             return ""
 
         else:
@@ -236,7 +236,6 @@ class EditionParser(ABC):
                         possible_refs=self.possible_refs,
                     )
                 )
-
             return "".join(single_lines)  # putting content of one node together
 
     def _postprocess_mainmatter(self, mainmatter: BeautifulSoup, volume: Volume) -> str:
@@ -341,7 +340,7 @@ class EditionParser(ABC):
         """Add main table of contents to a volume"""
         _mainmatter = BeautifulSoup(volume.mainmatter, "lxml")
         _collected_headings: list[Tag] = self._collect_main_toc(html=_mainmatter)
-        volume.main_toc = MainTableOfContents(_collected_headings)
+        volume.main_toc = MainTableOfContents.parse_obj(_collected_headings)
 
     @staticmethod
     def _collect_secondary_toc(
@@ -546,9 +545,12 @@ class EditionParser(ABC):
         _matters: list[str] = self.config.edition.volumes[_index].backmatter
         volume.backmatter = self._collect_matters(volume=volume, matters=_matters)
 
-    def _generate_covers(self) -> None:
+    def _generate_cover(self, volume: Volume) -> Any:
         log.debug("Generating covers...")
         # TODO [58]: implement
+
+    def set_cover(self, volume: Volume) -> None:
+        volume.cover = self._generate_cover(volume)
 
     # --- putting it all together
     def collect_all(self) -> Edition:
@@ -565,7 +567,7 @@ class EditionParser(ABC):
             self.set_backmatter,
         ]
         for _operation in _operations:
-            EditionParser._on_each_volume(edition=edition, operation=_operation)
+            EditionParser.on_each_volume(edition=edition, operation=_operation)
 
         return edition
 

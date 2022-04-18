@@ -92,7 +92,7 @@ class VolumeData:
     # work as unique identifiers) and the value is a string, either
     # raw HTML for .html files, or base64 for .jpg/.png
     extras: dict[str, str]
-    acronym: str | None = None
+    acronym: str = ""
 
 
 class EditionData(list[VolumeData]):

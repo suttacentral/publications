@@ -6,7 +6,6 @@ from typing import Any, Iterator, cast
 
 import requests
 from bs4 import BeautifulSoup, Tag
-from bs4.element import ResultSet
 from ebooklib.epub import Link, Section
 
 ALL_REFERENCES_URL = os.getenv("ALL_REFERENCES_URL", "")

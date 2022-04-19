@@ -1,29 +1,56 @@
 import logging
 import os
+import tempfile
+from pathlib import Path
+from typing import Callable
 
-from sutta_publisher.edition_parsers.base import EditionParser
+import jinja2
+from jinja2 import Environment, FileSystemLoader, Template
+
 from sutta_publisher.shared.value_objects.edition import EditionResult, EditionType
+from sutta_publisher.shared.value_objects.parser_objects import Edition, Volume
+
+from .base import EditionParser
 
 log = logging.getLogger(__name__)
 
 
 class HtmlEdition(EditionParser):
-    edition_type = EditionType.html
+    CSS_PATH: Path = Path(__file__).parent.parent / "css_stylesheets/standalone_html.css"
+    edition_type: EditionType = EditionType.html
 
-    def __get_standalone_html_css(self) -> str:
+    def _get_css(self) -> str:
         """Returns css stylesheet as a string"""
 
-        with open(os.path.dirname(__file__) + "/css_stylesheets/standalone_html.css", "r") as css_file:
+        with open(self.CSS_PATH, "r") as css_file:
             content = css_file.read()
 
         return content
 
-    def __generate_html(self) -> None:
-        log.debug("Generating html...")
+    def generate_standalone_html(self, volume: Volume) -> None:
+        log.debug("Generating a standalone html...")
+
+        _template_loader: FileSystemLoader = jinja2.FileSystemLoader(searchpath=HtmlEdition.HTML_TEMPLATES_DIR)
+        _template_env: Environment = jinja2.Environment(loader=_template_loader, autoescape=True)
+        _template: Template = _template_env.get_template(name="book-template.html")
+        _css: str = self._get_css()
+
+        # Generating output HTML
+        _output = _template.render(css=_css, **volume.dict(exclude_none=True, exclude_unset=True))
+
+        _path: str = os.path.join(tempfile.gettempdir(), volume.filename)
+
+        with open(file=_path, mode="wt") as f:
+            f.write(_output)
 
     def collect_all(self) -> EditionResult:
-        # self.__generate_backmatter()
-        self.__generate_html()
+        _edition: Edition = super().collect_all()
+
+        _operations: list[Callable] = [self.generate_standalone_html]
+
+        for _operation in _operations:
+            EditionParser.on_each_volume(edition=_edition, operation=_operation)
+
         txt = "dummy"
         result = EditionResult()
         result.write(txt)

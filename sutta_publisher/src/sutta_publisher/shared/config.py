@@ -1,20 +1,17 @@
 from __future__ import annotations
 
+import ast
 import logging
-from pathlib import Path
-from typing import cast
+import os
 
 import requests
 from pydantic import ValidationError
 
 from sutta_publisher.shared.value_objects.edition_config import EditionConfig, EditionMappingList, EditionsConfigs
 
-PAYLOADS_PATH = Path(__file__).parent / "example_payloads"
-API_URL = "http://localhost:80/api/"  # TODO: Change url for real one
-API_ENDPOINTS = {
-    "editions_mapping": "publication/editions",
-    "specific_edition": "publication/edition/{edition_id}",
-}
+API_URL = os.getenv("API_URL", "")
+API_ENDPOINTS = ast.literal_eval(os.getenv("API_ENDPOINTS", ""))
+CREATOR_BIOS_URL = os.getenv("CREATOR_BIOS_URL", "")
 
 
 def get_editions_ids(publication_number: str) -> list[str]:
@@ -24,7 +21,7 @@ def get_editions_ids(publication_number: str) -> list[str]:
     payload = response.content
 
     editions = EditionMappingList.parse_raw(payload)
-    return cast(list[str], editions.get_editions_id(publication_number=publication_number))
+    return editions.get_editions_id(publication_number=publication_number)  # type: ignore
 
 
 def get_edition_config(edition_id: str) -> EditionConfig:
@@ -34,6 +31,15 @@ def get_edition_config(edition_id: str) -> EditionConfig:
     payload = response.content.decode("utf-8")
 
     config = EditionConfig.parse_raw(payload)
+
+    # We need to set creator_bio separately as it comes from a different source
+    bios_response = requests.get(CREATOR_BIOS_URL)
+    bios_response.raise_for_status()
+    creators_bios: list[dict[str, str]] = bios_response.json()
+    (target_bio,) = [creator for creator in creators_bios if creator["creator_uid"] == config.publication.creator_uid]
+
+    config.publication.creator_bio = target_bio
+
     return config
 
 
@@ -46,7 +52,7 @@ def get_editions_configs(publication_number: str) -> EditionsConfigs:
         try:
             editions_config.append(get_edition_config(edition_id=each_id))
         except ValidationError:
-            logging.warning("Not upported edition type found. Skipping to next one.")
+            logging.warning("Unsupported edition type found. Skipping to next one.")
 
     if not editions_config:
         raise SystemExit(f"No valid edition configs found for {publication_number=}. Stopping.")

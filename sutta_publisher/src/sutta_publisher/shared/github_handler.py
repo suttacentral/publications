@@ -9,12 +9,13 @@ log = logging.getLogger(__name__)
 
 
 def upload_file_to_repo(file_path: str, file: BytesIO, repo_url: str, api_key: str) -> None:
-    """Uploads given file to SuttaCentral's editions repository.
+    """Uploads given file to `SuttaCentral`'s editions repository.
+
     Parameters:
-        file_path (string): path where file is to be uploaded (e.g. /folder1/folder2/file.html)
-        file (BytesIO): File-like object
-        repo_url (string): url of SuttaCentral editions repo
-        api_key (string): personal token of bot gh account
+        file_path: path where file is to be uploaded (e.g. /folder1/folder2/file.html)
+        file: File-like object
+        repo_url: url of SuttaCentral editions repo
+        api_key: personal token of bot gh account
     """
     headers = __get_request_headers(api_key)
     body = __get_request_body(file, file_path, repo_url)
@@ -25,18 +26,19 @@ def upload_file_to_repo(file_path: str, file: BytesIO, repo_url: str, api_key: s
     log.info("** Publication uploaded to repo")
 
 
-def __get_request_headers(api_key: str) -> dict:
+def __get_request_headers(api_key: str) -> dict[str, str]:
     """Creates request headers for GitHub API."""
 
     return {"Authorization": f"token {api_key}"}
 
 
-def __get_request_body(file: BytesIO, file_path: str, repo_url: str) -> dict:
+def __get_request_body(file: BytesIO, file_path: str, repo_url: str) -> dict[str, str]:
     """Creates request body for GitHub API.
+
     Parameters:
-        file_path (string): path where file is to be uploaded (e.g. /folder1/folder2/file.html)
-        file (BytesIO): File-like object
-        repo_url (string): url of SuttaCentral editions repo
+        file_path: path where file is to be uploaded (e.g. /folder1/folder2/file.html)
+        file: File-like object
+        repo_url: url of SuttaCentral editions repo
     """
 
     return {
@@ -48,9 +50,10 @@ def __get_request_body(file: BytesIO, file_path: str, repo_url: str) -> dict:
 
 def __get_file_sha(file_path: str, repo_url: str) -> str:
     """Return sha for existing file. If file does not exist returns empty string.
+
     Parameters:
-        file_path (string): path where file is to be uploaded (e.g. /folder1/folder2/file.html)
-        repo_url (string): url of SuttaCentral editions repo
+        file_path: path where file is to be uploaded (e.g. /folder1/folder2/file.html)
+        repo_url: url of SuttaCentral editions repo
     """
 
     response = requests.get(repo_url.format(file_name=file_path))

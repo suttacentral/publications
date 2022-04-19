@@ -1,4 +1,6 @@
 import logging
+import os
+import tempfile
 from pathlib import Path
 from typing import Callable
 
@@ -130,7 +132,8 @@ class EpubEdition(EditionParser):
         book.add_item(EpubNav())
 
         # create epub file
-        write_epub(name=volume.filename, book=book, options={})
+        _path: str = os.path.join(tempfile.gettempdir(), volume.filename)
+        write_epub(name=_path, book=book, options={})
 
     def collect_all(self) -> EditionResult:
         _edition: Edition = super().collect_all()

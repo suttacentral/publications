@@ -1,4 +1,6 @@
 import logging
+import os
+import tempfile
 from pathlib import Path
 from typing import Callable
 
@@ -38,7 +40,9 @@ class HtmlEdition(EditionParser):
             css=_css, frontmatter=volume.frontmatter, mainmatter=volume.mainmatter, backmatter=volume.backmatter
         )
 
-        with open(file=volume.filename, mode="wt") as f:
+        _path: str = os.path.join(tempfile.gettempdir(), volume.filename)
+
+        with open(file=_path, mode="wt") as f:
             f.write(_output)
 
     def collect_all(self) -> EditionResult:

@@ -96,6 +96,7 @@ class EditionParser(ABC):
             "creation_process": self.config.publication.creation_process,
             "creator_biography": self.config.publication.creator_bio,
             "creator_name": self.config.publication.creator_name,
+            "creator_uid": self.config.publication.creator_uid,
             "edition_number": self.config.edition.edition_number,
             "editions_url": self.config.publication.editions_url,
             "first_published": self.config.publication.first_published,
@@ -150,19 +151,16 @@ class EditionParser(ABC):
 
     def set_filename(self, volume: Volume) -> None:
         """Generate and assigns a proper name for output file to a volume"""
-        _translation_title = volume.translation_title.replace(" ", "-")
-        _date = volume.updated if volume.updated else volume.created
-        _volume_number = f"-{volume.volume_number}" if volume.volume_number else ""
-        _file_extension = self.edition_type.name
+        _translation_title: str = volume.translation_title.replace(" ", "-")
+        _date: str = volume.updated if volume.updated else volume.created
+        _date = _date[:10]
+        _volume_number: str = f"-{volume.volume_number}" if volume.volume_number else ""
+        _file_extension: str = self.edition_type.name
 
         volume.filename = f"{_translation_title}-{volume.creator_uid}-{_date}{_volume_number}.{_file_extension}"
 
     # --- operations on mainmatter
     def _generate_mainmatter(self, volume: Volume) -> str:
-        # TODO: some ideas for further refactoring:
-        #  - we check for segment_id-s without matching markup (with markup
-        #       being empty string ("") or possibly None) - maybe this could be done by Pydantic?
-        #       Not raise exception but ignore the key: value pairs with empty string as values.
 
         log.debug("Generating html...")
 
@@ -340,7 +338,7 @@ class EditionParser(ABC):
         """Add main table of contents to a volume"""
         _mainmatter = BeautifulSoup(volume.mainmatter, "lxml")
         _collected_headings: list[Tag] = self._collect_main_toc(html=_mainmatter)
-        volume.main_toc = MainTableOfContents.parse_obj(_collected_headings)
+        volume.main_toc = MainTableOfContents.parse_obj({"headings": _collected_headings})
 
     @staticmethod
     def _collect_secondary_toc(
@@ -441,7 +439,7 @@ class EditionParser(ABC):
         for _is_html, _matter in _types_matters:
             if _is_html:
                 _html_str: str = EditionParser._process_html_matter(matter=_matter, working_dir=_working_dir)
-            elif _matter == "main_toc":
+            elif _matter == "main-toc":
                 _html_str = EditionParser._process_main_toc_as_matter(matter=volume.main_toc)
             else:
                 _html_str = EditionParser._process_raw_matter(matter=_matter, volume=volume)
@@ -524,7 +522,6 @@ class EditionParser(ABC):
                 )
                 _template_env: Environment = jinja2.Environment(loader=_template_loader, autoescape=True)
                 _template: Template = _template_env.get_template(name=_template_name)
-
                 _matter: str = matter.to_html_str(_template)
 
                 return _matter

@@ -1,76 +1,77 @@
 <!DOCTYPE html>
 <html>
+
 <head profile="http://dublincore.org/specifications/dublin-core/dc-html/2008-08-04/">
-<meta charset="UTF-8">
-<meta name="description" content="{{text_description}}">
-<meta name="keywords" content="Buddhism, Tipitaka, suttas, scripture, meditation, mindfulness, translation, Pali, religion">
-<meta name="author" content="{{creator_name}}">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<link rel="schema.DC" href="http://purl.org/dc/elements/1.1/" >
-<dc:identifier id="uid">url:{{editions_url}}</dc:identifier>
-<dc:date>{{created}}</dc:date>
-<meta property="dcterms:modified">{{updated}}</meta>
-<dc:rights>This edition is released under the terms in the CC0 1.0 Universal Public Domain Dedication, available at https://creativecommons.org/publicdomain/zero/1.0/.</dc:rights>
-<dc:publisher id="publisher">SuttaCentral</dc:publisher>
-<meta property="file-as" refines="#publisher">SuttaCentral</meta>
-<link href="http://www.idpf.org/epub/a11y/accessibility-20170105.html#wcag-aa" rel="dcterms:conformsTo"/>
-<meta property="a11y:certifiedBy">SuttaCentral</meta>
-<meta property="schema:accessMode">textual</meta>
-<meta property="schema:accessModeSufficient">textual</meta>
-<meta property="schema:accessibilityFeature">readingOrder</meta>
-<meta property="schema:accessibilityFeature">structuralNavigation</meta>
-<meta property="schema:accessibilityFeature">tableOfContents</meta>
-<meta property="schema:accessibilityFeature">unlocked</meta>
-<meta property="schema:accessibilityHazard">none</meta>
-<meta property="schema:accessibilitySummary">This publication conforms to WCAG 2.1 Level AA.</meta>
-<link href="onix.xml" media-type="application/xml" properties="onix" rel="record"/>
-<dc:title id="title">{{translation_title}}</dc:title>
-<meta property="file-as" refines="#title">{{translation_title}}</meta>
-<dc:subject id="subject-1">Buddhism</dc:subject>
-<dc:subject id="subject-2">Buddhism--Religious life</dc:subject>
-<dc:subject id="subject-3">Buddhism--Sacred books</dc:subject>
-<dc:subject id="subject-4">Buddhist literature</dc:subject>
-<dc:subject id="subject-5">Religious literature</dc:subject>
-<dc:subject id="subject-6">Pali literature</dc:subject>
-<dc:subject id="subject-7">Buddhist literature, Pali</dc:subject>
-<dc:subject id="subject-8">Indic literature</dc:subject>
-<dc:subject id="subject-9">Theravāda Buddhism</dc:subject>
-<dc:subject id="subject-10">Meditation</dc:subject>
-<meta property="authority" refines="#subject-1">LCSH</meta>
-<meta property="term" refines="#subject-1">sh2021005107</meta>
-<meta property="authority" refines="#subject-2">LCSH</meta>
-<meta property="term" refines="#subject-2">sh2008110358</meta>
-<meta property="authority" refines="#subject-3">LCSH</meta>
-<meta property="term" refines="#subject-3">sh85017486</meta>
-<meta property="authority" refines="#subject-4">LCSH</meta>
-<meta property="term" refines="#subject-4">sh85017551</meta>
-<meta property="authority" refines="#subject-5">LCSH</meta>
-<meta property="term" refines="#subject-5">sh85112690</meta>
-<meta property="authority" refines="#subject-6">LCSH</meta>
-<meta property="term" refines="#subject-6">sh85097196</meta>
-<meta property="authority" refines="#subject-7">LCSH</meta>
-<meta property="term" refines="#subject-7">sh96002654</meta>
-<meta property="authority" refines="#subject-8">LCSH</meta>
-<meta property="term" refines="#subject-8">sh85065639</meta>
-<meta property="authority" refines="#subject-9">LCSH</meta>
-<meta property="term" refines="#subject-9">sh85134734</meta>
-<meta property="authority" refines="#subject-10">LCSH</meta>
-<meta property="term" refines="#subject-10">sh85083210</meta>
-<meta id="collection-1" property="belongs-to-collection">SuttaCentral Editions</meta>
-<meta property="collection-type" refines="#collection-1">set</meta>
-<dc:description id="description">{{text_description}}</dc:description>
-<dc:language>en-US</dc:language>
-<dc:source>{{source_url}</dc:source>
-<dc:creator id="author">{{creator_name}}</dc:creator>
-<dc:contributor id="translator">{{creator_name}}</dc:contributor>
+    <meta charset="UTF-8">
+    <meta name="description" content="{{text_description | safe}}">
+    <meta name="keywords" content="Buddhism, Tipitaka, suttas, scripture, meditation, mindfulness, translation, Pali, religion">
+    <meta name="author" content="{{creator_name | safe}}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="schema.DC" href="http://purl.org/dc/elements/1.1/">
+    <dc:identifier id="uid">url:{{editions_url | safe}}</dc:identifier>
+    <dc:date>{{created | safe}}</dc:date>
+    <meta property="dcterms:modified">{{updated | safe}}</meta>
+    <dc:rights>This edition is released under the terms in the CC0 1.0 Universal Public Domain Dedication, available at https://creativecommons.org/publicdomain/zero/1.0/.
+    </dc:rights>
+    <dc:publisher id="publisher">SuttaCentral</dc:publisher>
+    <meta property="file-as" refines="#publisher">SuttaCentral</meta>
+    <link href="http://www.idpf.org/epub/a11y/accessibility-20170105.html#wcag-aa" rel="dcterms:conformsTo" />
+    <meta property="a11y:certifiedBy">SuttaCentral</meta>
+    <meta property="schema:accessMode">textual</meta>
+    <meta property="schema:accessModeSufficient">textual</meta>
+    <meta property="schema:accessibilityFeature">readingOrder</meta>
+    <meta property="schema:accessibilityFeature">structuralNavigation</meta>
+    <meta property="schema:accessibilityFeature">tableOfContents</meta>
+    <meta property="schema:accessibilityFeature">unlocked</meta>
+    <meta property="schema:accessibilityHazard">none</meta>
+    <meta property="schema:accessibilitySummary">This publication conforms to WCAG 2.1 Level AA.</meta>
+    <link href="onix.xml" media-type="application/xml" properties="onix" rel="record" />
+    <dc:title id="title">{{translation_title | safe}}</dc:title>
+    <meta property="file-as" refines="#title">{{translation_title | safe}}</meta>
+    <dc:subject id="subject-1">Buddhism</dc:subject>
+    <dc:subject id="subject-2">Buddhism--Religious life</dc:subject>
+    <dc:subject id="subject-3">Buddhism--Sacred books</dc:subject>
+    <dc:subject id="subject-4">Buddhist literature</dc:subject>
+    <dc:subject id="subject-5">Religious literature</dc:subject>
+    <dc:subject id="subject-6">Pali literature</dc:subject>
+    <dc:subject id="subject-7">Buddhist literature, Pali</dc:subject>
+    <dc:subject id="subject-8">Indic literature</dc:subject>
+    <dc:subject id="subject-9">Theravāda Buddhism</dc:subject>
+    <dc:subject id="subject-10">Meditation</dc:subject>
+    <meta property="authority" refines="#subject-1">LCSH</meta>
+    <meta property="term" refines="#subject-1">sh2021005107</meta>
+    <meta property="authority" refines="#subject-2">LCSH</meta>
+    <meta property="term" refines="#subject-2">sh2008110358</meta>
+    <meta property="authority" refines="#subject-3">LCSH</meta>
+    <meta property="term" refines="#subject-3">sh85017486</meta>
+    <meta property="authority" refines="#subject-4">LCSH</meta>
+    <meta property="term" refines="#subject-4">sh85017551</meta>
+    <meta property="authority" refines="#subject-5">LCSH</meta>
+    <meta property="term" refines="#subject-5">sh85112690</meta>
+    <meta property="authority" refines="#subject-6">LCSH</meta>
+    <meta property="term" refines="#subject-6">sh85097196</meta>
+    <meta property="authority" refines="#subject-7">LCSH</meta>
+    <meta property="term" refines="#subject-7">sh96002654</meta>
+    <meta property="authority" refines="#subject-8">LCSH</meta>
+    <meta property="term" refines="#subject-8">sh85065639</meta>
+    <meta property="authority" refines="#subject-9">LCSH</meta>
+    <meta property="term" refines="#subject-9">sh85134734</meta>
+    <meta property="authority" refines="#subject-10">LCSH</meta>
+    <meta property="term" refines="#subject-10">sh85083210</meta>
+    <meta id="collection-1" property="belongs-to-collection">SuttaCentral Editions</meta>
+    <meta property="collection-type" refines="#collection-1">set</meta>
+    <dc:description id="description">{{text_description | safe}}</dc:description>
+    <dc:language>en-US</dc:language>
+    <dc:source>{{source_url | safe}}</dc:source>
+    <dc:creator id="author">{{creator_name | safe}}</dc:creator>
+    <dc:contributor id="translator">{{creator_name | safe}}</dc:contributor>
+    <style>{{css | safe}}</style>
 </head>
+
 <body>
-<section id='frontmatter'>{{frontmatter}}</section>
-<section id='mainmatter'>{{mainmatter}}</section>
-<section id='backmatter'>{{backmatter}}</section>
+    <section id='frontmatter'>{% for matter in frontmatter %} {{matter | safe}} {% endfor %}</section>
+    <section id='mainmatter'>{% for matter in frontmatter %} {{matter | safe}} {% endfor %}</section>
+    <section id='backmatter'>{% for matter in backmatter %} {{matter | safe}} {% endfor %}</section>
 </body>
+
 </html>
-
-	
-
-

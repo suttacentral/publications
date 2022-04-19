@@ -9,7 +9,6 @@ Therefore if we wrap all the parsed data (the output of parsers) into objects ju
 in pydantic objects, they will be more manageable and would have better control over chain of operations executed
 on an object.
 """
-
 from typing import Any
 
 from bs4 import Tag
@@ -23,6 +22,7 @@ class MainTableOfContents(BaseModel):
     headings: list[Tag]
 
     def to_html_str(self, template: Template) -> str:
+
         return template.render(main_toc=generate_html_toc(self.headings))
 
     class Config:

@@ -392,40 +392,6 @@ class EditionParser(ABC):
             log.debug(f"Edition without secondary ToCs. {secondary_toc=}")
 
     # --- operations on frontmatter and backmatter
-    # def _generate_frontmatter(self) -> dict[str, str]:
-    #     """Fetch a list of frontmatter components and their contents from API, return a dictionary with {<component_name>: <content>} mapping.
-    #     The output is returned for each volume of a publication.
-    #     """
-    #     log.debug("Generating FrontMatters...")
-    #
-    #     PREFIX = "/opt/sc/sc-flask/sc-data"
-    #     _working_dir: str = self.config.edition.working_dir.removeprefix(PREFIX)
-    #
-    #     per_volume_frontmatters: list[dict[str, Any]] = []
-    #
-    #     # Parse list of frontmatters for this publication
-    #     for _volume, _main_toc, _secondary_toc in zip(
-    #         self.config.edition.volumes, self._collect_main_toc(), self._collect_secondary_toc()
-    #     ):
-    #
-    #         _frontmatter: list[str] = _volume.frontmatter
-    #         matter_types: list[tuple[str, bool]] = [(matter, self._is_html_matter(matter)) for matter in _frontmatter]
-    #         processed_matters: dict[str, Any] = {}
-    #         _main_toc_ = _main_toc if "main-toc" in _frontmatter else None
-    #         _secondary_toc_ = list(_secondary_toc.values()) if "secondary-toc" in _frontmatter else None
-    #
-    #         for matter, is_html in matter_types:
-    #             if is_html:
-    #                 processed_matters[matter] = self._process_html_matter(matter=matter, working_dir=_working_dir)
-    #             else:
-    #                 processed_matters[matter] = self._process_raw_matter(
-    #                     matter=matter, volume=_volume, main_toc=_main_toc_, secondary_toc=_secondary_toc_
-    #                 )
-    #
-    #         per_volume_frontmatters.append(copy(processed_matters))
-    #
-    #     self.per_volume_frontmatters = per_volume_frontmatters
-
     def _collect_matters(self, matters: list[str], volume: Volume) -> list[str]:
         _types_matters: list[tuple[bool, str]] = [
             (EditionParser._is_html_matter(_matter), _matter) for _matter in matters

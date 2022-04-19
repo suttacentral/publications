@@ -312,9 +312,27 @@ def _make_html_link_to_heading(tag: Tag) -> str:
 
 
 def generate_html_toc(headings: list[Tag]) -> str:
-    _anchors = [_make_html_link_to_heading(heading) for heading in headings]
-    _list_items = [f"<li>{link}</li>" for link in _anchors]
-    return f"<ol>{''.join(_list_items)}</ol>"
+    _anchors: list[str] = [_make_html_link_to_heading(heading) for heading in headings]
+    _list_items: list[str] = [f"<li>{link}</li>" for link in _anchors]
+    _previous_h = 0
+    toc: list[str] = []
+    for _tag, _li in zip(headings, _list_items):
+        # If next heading is lower level we open another HTML list for it (to achieve multilevel list in HTML)
+        _current_depth = get_heading_depth(_tag)
+        # we come across situation where after h3 (sutta-title) comes preheading (h1),
+        # so we need to close both sutta-title nested list and chapters nested list
+        _level_difference = abs(_current_depth - _previous_h)
+        if _current_depth > _previous_h:
+            toc.append("<ol>" * _level_difference)
+        # If next heading is higher level we close the current HTML list before it
+        elif _current_depth < _previous_h:
+            toc.append("</ol>" * _level_difference)
+        toc.append(_li)
+        _previous_h = _current_depth
+
+    toc.append("</ol>")
+
+    return "".join(toc)
 
 
 def back_to_str(html: BeautifulSoup) -> str:

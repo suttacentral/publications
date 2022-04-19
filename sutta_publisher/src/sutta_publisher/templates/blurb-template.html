@@ -1,19 +1,19 @@
 <article class='blurbs'>
-<h1>Summary of Contents</h1>
-<dl class='blurb-list'>
-{% for blurb in blurbs %}
-<dt>
-<a class='blurb-link' href='{{link_to_content}}'>
-<span class='blurb-label'>
-<span class='translation_name'>{{translation_name}}</span>
-<span class='root_name'>{{root_name}}</span>
-<span class='acronym'>{{acronym}}</span>
-</span>
-</a>
-</dt>
-<dd>
-<span class='blurb_content'>{{blurb}}</span>
-</dd>
-{% endfor %}
-</dl>
+    <h1>Summary of Contents</h1>
+    <dl class='blurb-list'>
+        {% for blurb in blurbs %}
+        <dt>
+            <a class='blurb-link' href='{{link_to_content | safe}}'>
+                <span class='blurb-label'>
+                    <span class='translation_name'>{{translation_name | safe}}</span>
+                    <span class='root_name'>{{root_name | safe}}</span>
+                    <span class='acronym'>{{acronym | safe}}</span>
+                </span>
+            </a>
+        </dt>
+        <dd>
+            <span class='blurb_content'>{{blurb | safe}}</span>
+        </dd>
+        {% endfor %}
+    </dl>
 </article>

@@ -32,13 +32,11 @@ class HtmlEdition(EditionParser):
 
         _template_loader: FileSystemLoader = jinja2.FileSystemLoader(searchpath=HtmlEdition.HTML_TEMPLATES_DIR)
         _template_env: Environment = jinja2.Environment(loader=_template_loader, autoescape=True)
-        _template: Template = _template_env.get_template(name="standalone_template.html")
+        _template: Template = _template_env.get_template(name="book-template.html")
         _css: str = self._get_css()
 
         # Generating output HTML
-        _output = _template.render(
-            css=_css, frontmatter=volume.frontmatter, mainmatter=volume.mainmatter, backmatter=volume.backmatter
-        )
+        _output = _template.render(css=_css, **volume.dict(exclude_none=True, exclude_unset=True))
 
         _path: str = os.path.join(tempfile.gettempdir(), volume.filename)
 

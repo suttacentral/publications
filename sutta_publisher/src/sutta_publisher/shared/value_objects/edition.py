@@ -14,3 +14,5 @@ class EditionType(StrEnum):
     epub = auto()
     html = auto()
     pdf = auto()
+    hardcover = auto()
+    paperback = auto()

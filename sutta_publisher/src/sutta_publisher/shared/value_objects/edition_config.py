@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime
-from typing import Iterator, Literal, Optional
+from typing import Iterator, Literal, Optional, Union
 
 from pydantic import BaseModel, validator
 
@@ -9,9 +9,9 @@ from .edition import EditionType
 
 
 class VolumeDetail(BaseModel):
-    volume_number: str
-    volume_isbn: str
-    volume_acronym: str
+    volume_number: Union[str, None]
+    volume_isbn: Union[str, None]
+    volume_acronym: Union[str, None]
     backmatter: list[str]
     frontmatter: list[str]
     mainmatter: list[str]

@@ -36,9 +36,8 @@ def get_edition_config(edition_id: str) -> EditionConfig:
     bios_response = requests.get(CREATOR_BIOS_URL)
     bios_response.raise_for_status()
     creators_bios: list[dict[str, str]] = bios_response.json()
-    (target_bio,) = [creator for creator in creators_bios if creator["creator_uid"] == config.publication.creator_uid]
-
-    config.publication.creator_bio = target_bio
+    (target_bio,) = [bio for bio in creators_bios if bio["creator_uid"] == config.publication.creator_uid]
+    config.publication.creator_bio = target_bio["creator_biography"]
 
     return config
 
@@ -51,8 +50,12 @@ def get_editions_configs(publication_number: str) -> EditionsConfigs:
     for each_id in editions_id:
         try:
             editions_config.append(get_edition_config(edition_id=each_id))
-        except ValidationError:
-            logging.warning("Unsupported edition type found. Skipping to next one.")
+        except ValidationError as err:
+            messages = ["Unsupported edition type found. Skipping to next one. Details:"]
+            for idx, error in enumerate(err.errors()):
+                error_location = " -> ".join(str(module) for module in error["loc"])
+                messages.append(f'[{idx+1}] {error_location}: {error["msg"]} ({error["type"]})')
+            logging.warning(" ".join(messages))
 
     if not editions_config:
         raise SystemExit(f"No valid edition configs found for {publication_number=}. Stopping.")

@@ -91,6 +91,10 @@ blockquote {
     margin: 2em 0;
 }
 
+#main-toc ol {
+    margin-top: 0;
+}
+
 #toc li,
 .contents li {
     margin: .5em 0;
@@ -322,9 +326,9 @@ section+section {
 }
 
 .bj {
-  margin-right: 1rem;
+    margin-right: 1rem;
 }
 
 .pts-vp-pli {
-  margin-right: 1rem;
+    margin-right: 1rem;
 }

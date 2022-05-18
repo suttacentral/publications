@@ -26,6 +26,7 @@ from sutta_publisher.edition_parsers.helper_functions import (
     make_headings_tree,
     parse_main_toc_depth,
     process_line,
+    remove_all_header,
     remove_all_ul,
 )
 from sutta_publisher.shared.value_objects.edition import EditionType
@@ -219,7 +220,7 @@ class EditionParser(ABC):
             return ""
 
         else:
-            # Only store segment_id if it has matching text (prune empty strings)
+            # Only store segment_id if it has matching markup (prune empty strings)
             _segment_ids: list[str] = [
                 _id for _id, _markup in node.mainmatter.markup.items() if _markup
             ]  # type: ignore
@@ -242,8 +243,11 @@ class EditionParser(ABC):
         _index: int = self._get_true_index(volume)
         _raw_data: VolumeData = self.raw_data[_index]
 
-        # Remove all <ul></ul> tags from <header></header> element
-        remove_all_ul(html=mainmatter.find("header"))
+        _header_tags = mainmatter.find_all("header")
+        # Remove all <ul>...</ul> tags from <header>...</header> elements
+        remove_all_ul(headers=_header_tags)
+        # Remove all <header>...</header> tags from mainmatter, but keep their contents
+        remove_all_header(headers=_header_tags)
 
         # Change numbers of all headings according to how many additional preheadings are. If there are 2 preheadings,
         # h1 headings become h3 headings.

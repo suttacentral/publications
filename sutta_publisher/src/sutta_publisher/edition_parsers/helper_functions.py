@@ -80,7 +80,11 @@ def _reference_to_html(reference: tuple[str, str]) -> str:
 
 
 def process_line(markup: str, segment_id: str, text: str, references: str, possible_refs: set[str]) -> str:
-    segment_id_html: str = _segment_id_to_html(segment_id)
+    # add data-ref attribute to <p>, <ul>, <ol>, <dl> tags (#2417)
+    for tag in ["<p", "<ul", "<ol", "<dl"]:
+        if tag in markup:
+            markup = markup.replace(tag, f"{tag} data-ref='{segment_id}'")
+
     # references are passed as a string such as: "ref1, ref2, ref3"
     split_references: list[str] = [r.strip() for r in references.split(",")]
     references_divided_into_types_and_ids: list[tuple[str, str] | None] = [
@@ -92,7 +96,7 @@ def process_line(markup: str, segment_id: str, text: str, references: str, possi
     filtered_references = _filter_refs(references=filtered_references, accepted_references=ACCEPTED_REFERENCES)
     list_of_refs_tags: list[str] = [_reference_to_html(reference) for reference in filtered_references]
     references_html = "".join(list_of_refs_tags)
-    return markup.format(f"{segment_id_html}{references_html}{text}")
+    return markup.format(f"{references_html}{text}")
 
 
 def get_heading_depth(tag: Tag) -> int:
@@ -263,9 +267,14 @@ def make_section_or_link(
         return _make_link(tag=heading, file_name=file_name)
 
 
-def remove_all_ul(html: BeautifulSoup) -> None:
-    """Remove all <ul>...</ul> tags from HTML (in place)"""
-    [ul.decompose() for ul in html.find_all("ul")]
+def remove_all_header(headers: list[BeautifulSoup]) -> None:
+    """Remove all <header>...</header> tags from HTML (in place), but keep the content"""
+    [header.replaceWithChildren() for header in headers]
+
+
+def remove_all_ul(headers: list[BeautifulSoup]) -> None:
+    """Remove all <ul>...</ul> tags from HTML (in place) with their content"""
+    [ul.decompose() for ul in [header.find("ul") for header in headers]]
 
 
 def increment_heading_by_number(by_number: int, heading: Tag) -> None:
@@ -292,23 +301,22 @@ def create_html_heading_with_id(html: BeautifulSoup, *, depth: int, text: str, i
     Returns:
         Tag: an HTML tag with id ready to insert
     """
-    nt = html.new_tag(name=f"h{depth}")
+    nt = html.new_tag(name=f"h{depth}", id=id_)
     nt.string = text
-
-    nt_inner = html.new_tag(name="span", id=id_)
-    nt.insert(position=0, new_child=nt_inner)
 
     return nt
 
 
 def add_class(tags: list[Tag], class_: str) -> None:
-    """Sdd class to a collection of HTML tags"""
+    """Add class to a collection of HTML tags"""
     for tag in tags:
         tag["class"] = tag.get("class", []) + [class_]
 
 
 def _make_html_link_to_heading(tag: Tag) -> str:
-    return f"<a href='#{tag.span.get('id')}'>{tag.text}</a>"
+    # If heading is a sutta-title, we have to get id from parent <article> tag
+    tag_id = tag.get('id') if tag.get('id') else tag.parent.get('id')
+    return f"<a href='#{tag_id}'>{tag.text}</a>"
 
 
 def generate_html_toc(headings: list[Tag]) -> str:

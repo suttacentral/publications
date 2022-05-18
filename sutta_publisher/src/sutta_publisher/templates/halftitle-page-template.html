@@ -12,9 +12,9 @@
     <div class='front-bottom'>
         <div class='volume-details'>
             <div class='volume_number'>{% if volume_number %} Volume {{volume_number | safe}}{% endif %}</div>
-            <div class='volume_acronym'>{{volume_acronym | safe}}</div>
-            <div class='volume_translation_title'>{{volume_translation_title | safe}}</div>
-            <div class='volume_root_title'>{{volume_root_title | safe}}</div>
+            <div class='volume_acronym'>{% if volume_acronym %} {{volume_acronym | safe}} {% endif %}</div>
+            <div class='volume_translation_title'>{% if volume_translation_title %}{{volume_translation_title | safe}} {% endif %}</div>
+            <div class='volume_root_title'>{% if volume_root_title %} {{volume_root_title | safe}} {% endif %}</div>
         </div>
     </div>
 </section>

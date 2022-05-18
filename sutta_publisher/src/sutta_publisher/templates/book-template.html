@@ -10,23 +10,23 @@
     <link rel="schema.DC" href="http://purl.org/dc/elements/1.1/">
     <meta name="DC.Identifier" content="{{editions_url | safe}}">
     <meta name="DC.Date" content="{{created | safe}}">
-    <meta property="dcterms:modified">{{updated | safe}}</meta>
+    <meta name="DC.Modified" content="{{updated | safe}}">
     <meta name="DC.Rights" content="This edition is released under the terms in the CC0 1.0 Universal Public Domain Dedication, available at https://creativecommons.org/publicdomain/zero/1.0/.">
     <meta name="DC.Publisher" content="SuttaCentral">
-{#    <meta property="file-as" refines="#publisher">SuttaCentral</meta>#}
+    <meta property="file-as" refines="#publisher" content="SuttaCentral">
     <link href="http://www.idpf.org/epub/a11y/accessibility-20170105.html#wcag-aa" rel="dcterms:conformsTo" />
-{#    <meta property="a11y:certifiedBy">SuttaCentral</meta>#}
-{#    <meta property="schema:accessMode">textual</meta>#}
-{#    <meta property="schema:accessModeSufficient">textual</meta>#}
-{#    <meta property="schema:accessibilityFeature">readingOrder</meta>#}
-{#    <meta property="schema:accessibilityFeature">structuralNavigation</meta>#}
-{#    <meta property="schema:accessibilityFeature">tableOfContents</meta>#}
-{#    <meta property="schema:accessibilityFeature">unlocked</meta>#}
-{#    <meta property="schema:accessibilityHazard">none</meta>#}
-{#    <meta property="schema:accessibilitySummary">This publication conforms to WCAG 2.1 Level AA.</meta>#}
+    <meta property="a11y:certifiedBy" content="SuttaCentral">
+    <meta property="schema:accessMode" content="textual">
+    <meta property="schema:accessModeSufficient" content="textual">
+    <meta property="schema:accessibilityFeature" content="readingOrder">
+    <meta property="schema:accessibilityFeature" content="structuralNavigation">
+    <meta property="schema:accessibilityFeature" content="tableOfContents">
+    <meta property="schema:accessibilityFeature" content="unlocked">
+    <meta property="schema:accessibilityHazard" content="none">
+    <meta property="schema:accessibilitySummary" content="This publication conforms to WCAG 2.1 Level AA.">
     <link href="onix.xml" media-type="application/xml" properties="onix" rel="record" />
     <meta name="DC.Title" content="{{translation_title | safe}}">
-{#    <meta property="file-as" refines="#title">{{translation_title | safe}}</meta>#}
+    <meta property="file-as" refines="#title" content="{{translation_title | safe}}">
     <meta name="DC.Subject" content="Buddhism">
     <meta name="DC.Subject" content="Buddhism--Religious life">
     <meta name="DC.Subject" content="Buddhism--Sacred books">
@@ -37,28 +37,28 @@
     <meta name="DC.Subject" content="Indic literature">
     <meta name="DC.Subject" content="Theravāda Buddhism">
     <meta name="DC.Subject" content=">Meditation">
-{#    <meta property="authority" refines="#subject-1">LCSH</meta>#}
-{#    <meta property="term" refines="#subject-1">sh2021005107</meta>#}
-{#    <meta property="authority" refines="#subject-2">LCSH</meta>#}
-{#    <meta property="term" refines="#subject-2">sh2008110358</meta>#}
-{#    <meta property="authority" refines="#subject-3">LCSH</meta>#}
-{#    <meta property="term" refines="#subject-3">sh85017486</meta>#}
-{#    <meta property="authority" refines="#subject-4">LCSH</meta>#}
-{#    <meta property="term" refines="#subject-4">sh85017551</meta>#}
-{#    <meta property="authority" refines="#subject-5">LCSH</meta>#}
-{#    <meta property="term" refines="#subject-5">sh85112690</meta>#}
-{#    <meta property="authority" refines="#subject-6">LCSH</meta>#}
-{#    <meta property="term" refines="#subject-6">sh85097196</meta>#}
-{#    <meta property="authority" refines="#subject-7">LCSH</meta>#}
-{#    <meta property="term" refines="#subject-7">sh96002654</meta>#}
-{#    <meta property="authority" refines="#subject-8">LCSH</meta>#}
-{#    <meta property="term" refines="#subject-8">sh85065639</meta>#}
-{#    <meta property="authority" refines="#subject-9">LCSH</meta>#}
-{#    <meta property="term" refines="#subject-9">sh85134734</meta>#}
-{#    <meta property="authority" refines="#subject-10">LCSH</meta>#}
-{#    <meta property="term" refines="#subject-10">sh85083210</meta>#}
-{#    <meta id="collection-1" property="belongs-to-collection">SuttaCentral Editions</meta>#}
-{#    <meta property="collection-type" refines="#collection-1">set</meta>#}
+    <meta property="authority" refines="#subject-1" content="LCSH">
+    <meta property="term" refines="#subject-1" content="sh2021005107">
+    <meta property="authority" refines="#subject-2" content="LCSH">
+    <meta property="term" refines="#subject-2" content="sh2008110358">
+    <meta property="authority" refines="#subject-3" content="LCSH">
+    <meta property="term" refines="#subject-3" content="sh85017486">
+    <meta property="authority" refines="#subject-4" content="LCSH">
+    <meta property="term" refines="#subject-4" content="sh85017551">
+    <meta property="authority" refines="#subject-5" content="LCSH">
+    <meta property="term" refines="#subject-5" content="sh85112690">
+    <meta property="authority" refines="#subject-6" content="LCSH">
+    <meta property="term" refines="#subject-6" content="sh85097196">
+    <meta property="authority" refines="#subject-7" content="LCSH">
+    <meta property="term" refines="#subject-7" content="sh96002654">
+    <meta property="authority" refines="#subject-8" content="LCSH">
+    <meta property="term" refines="#subject-8" content="sh85065639">
+    <meta property="authority" refines="#subject-9" content="LCSH">
+    <meta property="term" refines="#subject-9" content="sh85134734">
+    <meta property="authority" refines="#subject-10" content="LCSH">
+    <meta property="term" refines="#subject-10" content="sh85083210">
+    <meta id="collection-1" property="belongs-to-collection" content="SuttaCentral Editions">
+    <meta property="collection-type" refines="#collection-1" content="set">
     <meta name="DC.Description" content="{{text_description | safe}}">
     <meta name="DC.Language" content="en-US">
     <meta name="DC.Source" content="{{source_url | safe}}">

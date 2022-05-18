@@ -315,7 +315,7 @@ def add_class(tags: list[Tag], class_: str) -> None:
 
 def _make_html_link_to_heading(tag: Tag) -> str:
     # If heading is a sutta-title, we have to get id from parent <article> tag
-    tag_id = tag.get('id') if tag.get('id') else tag.parent.get('id')
+    tag_id = tag.get("id") if tag.get("id") else tag.parent.get("id")
     return f"<a href='#{tag_id}'>{tag.text}</a>"
 
 

@@ -162,11 +162,12 @@ def collect_actual_headings(start_depth: int = 1, *, end_depth: int, html: Beaut
 
 
 def _make_link(tag: Tag, file_name: str) -> Link:
-    return Link(href=f"{file_name}#{tag.span['id']}", title=tag.text, uid=tag.span["id"])
+    """Takes id from sutta-title parent <article> tag"""
+    return Link(href=f"{file_name}#{tag.parent['id']}", title=tag.text, uid=tag.parent["id"])
 
 
 def _make_section(tag: Tag, file_name: str) -> Section:
-    return Section(title=tag.text, href=f"{file_name}#{tag.span['id']}")
+    return Section(title=tag.text, href=f"{file_name}#{tag['id']}")
 
 
 def _nest_or_extend(headings: Iterator[Tag], file_name: str) -> Link | list | None:

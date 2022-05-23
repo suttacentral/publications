@@ -40,7 +40,7 @@ from sutta_publisher.shared.value_objects.edition_data import (
     VolumeHeadings,
     VolumePreheadings,
 )
-from sutta_publisher.shared.value_objects.parser_objects import Edition, MainTableOfContents, Volume
+from sutta_publisher.shared.value_objects.parser_objects import Blurb, Edition, MainTableOfContents, Volume
 
 log = logging.getLogger(__name__)
 
@@ -90,7 +90,7 @@ class EditionParser(ABC):
         [operation(volume) for volume in edition.volumes]
 
     # --- operations on metadata
-    def _collect_metadata(self, volume: Volume) -> dict[str, str | int | list[str]]:
+    def _collect_metadata(self, volume: Volume) -> dict[str, str | int | list[str] | list[Blurb]]:
         _index = EditionParser._get_true_index(volume)
         return {
             "acronym": self.raw_data[_index].acronym,
@@ -121,7 +121,7 @@ class EditionParser(ABC):
             "volume_translation_title": "",  # TODO[61]: implement - where do I get it from?
         }
 
-    def _collect_blurbs(self, volume: Volume) -> list[str]:
+    def _collect_blurbs(self, volume: Volume) -> list[Blurb]:
         """Collect blurbs for a given volume.
 
         Args:
@@ -130,13 +130,13 @@ class EditionParser(ABC):
         Returns:
             list[str]: blurbs collected as a list of strings
         """
-        blurbs: list[str] = []
+        blurbs: list[Blurb] = []
 
         _index: int = self._get_true_index(volume)
         _mainmatter: MainMatter = self.raw_data[_index].mainmatter
 
         for _part in _mainmatter:
-            _blurbs_in_mainmatter_part: list[str] = [_node.blurb for _node in _part if _node.blurb]
+            _blurbs_in_mainmatter_part: list[Blurb] = [Blurb.parse_obj(_node) for _node in _part if _node.blurb]
             blurbs.extend(_blurbs_in_mainmatter_part)
 
         return blurbs

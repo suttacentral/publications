@@ -9,13 +9,21 @@ Therefore if we wrap all the parsed data (the output of parsers) into objects ju
 in pydantic objects, they will be more manageable and would have better control over chain of operations executed
 on an object.
 """
-from typing import Any
+from typing import Any, Optional
 
 from bs4 import Tag
 from jinja2 import Template
 from pydantic import BaseModel
 
 from sutta_publisher.edition_parsers.helper_functions import generate_html_toc
+
+
+class Blurb(BaseModel):
+    acronym: Optional[str]
+    blurb: Optional[str]
+    name: str
+    type: str
+    uid: str
 
 
 class MainTableOfContents(BaseModel):
@@ -72,6 +80,7 @@ class Volume(BaseModel):
 
     # Edition metadata (common for all volumes)
     acronym: str = ""
+    blurbs: list[Blurb] | None = None
     created: str = "None"
     creation_process: str = ""
     creator_biography: str = ""

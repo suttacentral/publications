@@ -3,16 +3,16 @@
     <dl class='blurb-list'>
         {% for blurb in blurbs %}
         <dt>
-            <a class='blurb-link' href='{{link_to_content | safe}}'>
+            <a class='blurb-link' href='#{{blurb.uid | safe}}'>
                 <span class='blurb-label'>
-                    <span class='translation_name'>{{translation_name | safe}}</span>
-                    <span class='root_name'>{{root_name | safe}}</span>
-                    <span class='acronym'>{{acronym | safe}}</span>
+                    {% if blurb.name %}<span class='translation_name'>{{blurb.name | safe}}</span>{% endif %}
+                    {% if blurb.root_name %}<span class='root_name'>{{blurb.root_name | safe}}</span>{%  endif %}
+                    {% if blurb.acronym %}<span class='acronym'>{{blurb.acronym | safe}}</span>{% endif %}
                 </span>
             </a>
         </dt>
         <dd>
-            <span class='blurb_content'>{{blurb | safe}}</span>
+            <span class='blurb_content'>{{blurb.blurb | safe}}</span>
         </dd>
         {% endfor %}
     </dl>

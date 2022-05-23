@@ -48,10 +48,12 @@ class NodeDetails(BaseModel):
 
 
 class Node(BaseModel):
+    acronym: Optional[str]
     blurb: Optional[str]
     mainmatter: NodeDetails
     name: str
     type: str
+    uid: str
 
 
 class MainMatterPart(BaseModel):

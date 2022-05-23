@@ -44,6 +44,8 @@ from sutta_publisher.shared.value_objects.parser_objects import Edition, MainTab
 
 log = logging.getLogger(__name__)
 
+ADDITIONAL_HEADINGS = ast.literal_eval(os.getenv("ADDITIONAL_HEADINGS", ""))
+
 
 class EditionParser(ABC):
     HTML_TEMPLATES_DIR = Path(__file__).parent.parent / "templates"
@@ -338,10 +340,36 @@ class EditionParser(ABC):
 
         return headings
 
+    def _create_additional_heading(self, item: str) -> Tag:
+        """Create additional a new Tag: <h1 id='{item}'>{item.capitalized}</h1>"""
+        soup = BeautifulSoup(parser="lxml")
+        tag = soup.new_tag("h1", id=item)
+        tag.string = item.capitalize()
+        return tag
+
+    def _insert_additional_headings(self, collected_headings: list[Tag], volume: Volume) -> None:
+        """Insert additional frontmatter heading at the beginning
+        and backmatter headings at the end of the collected_headings list"""
+        _index: int = EditionParser._get_true_index(volume)
+        frontmatter_headings: list[Tag] = [
+            self._create_additional_heading(item=item)
+            for item in ADDITIONAL_HEADINGS["frontmatter"]
+            if any(item in matter for matter in self.config.edition.volumes[_index].frontmatter)
+        ]
+        collected_headings[0:0] = frontmatter_headings
+
+        backmatter_headings: list[Tag] = [
+            self._create_additional_heading(item=item)
+            for item in ADDITIONAL_HEADINGS["backmatter"]
+            if any(item in matter for matter in self.config.edition.volumes[_index].backmatter)
+        ]
+        collected_headings.extend(backmatter_headings)
+
     def set_main_toc(self, volume: Volume) -> None:
         """Add main table of contents to a volume"""
         _mainmatter = BeautifulSoup(volume.mainmatter, "lxml")
         _collected_headings: list[Tag] = self._collect_main_toc(html=_mainmatter)
+        self._insert_additional_headings(collected_headings=_collected_headings, volume=volume)
         volume.main_toc = MainTableOfContents.parse_obj({"headings": _collected_headings})
 
     @staticmethod
@@ -409,6 +437,17 @@ class EditionParser(ABC):
         for _is_html, _matter in _types_matters:
             if _is_html:
                 _html_str: str = EditionParser._process_html_matter(matter=_matter, working_dir=_working_dir)
+
+                # add id attribute to enable front and backmatter links in table of contents
+                if item := [
+                    matter
+                    for matter in ADDITIONAL_HEADINGS["frontmatter"] + ADDITIONAL_HEADINGS["backmatter"]
+                    if matter in _matter
+                ]:
+                    soup = BeautifulSoup(_html_str, "lxml")
+                    soup.find("article")["id"] = item[0]
+                    _html_str = str(soup)
+
             elif _matter == "main-toc":
                 _html_str = EditionParser._process_main_toc_as_matter(matter=volume.main_toc)
             else:

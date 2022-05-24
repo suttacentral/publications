@@ -316,10 +316,12 @@ def add_class(tags: list[Tag], class_: str) -> None:
 
 
 def add_acronym_to_text(id: str, text: str) -> str:
-    _match = re.search(re.compile(r"^[a-z]+(\d+)"), id)
-    _index = id.index(_match.group(1))
-    acronym = f"{id[:_index].upper()} {id[_index:]}"
-    return f"{acronym}: {text}"
+    if _match := re.search(re.compile(r"^[a-z]+(\d+)"), id):
+        _index = id.index(_match.group(1))
+        acronym = f"{id[:_index].upper()} {id[_index:]}"
+        return f"{acronym}: {text}"
+    else:
+        return text
 
 
 def _make_html_link_to_heading(tag: Tag) -> str:

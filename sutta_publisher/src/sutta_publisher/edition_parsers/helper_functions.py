@@ -315,22 +315,26 @@ def add_class(tags: list[Tag], class_: str) -> None:
         tag["class"] = tag.get("class", []) + [class_]
 
 
+def add_acronym_to_text(id: str, text: str) -> str:
+    _match = re.search(re.compile(r"^[a-z]+(\d+)"), id)
+    _index = id.index(_match.group(1))
+    acronym = f"{id[:_index].upper()} {id[_index:]}"
+    return f"{acronym}: {text}"
+
+
 def _make_html_link_to_heading(tag: Tag) -> str:
     # If heading is a sutta-title, we have to get id from parent <article> tag
     tag_id = tag.get("id") if tag.get("id") else tag.parent.get("id")
-    return f"<a href='#{tag_id}'>{tag.text}</a>"
+    tag_text = tag.text
+    if tag.get("class") and "sutta-title" in tag.get("class"):
+        tag_text = add_acronym_to_text(id=tag_id, text=tag_text)
 
-
-def _get_max_depth(headings: list[Tag]) -> int:
-    """Return max depth of the table of contents"""
-    depths: list[str] = re.findall(r"<h(\d)", "".join(str(headings)))
-    return int(max(depths, key=int))
+    return f"<a href='#{tag_id}'>{tag_text}</a>"
 
 
 def generate_html_toc(headings: list[Tag]) -> str:
     _anchors: list[str] = [_make_html_link_to_heading(heading) for heading in headings]
     _list_items: list[str] = [f"<li>{link}</li>" for link in _anchors]
-    _max_depth: int = _get_max_depth(headings)
     _previous_h = 0
     toc: list[str] = []
     for _tag, _li in zip(headings, _list_items):
@@ -340,16 +344,10 @@ def generate_html_toc(headings: list[Tag]) -> str:
         # so we need to close both sutta-title nested list and chapters nested list
         _level_difference = abs(_current_depth - _previous_h)
         if _current_depth > _previous_h:
-            if _current_depth == _max_depth:
-                toc.append("<ul>" * (_level_difference - 1) + "<ol>")
-            else:
-                toc.append("<ul>" * _level_difference)
+            toc.append("<ul>" * _level_difference)
         # If next heading is higher level we close the current HTML list before it
         elif _current_depth < _previous_h:
-            if _previous_h == _max_depth:
-                toc.append("</ol>" + "</ul>" * (_level_difference - 1))
-            else:
-                toc.append("</ul>" * _level_difference)
+            toc.append("</ul>" * _level_difference)
         toc.append(_li)
         _previous_h = _current_depth
 

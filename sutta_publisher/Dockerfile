@@ -22,7 +22,6 @@ COPY ./src /app
 COPY ./prod.txt /tmp/
 RUN pip install -r /tmp/prod.txt
 
-COPY ./src /app/src
 WORKDIR /app
 
 ### DEVELOPMENT

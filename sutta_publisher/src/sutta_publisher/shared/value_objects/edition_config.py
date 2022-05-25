@@ -1,17 +1,27 @@
 from __future__ import annotations
 
 import datetime
-from typing import Iterator, Optional
+from typing import Iterator, Literal, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 
 from .edition import EditionType
 
 
 class VolumeDetail(BaseModel):
+    volume_number: str | None
+    volume_isbn: str | None
+    volume_acronym: str | None
     backmatter: list[str]
     frontmatter: list[str]
     mainmatter: list[str]
+
+    @validator("volume_number", "volume_isbn", "volume_acronym", pre=True)
+    def sanitize_input(cls, field: Literal[False] | str) -> str:
+        if field is False:
+            return ""
+        else:
+            return field
 
 
 class Volumes(BaseModel):
@@ -39,6 +49,8 @@ class EditionDetails(BaseModel):
     working_dir: str
     main_toc_depth: str
     secondary_toc: bool
+    edition_number: str
+    publication_isbn: str
 
     class Config:
         extra = "ignore"
@@ -46,9 +58,19 @@ class EditionDetails(BaseModel):
 
 class PublicationDetails(BaseModel):
     creator_name: str
+    creator_uid: str
+    creator_bio: str | None = None
     translation_subtitle: str
     translation_title: str
     translation_lang_iso: str
+    creation_process: str
+    editions_url: str
+    first_published: str
+    root_lang_name: str
+    root_title: str
+    source_url: str
+    text_description: str
+    translation_lang_name: str
 
     class Config:
         extra = "ignore"

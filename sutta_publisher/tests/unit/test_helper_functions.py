@@ -4,7 +4,6 @@ from sutta_publisher.edition_parsers.helper_functions import (
     _filter_refs,
     _flatten_list,
     _reference_to_html,
-    _segment_id_to_html,
     _split_ref_and_number,
     fetch_possible_refs,
     process_line,
@@ -49,17 +48,6 @@ def test_should_check_creating_tuple_from_reference(
     test_reference: str, expected: tuple[str, str] | None, list_of_all_refs: list[str]
 ) -> None:
     assert _split_ref_and_number(test_reference, list_of_all_refs) == expected
-
-
-@pytest.mark.parametrize(
-    "test_segment_id, expected_html",
-    [
-        ("dn1:0.1", "<span   id='dn1:0.1'></span>"),
-        ("dn1:1.1.4", "<span   id='dn1:1.1.4'></span>"),
-    ],
-)
-def test_should_check_html_element_is_created_from_segment_id(test_segment_id: str, expected_html: str) -> None:
-    assert _segment_id_to_html(test_segment_id) == expected_html
 
 
 @pytest.mark.parametrize(

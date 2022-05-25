@@ -40,25 +40,6 @@ def _flatten_list(irregular_list: list[Any]) -> list[Any]:
     return flat_list
 
 
-def _segment_id_to_html(segment_id: str) -> str:
-    """Convert segment id strings such as 'mn138:1.5' into HTML anchors."""
-    # TODO: [27] Implement logic for toggling visibility of segment ID
-    tag = "span"
-    displayable: bool = False
-    class_ = "class='sc-main'" if displayable else " "
-    # Catch two groups. First: 1 or more lowercase letters, second: everything except lowercase letters (one or more)
-    regex = re.match(r"^([a-z]+)([^a-z]+)$", segment_id)
-    # If not matched, will be None
-    if not regex:
-        raise KeyError(f"Invalid or unsupported segment ID {segment_id}")
-    else:
-        segment_id_displayable: str = f"{regex.group(1).upper()} {regex.group(2)}" if displayable else ""
-        # Depending on displayable flag return:
-        # displayable anchor:                              or non displayable anchor:
-        # <a class='sc-main' id='mn138:1.5'>MN 138:1.5</a> or <a id='mn138:1.5'></a>
-        return f"<{tag} {class_} id='{segment_id}'>{segment_id_displayable}</{tag}>"
-
-
 def _split_ref_and_number(reference: str, possible_refs: set[str]) -> tuple[str, str] | None:
     """Split reference strings such as "bj7.1" into tuples e.g. `("bj", "7.1")`."""
     # TODO: [28] Simplify and optimise this function
@@ -118,19 +99,6 @@ def parse_main_toc_depth(depth: str, html: BeautifulSoup) -> int:
         return find_sutta_title_depth(html)
     else:  # Else depth given explicitly.ToC made of h1...h<depth> range of headings
         return int(re.match(rf"^[1-{depth}]$", depth).group(0))  # type: ignore
-
-
-# def collect_main_toc_depth(depth: str, all_volumes: list[BeautifulSoup]) -> list[int]:
-#     """Collect ToC depths for all volumes.
-#
-#     Args:
-#         depth: unparsed input from configuration (such as: "all", "1")
-#         all_volumes: HTML for each volume
-#
-#     Returns:
-#         list[int]: list of depths for each volume
-#     """
-#     return [_parse_main_toc_depth(depth=depth, html=volume) for volume in all_volumes]
 
 
 def find_sutta_title_depth(html: BeautifulSoup) -> int:

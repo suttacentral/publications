@@ -22,12 +22,13 @@ class Blurb(BaseModel):
     acronym: Optional[str]
     blurb: Optional[str]
     name: str
+    # root_name: str
     type: str
     uid: str
 
 
 class MainTableOfContents(BaseModel):
-    headings: list[Tag]
+    headings: list[dict]
 
     def to_html_str(self, template: Template) -> str:
 

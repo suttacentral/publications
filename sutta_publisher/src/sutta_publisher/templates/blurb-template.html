@@ -5,14 +5,14 @@
         <dt>
             <a class='blurb-link' href='#{{blurb.uid | safe}}'>
                 <span class='blurb-label'>
-                    {% if blurb.acronym and blurb.type == "leaf" %}<span class='acronym'>{{blurb.acronym | safe}}</span>{% endif %}
-                    {% if blurb.name %}<span class='translation_name'>{{blurb.name | safe}}</span>{% endif %}
-                    {% if blurb.root_name %}<span class='root_name'>{{blurb.root_name | safe}}</span>{%  endif %}
+                    {% if blurb.acronym and blurb.type == "leaf" %}<span class='blurb-item acronym'>{{blurb.acronym | safe}}</span>{% endif %}
+                    {% if blurb.name %}<span class='blurb-item translated-title'>{{blurb.name | safe}}</span>{% endif %}
+                    {% if blurb.root_name %}<span class='blurb-item root-title'>{{blurb.root_name | safe}}</span>{%  endif %}
                 </span>
             </a>
         </dt>
         <dd>
-            <span class='blurb_content'>{{blurb.blurb | safe}}</span>
+            <span class='blurb-content'>{{blurb.blurb | safe}}</span>
         </dd>
         {% endfor %}
     </dl>

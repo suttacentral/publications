@@ -283,33 +283,37 @@ def add_class(tags: list[Tag], class_: str) -> None:
         tag["class"] = tag.get("class", []) + [class_]
 
 
-def add_acronym_to_text(id: str, text: str) -> str:
+def add_acronym(id: str) -> str | None:
     if _match := re.search(re.compile(r"^[a-z]+(\d+)"), id):
         _index = id.index(_match.group(1))
         acronym = f"{id[:_index].upper()} {id[_index:]}"
-        return f"{acronym}: {text}"
+        return acronym
     else:
-        return text
+        return None
 
 
-def _make_html_link_to_heading(tag: Tag) -> str:
+def _make_html_link_to_heading(heading: dict) -> str:
     # If heading is a sutta-title, we have to get id from parent <article> tag
-    tag_id = tag.get("id") if tag.get("id") else tag.parent.get("id")
-    tag_text = tag.text
-    if tag.get("class") and "sutta-title" in tag.get("class"):
-        tag_text = add_acronym_to_text(id=tag_id, text=tag_text)
+    text = heading["name"]
+    if heading["type"] == "leaf":
+        acronym_span = f"<span class='toc-item acronym'>{heading['acronym']}</span>"
+        name_span = f"<span class='toc-item translated-title'>{heading['name']}</span>"
+        # root_name_span = f"<span class='toc-item root-title'>{heading['root_name']}</span>"
 
-    return f"<a href='#{tag_id}'>{tag_text}</a>"
+        # return f"<a href='#{heading['uid']}'>{acronym_span} {name_span} {root_name_span}</a>"
+        return f"<a href='#{heading['uid']}'>{acronym_span} {name_span} </a>"
+
+    return f"<a href='#{heading['uid']}'>{heading['name']}</a>"
 
 
-def generate_html_toc(headings: list[Tag]) -> str:
-    _anchors: list[str] = [_make_html_link_to_heading(heading) for heading in headings]
+def generate_html_toc(headings: list[dict]) -> str:
+    _anchors: list[str] = [_make_html_link_to_heading(heading=heading) for heading in headings]
     _list_items: list[str] = [f"<li>{link}</li>" for link in _anchors]
     _previous_h = 0
     toc: list[str] = []
-    for _tag, _li in zip(headings, _list_items):
+    for _heading, _li in zip(headings, _list_items):
         # If next heading is lower level we open another HTML list for it (to achieve multilevel list in HTML)
-        _current_depth = get_heading_depth(_tag)
+        _current_depth = get_heading_depth(_heading['tag'])
         # we come across situation where after h3 (sutta-title) comes preheading (h1),
         # so we need to close both sutta-title nested list and chapters nested list
         _level_difference = abs(_current_depth - _previous_h)

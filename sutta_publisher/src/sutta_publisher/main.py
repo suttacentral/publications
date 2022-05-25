@@ -28,14 +28,15 @@ def run(editions: EditionsConfigs) -> None:
             log.exception("Can't parse publication_type='%s'. Error: %s", edition_config.edition.publication_type, e)
 
     for edition in edition_list:  # type: EditionParser
+        # TODO: DELETE THIS IF AND FIX INDENTATION
+        if edition.edition_type == "html":
+            log.debug(edition)
 
-        log.debug(edition)
-
-        try:
-            file_like_obj = edition.collect_all()
-            publish(file_like_obj)
-        except Exception as e:
-            log.exception(e)
+            try:
+                file_like_obj = edition.collect_all()
+                publish(file_like_obj)
+            except Exception as e:
+                log.exception(e)
 
     log.debug("*** Script finished ***")
 

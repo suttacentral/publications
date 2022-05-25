@@ -294,7 +294,6 @@ def add_acronym(id: str) -> str | None:
 
 def _make_html_link_to_heading(heading: dict) -> str:
     # If heading is a sutta-title, we have to get id from parent <article> tag
-    text = heading["name"]
     if heading["type"] == "leaf":
         acronym_span = f"<span class='toc-item acronym'>{heading['acronym']}</span>"
         name_span = f"<span class='toc-item translated-title'>{heading['name']}</span>"
@@ -313,7 +312,7 @@ def generate_html_toc(headings: list[dict]) -> str:
     toc: list[str] = []
     for _heading, _li in zip(headings, _list_items):
         # If next heading is lower level we open another HTML list for it (to achieve multilevel list in HTML)
-        _current_depth = get_heading_depth(_heading['tag'])
+        _current_depth = get_heading_depth(_heading["tag"])
         # we come across situation where after h3 (sutta-title) comes preheading (h1),
         # so we need to close both sutta-title nested list and chapters nested list
         _level_difference = abs(_current_depth - _previous_h)

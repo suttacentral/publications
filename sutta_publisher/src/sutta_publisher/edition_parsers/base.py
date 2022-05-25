@@ -40,12 +40,7 @@ from sutta_publisher.shared.value_objects.edition_data import (
     VolumeHeadings,
     VolumePreheadings,
 )
-from sutta_publisher.shared.value_objects.parser_objects import (
-    Blurb,
-    Edition,
-    MainTableOfContents,
-    Volume,
-)
+from sutta_publisher.shared.value_objects.parser_objects import Blurb, Edition, MainTableOfContents, Volume
 
 log = logging.getLogger(__name__)
 
@@ -416,9 +411,7 @@ class EditionParser(ABC):
         _heading_tags: list[Tag] = self._collect_main_toc(html=_mainmatter)
 
         _index = EditionParser._get_true_index(volume)
-        _data: list[Node] = [
-            _node for _part in self.raw_data[_index].mainmatter for _node in _part
-        ]
+        _data: list[Node] = [_node for _part in self.raw_data[_index].mainmatter for _node in _part]
 
         _headings: list[dict] = [
             {
@@ -428,7 +421,8 @@ class EditionParser(ABC):
                 "tag": tag,
                 "type": node.type,
                 "uid": node.uid,
-            } for tag, node in zip(_heading_tags, _data[1:])
+            }
+            for tag, node in zip(_heading_tags, _data[1:])
         ]
         self._insert_additional_headings(_headings=_headings, volume=volume)
         volume.main_toc = MainTableOfContents.parse_obj({"headings": _headings})

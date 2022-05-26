@@ -241,6 +241,7 @@ class EditionParser(ABC):
 
     @staticmethod
     def _insert_span_tags(headings: list[Tag], nodes: list[Node]) -> None:
+        """Inserts acronym, translation name and root name span tags"""
         for heading, node in zip(headings, nodes):
             heading.string = ""
 

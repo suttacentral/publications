@@ -283,15 +283,6 @@ def add_class(tags: list[Tag], class_: str) -> None:
         tag["class"] = tag.get("class", []) + [class_]
 
 
-def add_acronym(id: str) -> str | None:
-    if _match := re.search(re.compile(r"^[a-z]+(\d+)"), id):
-        _index = id.index(_match.group(1))
-        acronym = f"{id[:_index].upper()} {id[_index:]}"
-        return acronym
-    else:
-        return None
-
-
 def _make_html_link_to_heading(heading: dict) -> str:
     # If heading is a sutta-title, we have to get id from parent <article> tag
     if heading["type"] == "leaf":

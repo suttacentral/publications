@@ -22,7 +22,7 @@ class Blurb(BaseModel):
     acronym: Optional[str]
     blurb: Optional[str]
     name: str
-    # root_name: str
+    root_name: Optional[str]
     type: str
     uid: str
 

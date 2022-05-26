@@ -52,6 +52,7 @@ class Node(BaseModel):
     blurb: Optional[str]
     mainmatter: NodeDetails
     name: str
+    root_name: Optional[str]
     type: str
     uid: str
 

@@ -239,6 +239,29 @@ class EditionParser(ABC):
                 )
             return "".join(single_lines)  # putting content of one node together
 
+    @staticmethod
+    def _insert_span_tags(headings: list[Tag], nodes: list[Node]) -> None:
+        """Inserts acronym, translation name and root name span tags"""
+        for heading, node in zip(headings, nodes):
+            heading.string = ""
+
+            acronym_span = BeautifulSoup(parser="lxml").new_tag("span", class_="sutta-heading acronym")
+            acronym_span.string = node.acronym
+            heading.append(acronym_span)
+
+            heading.append(" ")
+
+            name_span = BeautifulSoup(parser="lxml").new_tag("span", class_="sutta-heading translated-title")
+            name_span.string = node.name
+            heading.append(name_span)
+
+            if node.root_name:
+                heading.append(" ")
+
+                root_name_span = BeautifulSoup(parser="lxml").new_tag("span", class_="sutta-heading root-title")
+                root_name_span.string = node.root_name
+                heading.append(root_name_span)
+
     def _postprocess_mainmatter(self, mainmatter: BeautifulSoup, volume: Volume) -> str:
         """Apply some additional postprocessing and insert additional headings to a crude mainmatter"""
 
@@ -253,7 +276,7 @@ class EditionParser(ABC):
 
         # Change numbers of all headings according to how many additional preheadings are. If there are 2 preheadings,
         # h1 headings become h3 headings.
-        _additional_depth: int = len(_raw_data.preheadings[0][0])
+        _additional_depth: int = 0 if not len(_raw_data.preheadings[0]) else len(_raw_data.preheadings[0][0])
         for heading in find_all_headings(mainmatter):
             increment_heading_by_number(by_number=_additional_depth, heading=heading)
 
@@ -267,6 +290,10 @@ class EditionParser(ABC):
         _headings = collect_actual_headings(end_depth=_depth, html=mainmatter)
 
         add_class(tags=_headings, class_="heading")
+
+        _sutta_headings: list[Tag] = mainmatter.find_all(f"h{_depth}")
+        _sutta_nodes: list[Node] = [_node for _part in _raw_data.mainmatter for _node in _part if _node.type == "leaf"]
+        self._insert_span_tags(headings=_sutta_headings, nodes=_sutta_nodes)
 
         # Add class "subheading" for all HTML headings below hX with class "sutta-title"
         _start_depth = find_sutta_title_depth(html=mainmatter) + 1
@@ -340,37 +367,64 @@ class EditionParser(ABC):
 
         return headings
 
-    def _create_additional_heading(self, item: str) -> Tag:
+    def _create_additional_heading(self, heading: str) -> Tag:
         """Create additional a new Tag: <h1 id='{item}'>{item.capitalized}</h1>"""
         soup = BeautifulSoup(parser="lxml")
-        tag = soup.new_tag("h1", id=item)
-        tag.string = item.capitalize()
+        tag = soup.new_tag("h1", id=heading)
+        tag.string = heading.capitalize()
         return tag
 
-    def _insert_additional_headings(self, collected_headings: list[Tag], volume: Volume) -> None:
+    def _insert_additional_headings(self, _headings: list[dict], volume: Volume) -> None:
         """Insert additional frontmatter heading at the beginning
         and backmatter headings at the end of the collected_headings list"""
         _index: int = EditionParser._get_true_index(volume)
-        frontmatter_headings: list[Tag] = [
-            self._create_additional_heading(item=item)
-            for item in ADDITIONAL_HEADINGS["frontmatter"]
-            if any(item in matter for matter in self.config.edition.volumes[_index].frontmatter)
+        frontmatter_headings: list[dict] = [
+            {
+                "acronym": None,
+                "name": heading.capitalize(),
+                "tag": self._create_additional_heading(heading=heading),
+                "type": "branch",
+                "uid": heading,
+            }
+            for heading in ADDITIONAL_HEADINGS["frontmatter"]
+            if any(heading in matter for matter in self.config.edition.volumes[_index].frontmatter)
         ]
-        collected_headings[0:0] = frontmatter_headings
+        _headings[0:0] = frontmatter_headings
 
-        backmatter_headings: list[Tag] = [
-            self._create_additional_heading(item=item)
-            for item in ADDITIONAL_HEADINGS["backmatter"]
-            if any(item in matter for matter in self.config.edition.volumes[_index].backmatter)
+        backmatter_headings: list[dict] = [
+            {
+                "acronym": None,
+                "name": heading.capitalize(),
+                "tag": self._create_additional_heading(heading=heading),
+                "type": "branch",
+                "uid": heading,
+            }
+            for heading in ADDITIONAL_HEADINGS["backmatter"]
+            if any(heading in matter for matter in self.config.edition.volumes[_index].backmatter)
         ]
-        collected_headings.extend(backmatter_headings)
+        _headings.extend(backmatter_headings)
 
     def set_main_toc(self, volume: Volume) -> None:
         """Add main table of contents to a volume"""
         _mainmatter = BeautifulSoup(volume.mainmatter, "lxml")
-        _collected_headings: list[Tag] = self._collect_main_toc(html=_mainmatter)
-        self._insert_additional_headings(collected_headings=_collected_headings, volume=volume)
-        volume.main_toc = MainTableOfContents.parse_obj({"headings": _collected_headings})
+        _heading_tags: list[Tag] = self._collect_main_toc(html=_mainmatter)
+
+        _index = EditionParser._get_true_index(volume)
+        _data: list[Node] = [_node for _part in self.raw_data[_index].mainmatter for _node in _part]
+
+        _headings: list[dict] = [
+            {
+                "acronym": node.acronym,
+                "name": node.name,
+                # "root_name": node.root_name,
+                "tag": tag,
+                "type": node.type,
+                "uid": node.uid,
+            }
+            for tag, node in zip(_heading_tags, _data[1:])
+        ]
+        self._insert_additional_headings(_headings=_headings, volume=volume)
+        volume.main_toc = MainTableOfContents.parse_obj({"headings": _headings})
 
     @staticmethod
     def _collect_secondary_toc(

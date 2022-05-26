@@ -255,12 +255,12 @@ class EditionParser(ABC):
             name_span.string = node.name
             heading.append(name_span)
 
-            # if node.root_name:
-            #     heading.append(" ")
-            #
-            #     root_name_span = BeautifulSoup(parser="lxml").new_tag("span", class_="sutta-heading root-title")
-            #     root_name_span.string = node.root_name
-            #     heading.append(root_name_span)
+            if node.root_name:
+                heading.append(" ")
+
+                root_name_span = BeautifulSoup(parser="lxml").new_tag("span", class_="sutta-heading root-title")
+                root_name_span.string = node.root_name
+                heading.append(root_name_span)
 
     def _postprocess_mainmatter(self, mainmatter: BeautifulSoup, volume: Volume) -> str:
         """Apply some additional postprocessing and insert additional headings to a crude mainmatter"""
@@ -276,7 +276,7 @@ class EditionParser(ABC):
 
         # Change numbers of all headings according to how many additional preheadings are. If there are 2 preheadings,
         # h1 headings become h3 headings.
-        _additional_depth: int = len(_raw_data.preheadings[0][0])
+        _additional_depth: int = 0 if not len(_raw_data.preheadings[0]) else len(_raw_data.preheadings[0][0])
         for heading in find_all_headings(mainmatter):
             increment_heading_by_number(by_number=_additional_depth, heading=heading)
 
@@ -382,7 +382,6 @@ class EditionParser(ABC):
             {
                 "acronym": None,
                 "name": heading.capitalize(),
-                # "root_name": None,
                 "tag": self._create_additional_heading(heading=heading),
                 "type": "branch",
                 "uid": heading,
@@ -396,7 +395,6 @@ class EditionParser(ABC):
             {
                 "acronym": None,
                 "name": heading.capitalize(),
-                # "root_name": None,
                 "tag": self._create_additional_heading(heading=heading),
                 "type": "branch",
                 "uid": heading,

@@ -290,10 +290,9 @@ def _make_html_link_to_heading(heading: dict) -> str:
     if heading["type"] == "leaf":
         acronym_span = f"<span class='toc-item acronym'>{heading['acronym']}</span>"
         name_span = f"<span class='toc-item translated-title'>{heading['name']}</span>"
-        # root_name_span = f"<span class='toc-item root-title'>{heading['root_name']}</span>"
+        root_name_span = f"<span class='toc-item root-title'>{heading['root_name']}</span>"
 
-        # return f"<a href='#{heading['uid']}'>{acronym_span} {name_span} {root_name_span}</a>"
-        return f"<a href='#{heading['uid']}'>{acronym_span} {name_span} </a>"
+        return f"<a href='#{heading['uid']}'>{' '.join([acronym_span, name_span, root_name_span])}</a>"
 
     return f"<a href='#{heading['uid']}'>{heading['name']}</a>"
 

@@ -431,7 +431,7 @@ class EditionParser(ABC):
             {
                 "acronym": node.acronym,
                 "name": node.name,
-                # "root_name": node.root_name,
+                "root_name": node.root_name,
                 "tag": tag,
                 "type": node.type,
                 "uid": node.uid,
@@ -615,13 +615,12 @@ class EditionParser(ABC):
         volume.frontmatter = self._collect_matters(volume=volume, matters=_matters)
 
     def set_notes(self, volume: Volume) -> None:
-        """Add a notes to a volume"""
+        """Add notes to a volume"""
         _index: int = EditionParser._get_true_index(volume)
         _raw_data: VolumeData = self.raw_data[_index]
-        _raw_nodes = [node for part in _raw_data.mainmatter for node in part]
-        _raw_mainmatters = [node.mainmatter for node in _raw_nodes]
+        _raw_node_mainmatters = [node.mainmatter for part in _raw_data.mainmatter for node in part]
         _raw_notes: list[str] = [
-            note for mainmatter in _raw_mainmatters if mainmatter.notes for note in mainmatter.notes.values()
+            note for mainmatter in _raw_node_mainmatters if mainmatter.notes for note in mainmatter.notes.values()
         ]
         volume.notes = _raw_notes
 

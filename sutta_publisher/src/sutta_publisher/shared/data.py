@@ -93,8 +93,8 @@ def get_mainmatters_headings_ids(edition_id: str, uids: list[str]) -> VolumeHead
             elif node["type"] == "branch" and leaves_group:
                 full_mainmatter_headings.append(deepcopy(leaves_group))
                 leaves_group = HeadingsGroup()
-            else:
-                continue
+        else:
+            full_mainmatter_headings.append(deepcopy(leaves_group))
 
         all_matters_headings.append(deepcopy(full_mainmatter_headings))
 

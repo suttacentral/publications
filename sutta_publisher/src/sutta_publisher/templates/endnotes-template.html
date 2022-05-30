@@ -1,0 +1,10 @@
+<article id="endnotes" epub:type="endnotes" role="doc-endnotes">
+  <h1>Endnotes</h1>
+  <ol>
+    {% for note in notes %}
+      <li id="note-{{ loop.index }}" epub:type="endnote">
+        <p>{{ note | safe }} <a href="#noteref-{{ loop.index }}" epub:type="backlink" role="doc-backlink">↩</a></p>
+      </li>
+    {% endfor %}
+  </ol>
+</article>

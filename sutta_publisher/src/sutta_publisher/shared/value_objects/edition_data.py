@@ -44,6 +44,7 @@ class EditionPreheadings(list[VolumePreheadings]):
 class NodeDetails(BaseModel):
     main_text: Optional[dict[str, str]]
     markup: Optional[dict[str, str]]
+    notes: Optional[dict[str, str]]
     reference: Optional[dict[str, str]]
 
 

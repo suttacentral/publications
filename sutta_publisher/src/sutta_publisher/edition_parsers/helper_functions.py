@@ -60,7 +60,7 @@ def _reference_to_html(reference: tuple[str, str]) -> str:
     return f"<a class='{ref_type}' id='{ref_type}{ref_id}'>{ref_type.upper()} {ref_id}</a>"
 
 
-def process_line(markup: str, segment_id: str, text: str, references: str, possible_refs: set[str]) -> str:
+def process_line(markup: str, segment_id: str, text: str, note: str, references: str, possible_refs: set[str]) -> str:
     # add data-ref attribute to <p>, <ul>, <ol>, <dl> tags (#2417)
     for tag in ["<p", "<ul", "<ol", "<dl"]:
         if tag in markup:
@@ -77,6 +77,8 @@ def process_line(markup: str, segment_id: str, text: str, references: str, possi
     filtered_references = _filter_refs(references=filtered_references, accepted_references=ACCEPTED_REFERENCES)
     list_of_refs_tags: list[str] = [_reference_to_html(reference) for reference in filtered_references]
     references_html = "".join(list_of_refs_tags)
+    if note:
+        text += '<a href="#note-{number}" id="noteref-{number}" role="doc-noteref" epub:type="noteref">{number}</a>'
     return markup.format(f"{references_html}{text}")
 
 

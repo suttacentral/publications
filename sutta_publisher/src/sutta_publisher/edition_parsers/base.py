@@ -233,6 +233,7 @@ class EditionParser(ABC):
                         markup=node.mainmatter.markup[_id],
                         segment_id=_id,
                         text=node.mainmatter.main_text.get(_id, ""),
+                        note=node.mainmatter.notes.get(_id, "") if node.mainmatter.notes else "",
                         references=node.mainmatter.reference.get(_id, ""),
                         possible_refs=self.possible_refs,
                     )
@@ -261,6 +262,17 @@ class EditionParser(ABC):
                 root_name_span = BeautifulSoup(parser="lxml").new_tag("span", class_="sutta-heading root-title")
                 root_name_span.string = node.root_name
                 heading.append(root_name_span)
+
+    def _add_indices_to_note_refs(self, mainmatter: BeautifulSoup) -> None:
+        """Add indices to note-ref anchor tags"""
+        last_id = self.config.edition.noteref_id
+        _noteref_anchors = mainmatter.find_all("a", id="noteref-{number}")
+        for tag in _noteref_anchors:
+            last_id += 1
+            tag["href"] = tag["href"].format(number=last_id)
+            tag["id"] = tag["id"].format(number=last_id)
+            tag.string = tag.string.format(number=last_id)
+        self.config.edition.noteref_id = last_id
 
     def _postprocess_mainmatter(self, mainmatter: BeautifulSoup, volume: Volume) -> str:
         """Apply some additional postprocessing and insert additional headings to a crude mainmatter"""
@@ -300,6 +312,9 @@ class EditionParser(ABC):
         _subheadings = collect_actual_headings(start_depth=_start_depth, end_depth=999, html=mainmatter)
 
         add_class(tags=_subheadings, class_="subheading")
+
+        # Add the numbering to note reference anchors
+        self._add_indices_to_note_refs(mainmatter=mainmatter)
 
         return cast(str, back_to_str(mainmatter))
 
@@ -416,7 +431,7 @@ class EditionParser(ABC):
             {
                 "acronym": node.acronym,
                 "name": node.name,
-                # "root_name": node.root_name,
+                "root_name": node.root_name,
                 "tag": tag,
                 "type": node.type,
                 "uid": node.uid,
@@ -599,6 +614,16 @@ class EditionParser(ABC):
         _matters: list[str] = self.config.edition.volumes[_index].frontmatter
         volume.frontmatter = self._collect_matters(volume=volume, matters=_matters)
 
+    def set_notes(self, volume: Volume) -> None:
+        """Add notes to a volume"""
+        _index: int = EditionParser._get_true_index(volume)
+        _raw_data: VolumeData = self.raw_data[_index]
+        _raw_node_mainmatters = [node.mainmatter for part in _raw_data.mainmatter for node in part]
+        _raw_notes: list[str] = [
+            note for mainmatter in _raw_node_mainmatters if mainmatter.notes for note in mainmatter.notes.values()
+        ]
+        volume.notes = _raw_notes
+
     def set_backmatter(self, volume: Volume) -> None:
         """Add a backmatter to a volume"""
         _index: int = EditionParser._get_true_index(volume)
@@ -624,6 +649,7 @@ class EditionParser(ABC):
             self.set_main_toc,
             self.set_secondary_toc,
             self.set_frontmatter,
+            self.set_notes,
             self.set_backmatter,
         ]
         for _operation in _operations:

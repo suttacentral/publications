@@ -36,8 +36,11 @@ def get_edition_config(edition_id: str) -> EditionConfig:
     bios_response = requests.get(CREATOR_BIOS_URL)
     bios_response.raise_for_status()
     creators_bios: list[dict[str, str]] = bios_response.json()
-    (target_bio,) = [bio for bio in creators_bios if bio["creator_uid"] == config.publication.creator_uid]
-    config.publication.creator_bio = target_bio["creator_biography"]
+    try:
+        (target_bio,) = [bio for bio in creators_bios if bio["creator_uid"] == config.publication.creator_uid]
+        config.publication.creator_bio = target_bio["creator_biography"]
+    except ValueError:
+        raise SystemExit(f"No creator's biography found for: {config.publication.creator_uid}. Stopping.")
 
     return config
 

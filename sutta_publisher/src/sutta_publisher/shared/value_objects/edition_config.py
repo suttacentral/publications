@@ -51,6 +51,7 @@ class EditionDetails(BaseModel):
     secondary_toc: bool
     edition_number: str
     publication_isbn: str
+    noteref_id: int = 0  # Helper field for proper numbering of note references in editions with multiple volumes
 
     class Config:
         extra = "ignore"

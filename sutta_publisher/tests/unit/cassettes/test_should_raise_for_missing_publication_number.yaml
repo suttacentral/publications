@@ -1,0 +1,48 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.27.1
+    method: GET
+    uri: http://localhost/api/publication/editions
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAEA7WYy26DMBBFfyViXUsxeaq/UlWRwbS4BYJ4ZFP13+skOxjUnqmyiyLlXDTnjoG8
+        fCWFD0M4N6fgk+dV4hpTNKYfP9xwPvV5O2Y7U/jUFPHTKV2nqVmnxq6Tp1USv6lC7m4/bsY6K7or
+        4P6b5Ptp9Tf03pRDXT0EvTWtf3sIeWda1xZd5vLPh/A3pnSdz8+Xovsn3898RpfYZyr5lNFw6IBM
+        mwLQqnkDvqovIj/u6nRB7V5h1O4lpUt0OnpGV02fRagEsAhYfBk+lOF96veqV3X9ouKlBJUElAAH
+        hNj0BoXgtP0LcDcza6NZ1dyttLxDKSfQy0dwOngEh41BbNVGiQmjn26sPWpO5KMkdQGuaw1J0M2H
+        JOBeEjitjsj2ZTtVe4hmIfsgeV1A05kQtqozJICeBYStqqMY0DczqVZh1SK4avYsQjUhFkHbyei0
+        PjK9nr3wbOLK0ivfSDsro1VqAR+eNoBMBw7QqjKK/H7mc6t9atpKUmU+HDog06EDNC05QKt8ivy2
+        Cma4mMvtNTbrXFm7Ktz/abo+NamCxJv3L0HQsCaC+tBkqE4fTRDtbcx4/QEPhHcYXhQAAA==
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 31 May 2022 13:44:29 GMT
+      ETag:
+      - W/"6b0360eb37f38f66aa51d2deb73631d8"
+      Keep-Alive:
+      - timeout=5
+      Server:
+      - nginx/1.21.1
+      Transfer-Encoding:
+      - chunked
+    status:
+      code: 200
+      message: OK
+version: 1

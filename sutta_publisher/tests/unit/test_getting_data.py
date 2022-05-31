@@ -15,15 +15,15 @@ def test_should_return_data_for_edition() -> None:
     assert len(edition_data) == 1
 
     first_edition_data = edition_data[0]
-    assert len(first_edition_data.mainmatter) == 171
+    assert len(first_edition_data.mainmatter[0]) == 171
 
-    first_mainmatter_chunk = first_edition_data.mainmatter[0]
-    assert first_mainmatter_chunk.blurb is not None
-    assert first_mainmatter_chunk.mainmatter == NodeDetails(main_text=None, markup=None, reference=None)
-    assert first_mainmatter_chunk.name == "Middle Discourses Collection"
-    assert first_mainmatter_chunk.type == "branch"
+    first_mainmatter_node = first_edition_data.mainmatter[0][0]
+    assert first_mainmatter_node.blurb is not None
+    assert first_mainmatter_node.mainmatter == NodeDetails(main_text=None, markup=None, reference=None)
+    assert first_mainmatter_node.name == "Middle Discourses Collection"
+    assert first_mainmatter_node.type == "branch"
 
-    some_mainmatter_chunk = first_edition_data.mainmatter[20]
+    some_mainmatter_chunk = first_edition_data.mainmatter[0][20]
     assert some_mainmatter_chunk.blurb == (
         "While living in the wilderness is great, not everyone is ready for it. "
         "The Buddha encourages meditators to reflect on whether one’s environment is genuinely supporting their meditation practice, "
@@ -43,4 +43,4 @@ def test_should_return_data_for_edition() -> None:
     }
 
     # Check if `volume_details.mainmatter` has more elements than only one
-    assert len(edition_data[-1].mainmatter) == 171
+    assert len(edition_data[-1].mainmatter[0]) == 171

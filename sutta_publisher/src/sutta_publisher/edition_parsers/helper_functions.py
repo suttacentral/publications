@@ -78,7 +78,7 @@ def process_line(markup: str, segment_id: str, text: str, note: str, references:
     list_of_refs_tags: list[str] = [_reference_to_html(reference) for reference in filtered_references]
     references_html = "".join(list_of_refs_tags)
     if note:
-        text += '<a href="#note-{number}" id="noteref-{number}" role="doc-noteref" epub:type="noteref">{number}</a>'
+        text += "<a href='#note-{number}' id='noteref-{number}' role='doc-noteref' epub:type='noteref'>{number}</a>"
     return markup.format(f"{references_html}{text}")
 
 

@@ -11,7 +11,7 @@ def test_should_create_config() -> None:
     editions = get_editions_configs(publication_number=publication_number)
 
     # Then
-    assert len(editions) == 3
+    assert len(editions) == 5  # (epub, html, pdf, hardcover, paperback)
 
     html_edition = editions.get_edition(edition=EditionType.html)
     assert html_edition.edition.publication_type == EditionType.html

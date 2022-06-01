@@ -326,5 +326,8 @@ def generate_html_toc(headings: list[dict]) -> str:
 def back_to_str(html: BeautifulSoup) -> str:
     """Retrieve content of the HTML body.
     Useful for converting back and forth between str and HTML (`BeautifulSoup`),
-    so that in final concatenated HTML we don't end up with multiple <head>-s."""
-    return cast(str, str(html.find("body")))
+    so that in final concatenated HTML we don't end up with multiple <html>, <head>, <body> tags."""
+    for attr in ["html", "head", "body"]:
+        if element := getattr(html, attr, None):
+            element.unwrap()
+    return cast(str, str(html))

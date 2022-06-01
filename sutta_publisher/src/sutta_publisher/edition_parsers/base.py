@@ -252,8 +252,7 @@ class EditionParser(ABC):
             for attr in ["acronym", "name", "root_name"]:
                 if node_attr := getattr(node, attr, None):
                     span = BeautifulSoup(parser="lxml").new_tag(
-                        "span",
-                        attrs={"class": f"sutta-heading {attr.replace('name', 'title')}"}
+                        "span", attrs={"class": f"sutta-heading {attr.replace('name', 'title')}"}
                     )
                     span.string = node_attr
                     heading.append(span)

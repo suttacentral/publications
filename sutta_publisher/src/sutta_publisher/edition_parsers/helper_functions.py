@@ -104,15 +104,17 @@ def parse_main_toc_depth(depth: str, html: BeautifulSoup) -> int:
 
 
 def find_sutta_title_depth(html: BeautifulSoup) -> int:
-    """Find depth of a header, whose class is 'sutta-title'
+    """Find depth of a header, whose class is 'sutta-title' or 'range-title' when individual suttas have no titles
 
     Args:
-        html: HTML to look for heading with class 'sutta-title'. Only the first found match is processed
+        html: HTML to look for heading with class 'sutta-title' or 'range-title'.
+        Only the first found match is processed.
 
     Returns:
         int: Level of a found heading, None if didn't find any:
     """
-    heading: Tag = html.find(name=re.compile(r"^h\d+$"), class_="sutta-title")
+    css_class: str = "range-title" if html.find(class_="range-title") else "sutta-title"
+    heading: Tag = html.find(name=re.compile(r"^h\d+$"), class_=css_class)
     return get_heading_depth(tag=heading)
 
 
@@ -292,7 +294,7 @@ def _make_html_link_to_heading(heading: dict) -> str:
         name_span = f"<span class='toc-item translated-title'>{heading['name']}</span>"
         root_name_span = f"<span class='toc-item root-title'>{heading['root_name']}</span>"
 
-        return f"<a href='#{heading['uid']}'>{' '.join([acronym_span, name_span, root_name_span])}</a>"
+        return f"<a href='#{heading['uid']}'>{acronym_span}{name_span}{root_name_span}</a>"
 
     return f"<a href='#{heading['uid']}'>{heading['name']}</a>"
 

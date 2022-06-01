@@ -228,16 +228,19 @@ class EditionParser(ABC):
             ]  # type: ignore
 
             for _id in _segment_ids:
-                single_lines.append(
-                    process_line(
-                        markup=node.mainmatter.markup[_id],
-                        segment_id=_id,
-                        text=node.mainmatter.main_text.get(_id, ""),
-                        note=node.mainmatter.notes.get(_id, "") if node.mainmatter.notes else "",
-                        references=node.mainmatter.reference.get(_id, ""),
-                        possible_refs=self.possible_refs,
+                try:
+                    single_lines.append(
+                        process_line(
+                            markup=node.mainmatter.markup[_id],
+                            segment_id=_id,
+                            text=node.mainmatter.main_text.get(_id, ""),
+                            note=node.mainmatter.notes.get(_id, "") if node.mainmatter.notes else "",
+                            references=node.mainmatter.reference.get(_id, ""),
+                            possible_refs=self.possible_refs,
+                        )
                     )
-                )
+                except AttributeError:
+                    raise SystemExit(f"Error while processing segment {_id}. Stopping.")
             return "".join(single_lines)  # putting content of one node together
 
     @staticmethod

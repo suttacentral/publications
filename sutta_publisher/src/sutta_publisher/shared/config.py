@@ -40,7 +40,17 @@ def get_edition_config(edition_id: str) -> EditionConfig:
         (target_bio,) = [bio for bio in creators_bios if bio["creator_uid"] == config.publication.creator_uid]
         config.publication.creator_bio = target_bio["creator_biography"]
     except ValueError:
-        raise SystemExit(f"No creator's biography found for: {config.publication.creator_uid}. Stopping.")
+        # raise SystemExit(f"No creator's biography found for: {config.publication.creator_uid}. Stopping.")
+
+        # TODO: DELETE THESE LINES
+        logging.error(f"No creator's biography found for: {config.publication.creator_uid}.")
+        config.publication.creator_bio = {
+            "creator_uid": config.publication.creator_uid,
+            "creator_biography": f"No creator's biography found for: {config.publication.creator_uid}. To be written.",
+        }
+
+    # TODO: UNCOMMENT THIS
+    # config.publication.creator_bio = target_bio["creator_biography"]
 
     return config
 

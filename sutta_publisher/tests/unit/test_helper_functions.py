@@ -11,8 +11,8 @@ from sutta_publisher.edition_parsers.helper_functions import (
 
 
 @pytest.fixture
-def list_of_all_refs() -> list[str]:
-    return [
+def list_of_all_refs() -> set[str]:
+    return {
         "ms",
         "pts-cs",
         "pts-vp-pli",
@@ -37,7 +37,7 @@ def list_of_all_refs() -> list[str]:
         "sya-all",
         "vri",
         "maku",
-    ]
+    }
 
 
 @pytest.mark.parametrize(
@@ -83,37 +83,46 @@ def test_should_check_intersection_of_two_lists() -> None:
 
 
 @pytest.mark.parametrize(
-    "test_markup, test_segment, test_text, test_references, expected_line",
+    "test_markup, test_segment, test_text, test_note, test_references, expected_line, accepted_references",
     [
         (
             "<p>{}",
             "dn1:0.1",
             "lorem ipsum",
+            "test note for lorem ipsum",
             "vnp1.9, pts-vp-pli14.2",
-            "<p><span   id='dn1:0.1'></span><a class='pts-vp-pli' id='pts-vp-pli14.2'>PTS-VP-PLI 14.2</a>lorem ipsum",
+            "<p data-ref='dn1:0.1'><a class='pts-vp-pli' id='pts-vp-pli14.2'>PTS-VP-PLI 14.2</a>lorem ipsum<a href='#note-{number}' id='noteref-{number}' role='doc-noteref' epub:type='noteref'>{number}</a>",
+            ["pts-vp-pli"],
         ),
         (
             "<h1 class='sutta-title'>{}</h1></header>",
             "mn138:0.2",
             "dolor sit",
+            "test note for dolor sit",
             "invalid_ref, bj7.9",
-            "<h1 class='sutta-title'><span   id='mn138:0.2'></span><a class='bj' id='bj7.9'>BJ 7.9</a>dolor sit</h1></header>",
+            "<h1 class='sutta-title'><a class='bj' id='bj7.9'>BJ 7.9</a>dolor sit<a href='#note-{number}' id='noteref-{number}' role='doc-noteref' epub:type='noteref'>{number}</a></h1></header>",
+            ["bj"],
         ),
     ],
 )
 def test_should_check_that_a_full_mainmatter_item_is_processed(
+    monkeypatch,
     test_markup: str,
     test_segment: str,
     test_text: str,
+    test_note: str,
     test_references: str,
     expected_line: str,
-    list_of_all_refs: list[str],
+    accepted_references: list[str],
+    list_of_all_refs: set[str],
 ) -> None:
+    monkeypatch.setattr("sutta_publisher.edition_parsers.helper_functions.ACCEPTED_REFERENCES", accepted_references)
     assert (
         process_line(
             markup=test_markup,
             segment_id=test_segment,
             text=test_text,
+            note=test_note,
             references=test_references,
             possible_refs=list_of_all_refs,
         )

@@ -516,9 +516,7 @@ class EditionParser(ABC):
                     for matter in ADDITIONAL_HEADINGS["frontmatter"] + ADDITIONAL_HEADINGS["backmatter"]
                     if matter in _matter
                 ]:
-                    soup = BeautifulSoup(_html_str, "lxml")
-                    soup.find("article")["id"] = item[0]
-                    _html_str = str(soup)
+                    _html_str = _html_str.replace("<article", f"<article id='{item[0]}'")
 
             elif _matter == "main-toc":
                 _html_str = EditionParser._process_main_toc_as_matter(matter=volume.main_toc)

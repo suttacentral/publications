@@ -245,26 +245,18 @@ class EditionParser(ABC):
 
     @staticmethod
     def _insert_span_tags(headings: list[Tag], nodes: list[Node]) -> None:
-        """Inserts acronym, translation name and root name span tags"""
+        """Inserts <span class='sutta-heading {acronym | translation-title | root-title}'> tags into
+        sutta-title headings"""
         for heading, node in zip(headings, nodes):
             heading.string = ""
-
-            acronym_span = BeautifulSoup(parser="lxml").new_tag("span", class_="sutta-heading acronym")
-            acronym_span.string = node.acronym
-            heading.append(acronym_span)
-
-            heading.append(" ")
-
-            name_span = BeautifulSoup(parser="lxml").new_tag("span", class_="sutta-heading translated-title")
-            name_span.string = node.name
-            heading.append(name_span)
-
-            if node.root_name:
-                heading.append(" ")
-
-                root_name_span = BeautifulSoup(parser="lxml").new_tag("span", class_="sutta-heading root-title")
-                root_name_span.string = node.root_name
-                heading.append(root_name_span)
+            for attr in ["acronym", "name", "root_name"]:
+                if node_attr := getattr(node, attr, None):
+                    span = BeautifulSoup(parser="lxml").new_tag(
+                        "span",
+                        attrs={"class": f"sutta-heading {attr.replace('name', 'title')}"}
+                    )
+                    span.string = node_attr
+                    heading.append(span)
 
     def _add_indices_to_note_refs(self, mainmatter: BeautifulSoup) -> None:
         """Add indices to note-ref anchor tags"""

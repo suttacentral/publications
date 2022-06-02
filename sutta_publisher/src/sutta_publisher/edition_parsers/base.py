@@ -14,9 +14,9 @@ from jinja2 import Environment, FileSystemLoader, Template
 
 from sutta_publisher.edition_parsers.helper_functions import (
     add_class,
-    back_to_str,
     collect_actual_headings,
     create_html_heading_with_id,
+    extract_string,
     fetch_possible_refs,
     find_all_headings,
     find_children_by_index,
@@ -247,9 +247,10 @@ class EditionParser(ABC):
     def _insert_span_tags(headings: list[Tag], nodes: list[Node]) -> None:
         """Inserts <span class='sutta-heading {acronym | translation-title | root-title}'> tags into
         sutta-title headings"""
+        css_classes_to_add = ["acronym", "name", "root_name"]
         for heading, node in zip(headings, nodes):
             heading.string = ""
-            for attr in ["acronym", "name", "root_name"]:
+            for attr in css_classes_to_add:
                 if node_attr := getattr(node, attr, None):
                     span = BeautifulSoup(parser="lxml").new_tag(
                         "span", attrs={"class": f"sutta-heading {attr.replace('name', 'title')}"}
@@ -310,7 +311,7 @@ class EditionParser(ABC):
         # Add the numbering to note reference anchors
         self._add_indices_to_note_refs(mainmatter=mainmatter)
 
-        return cast(str, back_to_str(mainmatter))
+        return cast(str, extract_string(mainmatter))
 
     @staticmethod
     def _insert_preheadings(

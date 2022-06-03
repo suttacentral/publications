@@ -235,7 +235,7 @@ class EditionParser(ABC):
                             segment_id=_id,
                             text=node.mainmatter.main_text.get(_id, ""),
                             note=node.mainmatter.notes.get(_id, "") if node.mainmatter.notes else "",
-                            references=node.mainmatter.reference.get(_id, ""),
+                            references=node.mainmatter.reference.get(_id, "") if node.mainmatter.reference else "",
                             possible_refs=self.possible_refs,
                         )
                     )
@@ -377,6 +377,10 @@ class EditionParser(ABC):
 
         return headings
 
+    def _collect_main_toc_uids(self, tags: list[Tag]) -> list[str]:
+        """Return a list of unique IDs of headings"""
+        return [tag["id"] if tag.get("id", None) else tag.parent["id"] for tag in tags]
+
     def _create_additional_heading(self, heading: str) -> Tag:
         """Create additional a new Tag: <h1 id='{item}'>{item.capitalized}</h1>"""
         soup = BeautifulSoup(parser="lxml")
@@ -417,10 +421,12 @@ class EditionParser(ABC):
     def set_main_toc(self, volume: Volume) -> None:
         """Add main table of contents to a volume"""
         _mainmatter = BeautifulSoup(volume.mainmatter, "lxml")
-        _heading_tags: list[Tag] = self._collect_main_toc(html=_mainmatter)
-
+        _heading_tags = self._collect_main_toc(html=_mainmatter)
+        _heading_uids = self._collect_main_toc_uids(tags=_heading_tags)
         _index = EditionParser._get_true_index(volume)
-        _data: list[Node] = [_node for _part in self.raw_data[_index].mainmatter for _node in _part]
+        _data: list[Node] = [
+            _node for _part in self.raw_data[_index].mainmatter for _node in _part if _node.uid in _heading_uids
+        ]
 
         _headings: list[dict] = [
             {
@@ -431,7 +437,7 @@ class EditionParser(ABC):
                 "type": node.type,
                 "uid": node.uid,
             }
-            for tag, node in zip(_heading_tags, _data[1:])
+            for tag, node in zip(_heading_tags, _data)
         ]
         self._insert_additional_headings(_headings=_headings, volume=volume)
         volume.main_toc = MainTableOfContents.parse_obj({"headings": _headings})

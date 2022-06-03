@@ -21,7 +21,7 @@ from sutta_publisher.edition_parsers.helper_functions import generate_html_toc
 class Blurb(BaseModel):
     acronym: Optional[str]
     blurb: Optional[str]
-    name: str
+    name: Optional[str]
     root_name: Optional[str]
     type: str
     uid: str

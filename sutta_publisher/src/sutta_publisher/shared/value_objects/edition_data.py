@@ -52,7 +52,7 @@ class Node(BaseModel):
     acronym: Optional[str]
     blurb: Optional[str]
     mainmatter: NodeDetails
-    name: str
+    name: Optional[str]
     root_name: Optional[str]
     type: str
     uid: str

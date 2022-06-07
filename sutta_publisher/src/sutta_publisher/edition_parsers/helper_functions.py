@@ -1,3 +1,5 @@
+# mypy: ignore-errors
+# TODO: REMOVE MYPY IGNORE
 import ast
 import os
 import re

@@ -177,9 +177,9 @@ def _update_index(index: list[int], tag: Tag) -> None:
         index[i] = 0
 
 
-def _find_index_root(index: HeadingsIndexTreeFrozen) -> tuple[int, ...]:
+def _find_index_root(index: HeadingsIndexTreeFrozen, main_toc_depth: int) -> tuple[int, ...]:
     """Find common index root for all children of this heading - i.e. a non-zero subset of this tuple"""
-    return tuple([i for i in index if i != 0])
+    return tuple([i for n, i in enumerate(index) if i != 0 or n < main_toc_depth - 1])
 
 
 def _compare_index_with_root(index: HeadingsIndexTreeFrozen, root: tuple[int, ...]) -> bool:
@@ -191,10 +191,10 @@ def _compare_index_with_root(index: HeadingsIndexTreeFrozen, root: tuple[int, ..
 
 
 def find_children_by_index(
-    index: HeadingsIndexTreeFrozen, headings_tree: dict[HeadingsIndexTreeFrozen, Tag]
+    index: HeadingsIndexTreeFrozen, headings_tree: dict[HeadingsIndexTreeFrozen, Tag], main_toc_depth: int
 ) -> list[HeadingsIndexTreeFrozen]:
     """Based on parents index, find all children and return their indices"""
-    parent_root = _find_index_root(index)
+    parent_root = _find_index_root(index, main_toc_depth)
     # Return all indexes with the same root except for the parent
     return [
         child_index
@@ -203,7 +203,7 @@ def find_children_by_index(
     ]
 
 
-def make_headings_tree(headings: list[Tag]) -> dict[HeadingsIndexTreeFrozen, Tag]:
+def make_headings_tree(headings: list[Tag] | list[dict]) -> dict[HeadingsIndexTreeFrozen, Tag]:
     """Build a tree of headings where structure is represented by tuple of indexes
 
     Args:
@@ -290,11 +290,11 @@ def add_class(tags: list[Tag], class_: str) -> None:
 def _make_html_link_to_heading(heading: dict) -> str:
     # If heading is a sutta-title, we have to get id from parent <article> tag
     if heading["type"] == "leaf":
-        acronym_span = f"<span class='toc-item acronym'>{heading['acronym']}</span>"
-        name_span = f"<span class='toc-item translated-title'>{heading['name']}</span>"
-        root_name_span = f"<span class='toc-item root-title'>{heading['root_name']}</span>"
+        acronym = f"<span class='toc-item acronym'>{heading['acronym']}</span>" if heading["acronym"] else ""
+        name = f"<span class='toc-item translated-title'>{heading['name']}</span>" if heading["name"] else ""
+        root_name = f"<span class='toc-item root-title'>{heading['root_name']}</span>" if heading["root_name"] else ""
 
-        return f"<a href='#{heading['uid']}'>{acronym_span}{name_span}{root_name_span}</a>"
+        return f"<a href='#{heading['uid']}'>{acronym}{name}{root_name}</a>"
 
     return f"<a href='#{heading['uid']}'>{heading['name']}</a>"
 
@@ -303,18 +303,24 @@ def generate_html_toc(headings: list[dict]) -> str:
     _anchors: list[str] = [_make_html_link_to_heading(heading=heading) for heading in headings]
     _list_items: list[str] = [f"<li>{link}</li>" for link in _anchors]
     _previous_h = 0
+
+    # we need delta level for proper secondary toc indentation
+    _delta: int = get_heading_depth(headings[0]["tag"]) - 1 if headings else 0
+
     toc: list[str] = []
     for _heading, _li in zip(headings, _list_items):
         # If next heading is lower level we open another HTML list for it (to achieve multilevel list in HTML)
-        _current_depth = get_heading_depth(_heading["tag"])
+        _current_depth = get_heading_depth(_heading["tag"]) - _delta
         # we come across situation where after h3 (sutta-title) comes preheading (h1),
         # so we need to close both sutta-title nested list and chapters nested list
         _level_difference = abs(_current_depth - _previous_h)
         if _current_depth > _previous_h:
+            if toc:
+                toc.append(toc.pop(-1).replace("</li>", ""))
             toc.append("<ul>" * _level_difference)
         # If next heading is higher level we close the current HTML list before it
         elif _current_depth < _previous_h:
-            toc.append("</ul>" * _level_difference)
+            toc.append("</ul>" * _level_difference + "</li>")
         toc.append(_li)
         _previous_h = _current_depth
 

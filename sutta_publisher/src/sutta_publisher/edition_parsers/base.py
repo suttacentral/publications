@@ -40,7 +40,13 @@ from sutta_publisher.shared.value_objects.edition_data import (
     VolumeHeadings,
     VolumePreheadings,
 )
-from sutta_publisher.shared.value_objects.parser_objects import Blurb, Edition, MainTableOfContents, Volume
+from sutta_publisher.shared.value_objects.parser_objects import (
+    Blurb,
+    Edition,
+    MainTableOfContents,
+    SecondaryTablesOfContents,
+    Volume,
+)
 
 log = logging.getLogger(__name__)
 
@@ -378,7 +384,7 @@ class EditionParser(ABC):
         return headings
 
     def _collect_main_toc_uids(self, tags: list[Tag]) -> list[str]:
-        """Return a list of unique IDs of headings"""
+        """Return a list of unique IDs of main toc headings"""
         return [tag["id"] if tag.get("id", None) else tag.parent["id"] for tag in tags]
 
     def _create_additional_heading(self, heading: str) -> Tag:
@@ -395,7 +401,9 @@ class EditionParser(ABC):
         frontmatter_headings: list[dict] = [
             {
                 "acronym": None,
-                "name": heading.capitalize(),
+                "name": heading.capitalize()
+                if heading != "blurbs"
+                else "Summary of Contents",  # TODO: Make a translation dict as env variable
                 "tag": self._create_additional_heading(heading=heading),
                 "type": "branch",
                 "uid": heading,
@@ -408,7 +416,7 @@ class EditionParser(ABC):
         backmatter_headings: list[dict] = [
             {
                 "acronym": None,
-                "name": heading.capitalize(),
+                "name": heading.capitalize(),  # TODO: Make a translation dict as env variable
                 "tag": self._create_additional_heading(heading=heading),
                 "type": "branch",
                 "uid": heading,
@@ -475,10 +483,17 @@ class EditionParser(ABC):
         # to their respective children using their indices and build a mapping.
         for _index, _target in _parents:
             secondary_toc_mapping[_target] = [
-                _tree[child_index] for child_index in find_children_by_index(index=_index, headings_tree=_tree)
+                _tree[child_index]
+                for child_index in find_children_by_index(
+                    index=_index, headings_tree=_tree, main_toc_depth=main_toc_depth
+                )
             ]
 
         return secondary_toc_mapping
+
+    def _collect_sec_toc_uids(self, headings: dict[Tag, list[Tag]]) -> list[str]:
+        """Return a list of unique IDs of secondary toc headings"""
+        return [h["id"] if h.get("id", None) else h.parent["id"] for hs in headings.values() for h in hs]
 
     def set_secondary_toc(self, volume: Volume) -> None:
         """Add secondary tables of contents to a volume"""
@@ -487,9 +502,32 @@ class EditionParser(ABC):
             _main_toc_depth: int = parse_main_toc_depth(depth=self.config.edition.main_toc_depth, html=_mainmatter)
             _secondary_toc_depth: int = find_sutta_title_depth(html=_mainmatter)
 
-            volume.secondary_toc = EditionParser._collect_secondary_toc(
+            _headings: dict[Tag, list[Tag]] = EditionParser._collect_secondary_toc(
                 html=_mainmatter, main_toc_depth=_main_toc_depth, secondary_toc_depth=_secondary_toc_depth
             )
+            _heading_uids: list[str] = self._collect_sec_toc_uids(headings=_headings)
+            _index: int = EditionParser._get_true_index(volume)
+            _data: list[Node] = [
+                _node for _part in self.raw_data[_index].mainmatter for _node in _part if _node.uid in _heading_uids
+            ]
+
+            _soc_headings: dict[Tag, list[dict]] = {}
+            for heading, subheadings in _headings.items():
+                _soc_headings[heading] = []
+                for tag in subheadings:
+                    node = _data.pop(0)
+                    _soc_headings[heading].append(
+                        {
+                            "acronym": node.acronym,
+                            "name": node.name,
+                            "root_name": node.root_name,
+                            "tag": tag,
+                            "type": node.type,
+                            "uid": node.uid,
+                        }
+                    )
+
+            volume.secondary_toc = SecondaryTablesOfContents.parse_obj({"headings": _soc_headings})
         else:
             log.debug(f"Edition without secondary ToCs. {secondary_toc=}")
 
@@ -629,6 +667,44 @@ class EditionParser(ABC):
         _matters: list[str] = self.config.edition.volumes[_index].backmatter
         volume.backmatter = self._collect_matters(volume=volume, matters=_matters)
 
+    @staticmethod
+    def _process_secondary_toc(matter: SecondaryTablesOfContents) -> dict[Tag, str]:
+        MATTERS_TO_TEMPLATES_NAMES_MAPPING: dict[str, str] = ast.literal_eval(
+            os.getenv("MATTERS_TO_TEMPLATES_NAMES_MAPPING")  # type: ignore
+        )
+
+        if not MATTERS_TO_TEMPLATES_NAMES_MAPPING:
+            raise EnvironmentError(
+                "Missing .env_public file or the file lacks required variable MATTERS_TO_TEMPLATES_NAMES_MAPPING."
+            )
+        else:
+            try:
+                _template_name: str = MATTERS_TO_TEMPLATES_NAMES_MAPPING["secondary-toc"]
+                _template_loader: FileSystemLoader = jinja2.FileSystemLoader(
+                    searchpath=EditionParser.HTML_TEMPLATES_DIR
+                )
+                _template_env: Environment = jinja2.Environment(loader=_template_loader, autoescape=True)
+                _template: Template = _template_env.get_template(name=_template_name)
+                _secondary_tocs: dict[Tag, str] = matter.to_html_str(_template)
+
+                return _secondary_tocs
+
+            except FileNotFoundError:
+                raise SystemExit(f"Matter '{matter}' is not supported.")
+
+    def add_secondary_toc_to_mainmatter(self, volume: Volume) -> None:
+        """Add secondary toc to mainmatter"""
+        if secondary_toc := self.config.edition.secondary_toc:
+            _secondary_tocs = self._process_secondary_toc(volume.secondary_toc)
+            _mainmatter = BeautifulSoup(volume.mainmatter, "lxml")
+            _main_toc_depth: int = parse_main_toc_depth(depth=self.config.edition.main_toc_depth, html=_mainmatter)
+            for heading, toc in zip(_mainmatter.find_all(f"h{_main_toc_depth}"), _secondary_tocs.values()):
+                heading.insert_after(BeautifulSoup(toc, "html.parser"))
+
+            volume.mainmatter = extract_string(_mainmatter)
+        else:
+            log.debug(f"Edition without secondary ToCs. {secondary_toc=}")
+
     def _generate_cover(self, volume: Volume) -> Any:
         log.debug("Generating covers...")
         # TODO [58]: implement
@@ -650,6 +726,7 @@ class EditionParser(ABC):
             self.set_frontmatter,
             self.set_notes,
             self.set_backmatter,
+            self.add_secondary_toc_to_mainmatter,
         ]
         for _operation in _operations:
             EditionParser.on_each_volume(edition=edition, operation=_operation)

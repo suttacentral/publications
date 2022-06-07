@@ -39,7 +39,7 @@ class MainTableOfContents(BaseModel):
 
 
 class SecondaryTablesOfContents(BaseModel):
-    headings: dict[Tag, list[Tag]]
+    headings: dict[Tag, list[dict]]
 
     def to_html_str(self, template: Template) -> dict[Tag, str]:
         tocs: dict[Tag, str] = {}

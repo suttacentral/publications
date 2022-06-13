@@ -301,9 +301,12 @@ class EditionParser(ABC):
         # Add class "heading" for all HTML headings between h1 and hX which has class "sutta-title"
         _depth = find_sutta_title_depth(html=mainmatter)
         _headings = collect_actual_headings(end_depth=_depth, html=mainmatter)
-
         add_class(tags=_headings, class_="heading")
 
+        # Add class "section-title" for all headings that are not sutta-titles
+        add_class(tags=[h for h in _headings if "sutta-title" not in h.attrs["class"]], class_="section-title")
+
+        # Add <span> tags with acronyms, translated and root titles into sutta-title headings
         _sutta_headings: list[Tag] = mainmatter.find_all(f"h{_depth}")
         _sutta_nodes: list[Node] = [_node for _part in _raw_data.mainmatter for _node in _part if _node.type == "leaf"]
         self._insert_span_tags(headings=_sutta_headings, nodes=_sutta_nodes)

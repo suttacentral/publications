@@ -13,7 +13,7 @@
     </div>
     <div class="text-metadata" about="https://github.com/suttacentral/bilara-data/tree/master/translation/en/sujato/sutta/dn">
         <table>
-            <tr class='first_published'>
+            <tr class='first-published'>
                 <td>Web publication date</td>
                 <td property="dc:date">{{first_published | safe}}</td>
             </tr>
@@ -27,37 +27,37 @@
                 <td property="dcterms:modified">{{updated | safe}}</td>
             </tr>
             {% endif %}
-            <tr class='publication_type'>
+            <tr class='publication-type'>
                 <td>Publication type</td>
                 <td property="dc:format">{{publication_type | safe}}</td>
             </tr>
-            <tr class='edition_number'>
+            <tr class='edition-number'>
                 <td>Edition</td>
                 <td>{{edition_number | safe}}</td>
             </tr>
-            <tr class='number_of_volumes'>
+            <tr class='number-of-volumes'>
                 <td>Number of volumes</td>
                 <td>{{number_of_volumes | safe}}</td>
             </tr>
-            <tr class='publication_isbn'>
+            <tr class='publication-isbn'>
                 <td>Publication ISBN</td>
                 <td>{{publication_isbn | safe}}</td>
             </tr>
             {% if volume %}
-            <tr class='volume_isbn'>
+            <tr class='volume-isbn'>
                 <td>Volume ISBN</td>
                 <td>{{volume_isbn | safe}}</td>
             </tr>
             {% endif %}
-            <tr class="editions_url">
+            <tr class="editions-url">
                 <td>Publication URL</td>
                 <td><a href="{{editions_url}}">{{editions_url | safe}}</a></td>
             </tr>
-            <tr class="source_url">
+            <tr class="source-url">
                 <td>Source URL</td>
                 <td><a href="{{source_url | safe}}">{{source_url | safe}}</a></td>
             </tr>
-            <tr class='publication_number'>
+            <tr class='publication-number'>
                 <td>Publication number</td>
                 <td property="dc:identifier">{{publication_number | safe}}</td>
             </tr>

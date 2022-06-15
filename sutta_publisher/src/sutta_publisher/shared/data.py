@@ -3,7 +3,6 @@ from __future__ import annotations
 import ast
 import os
 from copy import deepcopy
-from typing import Union
 
 import requests
 
@@ -47,26 +46,28 @@ def get_mainmatter_data(edition_id: str, uids: list[str]) -> MainMatter:
     return MainMatter.parse_obj(_all_parts)
 
 
-def get_depths(tree: list[dict] | list[str], mainmatter_tree: dict[str, int], depth: int = 1) -> None:
+def get_depths(tree: list[dict] | list[str], depths: dict[str, int], initial_depth: int = 1) -> None:
+    """Get all headings depth recursively"""
     for item in tree:
         if isinstance(item, dict):
-            mainmatter_tree[list(item.keys())[0]] = depth
+            depths[list(item.keys())[0]] = initial_depth
             _tree = list(item.values())[0]
-            get_depths(_tree, mainmatter_tree, depth=depth + 1)
+            get_depths(_tree, depths, initial_depth=initial_depth + 1)
         elif isinstance(item, str):
-            mainmatter_tree[item] = depth
+            depths[item] = initial_depth
 
 
-def get_mainmatter_tree(uids: list[str]) -> dict[str, int]:
-    mainmatter_tree: dict[str, int] = {}
+def get_depth_tree(uids: list[str]) -> dict[str, int]:
+    """Get edition tree json and convert it into dict of all heading uids and their depth"""
+    depths: dict[str, int] = {}
 
     for uid in uids:
         response = requests.get(TREE_URL.format(uid=uid))
         response.raise_for_status()
         tree: list[dict] = response.json()[uid]
-        get_depths(tree, mainmatter_tree, depth=1)
+        get_depths(tree, depths, initial_depth=1)
 
-    return mainmatter_tree
+    return depths
 
 
 def get_mainmatter_preheadings(edition_id: str, uids: list[str]) -> VolumePreheadings:
@@ -135,7 +136,7 @@ def get_extras_data(edition_id: str) -> dict:
 def get_edition_data(edition_config: EditionConfig) -> EditionData:
     edition_data = EditionData()
     for _volume_details in edition_config.edition.volumes:
-        _mainmatter_tree = get_mainmatter_tree(
+        _depth_tree = get_depth_tree(
             uids=_volume_details.mainmatter,
         )
         _preheadings = get_mainmatter_preheadings(
@@ -165,7 +166,7 @@ def get_edition_data(edition_config: EditionConfig) -> EditionData:
                 mainmatter=_mainmatter,
                 extras=_extras,
                 acronym=_acronym,
-                mainmatter_tree=_mainmatter_tree,
+                depth_tree=_depth_tree,
             )
         )
     return edition_data

@@ -279,7 +279,7 @@ class EditionParser(ABC):
 
         _index: int = self._get_true_index(volume)
         _raw_data: VolumeData = self.raw_data[_index]
-        _sutta_title_depth: int = max(_raw_data.mainmatter_tree.values())
+        _sutta_title_depth: int = max(_raw_data.depth_tree.values())
 
         _header_tags = mainmatter.find_all("header")
         # Remove all <ul>...</ul> tags from <header>...</header> elements
@@ -297,7 +297,7 @@ class EditionParser(ABC):
         EditionParser._insert_preheadings(
             mainmatter=mainmatter,
             preheadings=_raw_data.preheadings,
-            tree=_raw_data.mainmatter_tree,
+            tree=_raw_data.depth_tree,
         )
 
         # Add class "heading" for all HTML headings between h1 and hX which has class "sutta-title"
@@ -443,7 +443,7 @@ class EditionParser(ABC):
         _data: list[Node] = [
             _node for _part in self.raw_data[_index].mainmatter for _node in _part if _node.uid in _heading_uids
         ]
-        _tree = self.raw_data[_index].mainmatter_tree
+        _tree = self.raw_data[_index].depth_tree
 
         _headings: list[dict] = [
             {
@@ -520,7 +520,7 @@ class EditionParser(ABC):
             _data: list[Node] = [
                 _node for _part in self.raw_data[_index].mainmatter for _node in _part if _node.uid in _heading_uids
             ]
-            _tree = self.raw_data[_index].mainmatter_tree
+            _tree = self.raw_data[_index].depth_tree
 
             _soc_headings: dict[Tag, list[dict]] = {}
             for heading, subheadings in _headings.items():

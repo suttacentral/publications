@@ -37,7 +37,6 @@ from sutta_publisher.shared.value_objects.edition_data import (
     MainMatterPart,
     Node,
     VolumeData,
-    VolumeHeadings,
     VolumePreheadings,
 )
 from sutta_publisher.shared.value_objects.parser_objects import (
@@ -259,7 +258,7 @@ class EditionParser(ABC):
             for attr in css_classes_to_add:
                 if node_attr := getattr(node, attr, None):
                     span = BeautifulSoup(parser="lxml").new_tag(
-                        "span", attrs={"class": f"sutta-heading {attr.replace('name', 'title')}"}
+                        "span", attrs={"class": f"sutta-heading {attr.replace('_', '-').replace('name', 'title')}"}
                     )
                     span.string = node_attr
                     heading.append(span)
@@ -280,6 +279,7 @@ class EditionParser(ABC):
 
         _index: int = self._get_true_index(volume)
         _raw_data: VolumeData = self.raw_data[_index]
+        _sutta_title_depth: int = max(_raw_data.mainmatter_tree.values())
 
         _header_tags = mainmatter.find_all("header")
         # Remove all <ul>...</ul> tags from <header>...</header> elements
@@ -289,32 +289,32 @@ class EditionParser(ABC):
 
         # Change numbers of all headings according to how many additional preheadings are. If there are 2 preheadings,
         # h1 headings become h3 headings.
-        _additional_depth: int = 0 if not len(_raw_data.preheadings[0]) else len(_raw_data.preheadings[0][0])
+        _additional_depth: int = _sutta_title_depth - 1
         for heading in find_all_headings(mainmatter):
             increment_heading_by_number(by_number=_additional_depth, heading=heading)
 
         # Insert preheadings
         EditionParser._insert_preheadings(
-            mainmatter=mainmatter, preheadings=_raw_data.preheadings, headings=_raw_data.headings
+            mainmatter=mainmatter,
+            preheadings=_raw_data.preheadings,
+            tree=_raw_data.mainmatter_tree,
         )
 
         # Add class "heading" for all HTML headings between h1 and hX which has class "sutta-title"
-        _depth = find_sutta_title_depth(html=mainmatter)
-        _headings = collect_actual_headings(end_depth=_depth, html=mainmatter)
+        _headings = collect_actual_headings(end_depth=_sutta_title_depth, html=mainmatter)
         add_class(tags=_headings, class_="heading")
 
         # Add class "section-title" for all headings that are not sutta-titles
         add_class(tags=[h for h in _headings if "sutta-title" not in h.attrs["class"]], class_="section-title")
 
         # Add <span> tags with acronyms, translated and root titles into sutta-title headings
-        _sutta_headings: list[Tag] = mainmatter.find_all(f"h{_depth}")
+        _sutta_headings: list[Tag] = [h for h in _headings if h.name == f"h{_sutta_title_depth}"]
         _sutta_nodes: list[Node] = [_node for _part in _raw_data.mainmatter for _node in _part if _node.type == "leaf"]
         self._insert_span_tags(headings=_sutta_headings, nodes=_sutta_nodes)
 
         # Add class "subheading" for all HTML headings below hX with class "sutta-title"
-        _start_depth = find_sutta_title_depth(html=mainmatter) + 1
+        _start_depth = _sutta_title_depth + 1
         _subheadings = collect_actual_headings(start_depth=_start_depth, end_depth=999, html=mainmatter)
-
         add_class(tags=_subheadings, class_="subheading")
 
         # Add the numbering to note reference anchors
@@ -324,18 +324,22 @@ class EditionParser(ABC):
 
     @staticmethod
     def _insert_preheadings(
-        mainmatter: BeautifulSoup, preheadings: VolumePreheadings, headings: VolumeHeadings
+        mainmatter: BeautifulSoup,
+        preheadings: VolumePreheadings,
+        tree: dict,
     ) -> None:
         """Insert preheadings (additional HTML tags) into mainmatter"""
-        for mainmatter_preheadings, mainmatter_headings in zip(preheadings, headings):
-            for preheading_group, heading_group in zip(mainmatter_preheadings, mainmatter_headings):
+        tree_keys = list(tree.keys())
 
-                target: Tag = mainmatter.find(id=heading_group[0].heading_id)
+        for mainmatter_preheadings in preheadings:
+            for preheading_group in mainmatter_preheadings:
 
-                for _level, _preheading in enumerate(preheading_group):
-                    # Why this crazy logic?
-                    # 1. +1: because list enumeration is 0-based (1, 2, 3, ...) and HTML headings are 1-based (h1, h2, h3, ...)
-                    # 2. len(volume.preheadings[0][0]) - len(preheading_group): because preheadings tree looks like this
+                # Firstly we need the first sutta-title tag in given section (preheading group)
+                target: Tag = mainmatter.find(id=tree_keys[tree_keys.index(preheading_group[-1].uid) + 1])
+
+                for _preheading in preheading_group:
+                    # Then we insert all section headings (preheadings) before that sutta-title tag.
+                    # The exemplary structure looks like this:
                     #      [main preheadings group] - main preheading                                              (h1)
                     #      [main preheadings group]    - another preheading, before each group of suttas           (h2)
                     #      [main preheadings group]        - yet another preheading, before each group of suttas   (h3)
@@ -354,13 +358,10 @@ class EditionParser(ABC):
                     #                                             - sutta                                          (h4 class="sutta-title")
                     #                                             - (...)                                          (h4 class="sutta-title")
                     # DEPTH OF PREHEADINGS VARIES! (not only between publications but between parts of a single publication)
-                    _main_depth: int = len(preheadings[0][0])
-                    _secondary_depth: int = len(preheading_group)
-                    _level = _level + 1 + _main_depth - _secondary_depth
 
                     target.insert_before(
                         create_html_heading_with_id(
-                            html=mainmatter, depth=_level, text=_preheading.name, id_=_preheading.uid
+                            html=mainmatter, depth=tree[_preheading.uid], text=_preheading.name, id_=_preheading.uid
                         )
                     )
 
@@ -404,6 +405,7 @@ class EditionParser(ABC):
         frontmatter_headings: list[dict] = [
             {
                 "acronym": None,
+                "depth": 1,
                 "name": heading.capitalize()
                 if heading != "blurbs"
                 else "Summary of Contents",  # TODO: Make a translation dict as env variable
@@ -419,10 +421,13 @@ class EditionParser(ABC):
         backmatter_headings: list[dict] = [
             {
                 "acronym": None,
-                "name": heading.capitalize(),  # TODO: Make a translation dict as env variable
+                "depth": 1,
+                "name": heading.capitalize()
+                if heading != "notes"
+                else "Endnotes",  # TODO: Make a translation dict as env variable
                 "tag": self._create_additional_heading(heading=heading),
                 "type": "branch",
-                "uid": heading,
+                "uid": heading.replace("notes", "endnotes"),  # TODO: Make a translation dict as env variable
             }
             for heading in ADDITIONAL_HEADINGS["backmatter"]
             if any(heading in matter for matter in self.config.edition.volumes[_index].backmatter)
@@ -438,10 +443,12 @@ class EditionParser(ABC):
         _data: list[Node] = [
             _node for _part in self.raw_data[_index].mainmatter for _node in _part if _node.uid in _heading_uids
         ]
+        _tree = self.raw_data[_index].mainmatter_tree
 
         _headings: list[dict] = [
             {
                 "acronym": node.acronym,
+                "depth": _tree[node.uid],
                 "name": node.name,
                 "root_name": node.root_name,
                 "tag": tag,
@@ -513,6 +520,7 @@ class EditionParser(ABC):
             _data: list[Node] = [
                 _node for _part in self.raw_data[_index].mainmatter for _node in _part if _node.uid in _heading_uids
             ]
+            _tree = self.raw_data[_index].mainmatter_tree
 
             _soc_headings: dict[Tag, list[dict]] = {}
             for heading, subheadings in _headings.items():
@@ -522,6 +530,7 @@ class EditionParser(ABC):
                     _soc_headings[heading].append(
                         {
                             "acronym": node.acronym,
+                            "depth": _tree[node.uid],
                             "name": node.name,
                             "root_name": node.root_name,
                             "tag": tag,

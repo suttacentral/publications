@@ -307,12 +307,12 @@ def generate_html_toc(headings: list[dict]) -> str:
     _previous_h = 0
 
     # we need delta level for proper secondary toc indentation
-    _delta: int = get_heading_depth(headings[0]["tag"]) - 1 if headings else 0
+    _delta: int = headings[0]["depth"] - 1 if headings else 0
 
     toc: list[str] = []
     for _heading, _li in zip(headings, _list_items):
         # If next heading is lower level we open another HTML list for it (to achieve multilevel list in HTML)
-        _current_depth = get_heading_depth(_heading["tag"]) - _delta
+        _current_depth = _heading["depth"] - _delta
         # we come across situation where after h3 (sutta-title) comes preheading (h1),
         # so we need to close both sutta-title nested list and chapters nested list
         _level_difference = abs(_current_depth - _previous_h)

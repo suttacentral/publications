@@ -3,6 +3,7 @@ from __future__ import annotations
 import ast
 import os
 from copy import deepcopy
+from typing import Union
 
 import requests
 
@@ -24,6 +25,7 @@ from sutta_publisher.shared.value_objects.edition_data import (
 
 API_URL = os.getenv("API_URL")
 API_ENDPOINTS = ast.literal_eval(os.getenv("API_ENDPOINTS", ""))
+TREE_URL = os.getenv("TREE_URL", "")
 
 
 def get_mainmatter_data(edition_id: str, uids: list[str]) -> MainMatter:
@@ -43,6 +45,28 @@ def get_mainmatter_data(edition_id: str, uids: list[str]) -> MainMatter:
     #     result.__root__.extend(*the_rest)
 
     return MainMatter.parse_obj(_all_parts)
+
+
+def get_depths(tree: list[dict] | list[str], mainmatter_tree: dict[str, int], depth: int = 1) -> None:
+    for item in tree:
+        if isinstance(item, dict):
+            mainmatter_tree[list(item.keys())[0]] = depth
+            _tree = list(item.values())[0]
+            get_depths(_tree, mainmatter_tree, depth=depth + 1)
+        elif isinstance(item, str):
+            mainmatter_tree[item] = depth
+
+
+def get_mainmatter_tree(uids: list[str]) -> dict[str, int]:
+    mainmatter_tree: dict[str, int] = {}
+
+    for uid in uids:
+        response = requests.get(TREE_URL.format(uid=uid))
+        response.raise_for_status()
+        tree: list[dict] = response.json()[uid]
+        get_depths(tree, mainmatter_tree, depth=1)
+
+    return mainmatter_tree
 
 
 def get_mainmatter_preheadings(edition_id: str, uids: list[str]) -> VolumePreheadings:
@@ -111,6 +135,9 @@ def get_extras_data(edition_id: str) -> dict:
 def get_edition_data(edition_config: EditionConfig) -> EditionData:
     edition_data = EditionData()
     for _volume_details in edition_config.edition.volumes:
+        _mainmatter_tree = get_mainmatter_tree(
+            uids=_volume_details.mainmatter,
+        )
         _preheadings = get_mainmatter_preheadings(
             edition_id=edition_config.edition.edition_id,
             uids=_volume_details.mainmatter,
@@ -138,6 +165,7 @@ def get_edition_data(edition_config: EditionConfig) -> EditionData:
                 mainmatter=_mainmatter,
                 extras=_extras,
                 acronym=_acronym,
+                mainmatter_tree=_mainmatter_tree,
             )
         )
     return edition_data

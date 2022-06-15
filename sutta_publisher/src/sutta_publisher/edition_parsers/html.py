@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Callable
 
 import jinja2
+from bs4 import BeautifulSoup
 from jinja2 import Environment, FileSystemLoader, Template
 
 from sutta_publisher.shared.value_objects.edition import EditionResult, EditionType
@@ -37,6 +38,9 @@ class HtmlEdition(EditionParser):
 
         # Generating output HTML
         _output = _template.render(css=_css, **volume.dict(exclude_none=True, exclude_unset=True))
+
+        # TODO: Check for possibilities to get rid of spacing issue
+        _output = BeautifulSoup(_output, "lxml").prettify()
 
         _path: str = os.path.join(tempfile.gettempdir(), volume.filename)
 

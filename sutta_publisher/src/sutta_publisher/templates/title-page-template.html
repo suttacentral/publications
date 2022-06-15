@@ -1,15 +1,15 @@
 <section id="titlepage" epub:type="titlepage">
     <div class='front-top'>
         <div class='front-title'>
-            <div class='translation_title' epub:type="title">{{translation_title | safe}}</div>
+            <div class='translation-title' epub:type="title">{{translation_title | safe}}</div>
         </div>
         <div class='front-creator'>
-            <div class='creator_name'>{{creator_name | safe}}</div>
+            <div class='creator-name'>{{creator_name | safe}}</div>
         </div>
     </div>
     <div class='front-bottom'>
         <div class='volume-details'>
-            <div class='volume_number'>{% if volume_number %} Volume {{volume_number | safe}}{% endif %}</div>
+            <div class='volume-number'>{% if volume_number %} Volume {{volume_number | safe}}{% endif %}</div>
         </div>
     </div>
 </section>

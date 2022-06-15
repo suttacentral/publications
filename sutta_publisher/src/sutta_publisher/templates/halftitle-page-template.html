@@ -1,20 +1,20 @@
 <section id="halftitlepage" epub:type="halftitlepage">
     <div class='front-top'>
         <div class='front-title'>
-            <div class='translation_title' epub:type="title">{{translation_title | safe}}</div>
-            <div class='translation_subtitle' epub:type="subtitle">{{translation_subtitle | safe}}</div>
+            <div class='translation-title' epub:type="title">{{translation_title | safe}}</div>
+            <div class='translation-subtitle' epub:type="subtitle">{{translation_subtitle | safe}}</div>
         </div>
         <div class='front-creator'>
             <div class='byline'>translated by</div>
-            <div class='creator_name'>{{creator_name | safe}}</div>
+            <div class='creator-name'>{{creator_name | safe}}</div>
         </div>
     </div>
     <div class='front-bottom'>
         <div class='volume-details'>
-            <div class='volume_number'>{% if volume_number %} Volume {{volume_number | safe}}{% endif %}</div>
-            <div class='volume_acronym'>{% if volume_acronym %} {{volume_acronym | safe}} {% endif %}</div>
-            <div class='volume_translation_title'>{% if volume_translation_title %}{{volume_translation_title | safe}} {% endif %}</div>
-            <div class='volume_root_title'>{% if volume_root_title %} {{volume_root_title | safe}} {% endif %}</div>
+            <div class='volume-number'>{% if volume_number %} Volume {{volume_number | safe}}{% endif %}</div>
+            <div class='volume-acronym'>{% if volume_acronym %} {{volume_acronym | safe}} {% endif %}</div>
+            <div class='volume-translation-title'>{% if volume_translation_title %}{{volume_translation_title | safe}} {% endif %}</div>
+            <div class='volume-root-title'>{% if volume_root_title %} {{volume_root_title | safe}} {% endif %}</div>
         </div>
     </div>
 </section>

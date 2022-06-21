@@ -9,43 +9,56 @@ Therefore if we wrap all the parsed data (the output of parsers) into objects ju
 in pydantic objects, they will be more manageable and would have better control over chain of operations executed
 on an object.
 """
-from typing import Any, Optional
+from typing import Any
 
 from bs4 import Tag
 from jinja2 import Template
 from pydantic import BaseModel
 
-from sutta_publisher.edition_parsers.helper_functions import generate_html_toc
+import sutta_publisher.edition_parsers.helper_functions as help_funcs
 
 
 class Blurb(BaseModel):
-    acronym: Optional[str]
-    blurb: Optional[str]
-    name: Optional[str]
-    root_name: Optional[str]
+    acronym: str | None
+    blurb: str | None
+    name: str | None
+    root_name: str | None
     type: str
     uid: str
 
 
+class ToCHeading(BaseModel):
+    acronym: str | None
+    depth: int
+    name: str
+    root_name: str | None
+    tag: Tag
+    type: str
+    uid: str
+
+    class Config:
+        arbitrary_types_allowed = True
+
+
 class MainTableOfContents(BaseModel):
-    headings: list[dict]
+    headings: list[ToCHeading]
 
     def to_html_str(self, template: Template) -> str:
 
-        return template.render(main_toc=generate_html_toc(self.headings))
+        return template.render(main_toc=help_funcs.generate_html_toc(self.headings))
 
     class Config:
         arbitrary_types_allowed = True
 
 
 class SecondaryTablesOfContents(BaseModel):
-    headings: dict[Tag, list[dict]]
+    headings: dict[Tag, list[ToCHeading]]
 
     def to_html_str(self, template: Template) -> dict[Tag, str]:
         tocs: dict[Tag, str] = {}
 
         for _target, _toc in self.headings.items():
-            tocs[_target] = template.render(secondary_toc=generate_html_toc(_toc))
+            tocs[_target] = template.render(secondary_toc=help_funcs.generate_html_toc(_toc))
 
         return tocs
 

@@ -44,6 +44,7 @@ from sutta_publisher.shared.value_objects.parser_objects import (
     Edition,
     MainTableOfContents,
     SecondaryTablesOfContents,
+    ToCHeading,
     Volume,
 )
 
@@ -252,14 +253,17 @@ class EditionParser(ABC):
     def _insert_span_tags(headings: list[Tag], nodes: list[Node]) -> None:
         """Inserts <span class='sutta-heading {acronym | translation-title | root-title}'> tags into
         sutta-title headings"""
-        css_classes_to_add = ["acronym", "name", "root_name"]
+        span_tags_to_add = {"acronym": "acronym", "name": "translated-title", "root_name": "root-title"}
         for heading, node in zip(headings, nodes):
+            title = heading.get_text()
             heading.string = ""
-            for attr in css_classes_to_add:
-                if node_attr := getattr(node, attr, None):
-                    span = BeautifulSoup(parser="lxml").new_tag(
-                        "span", attrs={"class": f"sutta-heading {attr.replace('_', '-').replace('name', 'title')}"}
-                    )
+            for attr, css_class in span_tags_to_add.items():
+                if attr == "name":
+                    span = BeautifulSoup(parser="lxml").new_tag("span", attrs={"class": f"sutta-heading {css_class}"})
+                    span.string = title
+                    heading.append(span)
+                elif node_attr := getattr(node, attr, None):
+                    span = BeautifulSoup(parser="lxml").new_tag("span", attrs={"class": f"sutta-heading {css_class}"})
                     span.string = node_attr
                     heading.append(span)
 
@@ -398,38 +402,38 @@ class EditionParser(ABC):
         tag.string = heading.capitalize()
         return tag
 
-    def _insert_additional_headings(self, _headings: list[dict], volume: Volume) -> None:
+    def _insert_additional_headings(self, _headings: list[ToCHeading], volume: Volume) -> None:
         """Insert additional frontmatter heading at the beginning
         and backmatter headings at the end of the collected_headings list"""
         _index: int = EditionParser._get_true_index(volume)
-        frontmatter_headings: list[dict] = [
-            {
-                "acronym": None,
-                "depth": 1,
-                "name": heading.capitalize()
-                if heading != "blurbs"
-                else "Summary of Contents",  # TODO: Make a translation dict as env variable
-                "tag": self._create_additional_heading(heading=heading),
-                "type": "branch",
-                "uid": heading,
-            }
-            for heading in ADDITIONAL_HEADINGS["frontmatter"]
+        frontmatter_headings: list[ToCHeading] = [
+            ToCHeading.parse_obj(
+                {
+                    "acronym": None,
+                    "depth": 1,
+                    "name": display_name,
+                    "tag": self._create_additional_heading(heading=heading),
+                    "type": "branch",
+                    "uid": heading,
+                }
+            )
+            for heading, display_name in ADDITIONAL_HEADINGS["frontmatter"]
             if any(heading in matter for matter in self.config.edition.volumes[_index].frontmatter)
         ]
         _headings[0:0] = frontmatter_headings
 
-        backmatter_headings: list[dict] = [
-            {
-                "acronym": None,
-                "depth": 1,
-                "name": heading.capitalize()
-                if heading != "notes"
-                else "Endnotes",  # TODO: Make a translation dict as env variable
-                "tag": self._create_additional_heading(heading=heading),
-                "type": "branch",
-                "uid": heading.replace("notes", "endnotes"),  # TODO: Make a translation dict as env variable
-            }
-            for heading in ADDITIONAL_HEADINGS["backmatter"]
+        backmatter_headings: list[ToCHeading] = [
+            ToCHeading.parse_obj(
+                {
+                    "acronym": None,
+                    "depth": 1,
+                    "name": display_name,
+                    "tag": self._create_additional_heading(heading=heading),
+                    "type": "branch",
+                    "uid": heading.replace("notes", "endnotes"),  # TODO: matter names should be unified
+                }
+            )
+            for heading, display_name in ADDITIONAL_HEADINGS["backmatter"]
             if any(heading in matter for matter in self.config.edition.volumes[_index].backmatter)
         ]
         _headings.extend(backmatter_headings)
@@ -445,16 +449,18 @@ class EditionParser(ABC):
         ]
         _tree = self.raw_data[_index].depth_tree
 
-        _headings: list[dict] = [
-            {
-                "acronym": node.acronym,
-                "depth": _tree[node.uid],
-                "name": node.name,
-                "root_name": node.root_name,
-                "tag": tag,
-                "type": node.type,
-                "uid": node.uid,
-            }
+        _headings: list[ToCHeading] = [
+            ToCHeading.parse_obj(
+                {
+                    "acronym": node.acronym,
+                    "depth": _tree[node.uid],
+                    "name": node.name,
+                    "root_name": node.root_name,
+                    "tag": tag,
+                    "type": node.type,
+                    "uid": node.uid,
+                }
+            )
             for tag, node in zip(_heading_tags, _data)
         ]
         self._insert_additional_headings(_headings=_headings, volume=volume)
@@ -522,21 +528,23 @@ class EditionParser(ABC):
             ]
             _tree = self.raw_data[_index].depth_tree
 
-            _soc_headings: dict[Tag, list[dict]] = {}
+            _soc_headings: dict[Tag, list[ToCHeading]] = {}
             for heading, subheadings in _headings.items():
                 _soc_headings[heading] = []
                 for tag in subheadings:
                     node = _data.pop(0)
                     _soc_headings[heading].append(
-                        {
-                            "acronym": node.acronym,
-                            "depth": _tree[node.uid],
-                            "name": node.name,
-                            "root_name": node.root_name,
-                            "tag": tag,
-                            "type": node.type,
-                            "uid": node.uid,
-                        }
+                        ToCHeading.parse_obj(
+                            {
+                                "acronym": node.acronym,
+                                "depth": _tree[node.uid],
+                                "name": node.name,
+                                "root_name": node.root_name,
+                                "tag": tag,
+                                "type": node.type,
+                                "uid": node.uid,
+                            }
+                        )
                     )
 
             volume.secondary_toc = SecondaryTablesOfContents.parse_obj({"headings": _soc_headings})
@@ -561,7 +569,7 @@ class EditionParser(ABC):
                 # add id attribute to enable front and backmatter links in table of contents
                 if item := [
                     matter
-                    for matter in ADDITIONAL_HEADINGS["frontmatter"] + ADDITIONAL_HEADINGS["backmatter"]
+                    for matter, _ in ADDITIONAL_HEADINGS["frontmatter"] + ADDITIONAL_HEADINGS["backmatter"]
                     if matter in _matter
                 ]:
                     _html_str = _html_str.replace("<article", f"<article id='{item[0]}'")

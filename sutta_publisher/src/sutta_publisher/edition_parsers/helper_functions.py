@@ -10,6 +10,8 @@ import requests
 from bs4 import BeautifulSoup, Tag
 from ebooklib.epub import Link, Section
 
+from sutta_publisher.shared.value_objects.parser_objects import ToCHeading
+
 ALL_REFERENCES_URL = os.getenv("ALL_REFERENCES_URL", "")
 ACCEPTED_REFERENCES = ast.literal_eval(os.getenv("ACCEPTED_REFERENCES", ""))
 MAX_HEADING_DEPTH = 6
@@ -289,36 +291,34 @@ def add_class(tags: list[Tag], class_: str) -> None:
         tag["class"] = tag.get("class", []) + [class_]
 
 
-def _make_html_link_to_heading(heading: dict) -> str:
-    # If heading is a sutta-title, we have to get id from parent <article> tag
-    if heading["type"] == "leaf":
-        acronym = f"<span class='toc-item acronym'>{heading['acronym']}</span>" if heading["acronym"] else ""
-        name = f"<span class='toc-item translated-title'>{heading['name']}</span>" if heading["name"] else ""
-        root_name = f"<span class='toc-item root-title'>{heading['root_name']}</span>" if heading["root_name"] else ""
+def _make_html_link_to_heading(heading: ToCHeading) -> str:
+    # Sutta headings contain acronym, translated title and root title span tags. We have to change their css classes
+    if heading.type == "leaf":
+        span_tags = "".join(str(span).replace("sutta-heading", "toc-item") for span in heading.tag.children)
 
-        return f"<a href='#{heading['uid']}'>{acronym}{name}{root_name}</a>"
+        return f"<a href='#{heading.uid}'>{span_tags}</a>"
 
-    return f"<a href='#{heading['uid']}'>{heading['name']}</a>"
+    return f"<a href='#{heading.uid}'>{heading.name}</a>"
 
 
-def generate_html_toc(headings: list[dict]) -> str:
+def generate_html_toc(headings: list[ToCHeading]) -> str:
     _anchors: list[str] = [_make_html_link_to_heading(heading=heading) for heading in headings]
     _list_items: list[str] = [f"<li>{link}</li>" for link in _anchors]
     _previous_h = 0
 
     # we need delta level for proper secondary toc indentation
-    _delta: int = headings[0]["depth"] - 1 if headings else 0
+    _delta: int = headings[0].depth - 1 if headings else 0
 
     toc: list[str] = []
     for _heading, _li in zip(headings, _list_items):
         # If next heading is lower level we open another HTML list for it (to achieve multilevel list in HTML)
-        _current_depth = _heading["depth"] - _delta
+        _current_depth = _heading.depth - _delta
         # we come across situation where after h3 (sutta-title) comes preheading (h1),
         # so we need to close both sutta-title nested list and chapters nested list
         _level_difference = abs(_current_depth - _previous_h)
         if _current_depth > _previous_h:
             if toc:
-                toc.append(toc.pop(-1).replace("</li>", ""))
+                toc[-1].replace("</li>", "")
             toc.append("<ul>" * _level_difference)
         # If next heading is higher level we close the current HTML list before it
         elif _current_depth < _previous_h:

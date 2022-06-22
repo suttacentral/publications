@@ -95,6 +95,30 @@ class EpubEdition(EditionParser):
             book.toc.extend(toc)
         book.spine.append(chapter)
 
+    def _set_matter_part_chapter(
+        self, book: EpubBook, html: BeautifulSoup, chapter_number: int, volume: Volume
+    ) -> None:
+        if html.article:
+            _id: str = html.article.get("id")
+            _heading: list[ToCHeading] | None = next(
+                ([h] for h in volume.main_toc.headings if h.uid == _id), None
+            )
+            self._set_chapter(book=book, html=html, headings=_heading, chapter_number=chapter_number)
+        else:
+            self._set_chapter(book=book, html=html, chapter_number=chapter_number)
+
+    def _set_mainmatter_chapter(
+        self, book: EpubBook, html: BeautifulSoup, chapter_number: int, volume: Volume
+    ) -> None:
+        _headings: list[ToCHeading] = list(
+            filter(lambda heading: heading.type in ["branch", "leaf"], volume.main_toc.headings)
+        )
+        _index: int = self._get_true_index(volume)
+        _tree: list[dict | str] = self.raw_data[_index].tree
+        self._set_chapter(
+            book=book, html=html, headings=_headings, chapter_number=chapter_number, tree=_tree
+        )
+
     def _generate_epub(self, volume: Volume) -> None:
         log.debug("Generating epub...")
 
@@ -110,52 +134,27 @@ class EpubEdition(EditionParser):
         _chapter_number = 0
 
         # set frontmatter
-        for _part in volume.frontmatter:
-            _frontmatter_part_html: BeautifulSoup = BeautifulSoup(_part, "lxml")
+        for _matter_part in volume.frontmatter:
+            _frontmatter_part_html: BeautifulSoup = BeautifulSoup(_matter_part, "lxml")
             _chapter_number += 1
-            if _frontmatter_part_html.article:
-                _frontmatter_part_id: str = _frontmatter_part_html.article.get("id")
-                _frontmatter_part_heading: list[ToCHeading] | None = next(
-                    ([h] for h in volume.main_toc.headings if h.uid == _frontmatter_part_id), None
-                )
-                self._set_chapter(
-                    book=book,
-                    html=_frontmatter_part_html,
-                    headings=_frontmatter_part_heading,
-                    chapter_number=_chapter_number,
-                )
-            else:
-                self._set_chapter(book=book, html=_frontmatter_part_html, chapter_number=_chapter_number)
+            self._set_matter_part_chapter(
+                book=book, html=_frontmatter_part_html, chapter_number=_chapter_number, volume=volume
+            )
 
         # set mainmatter
         _chapter_number += 1
         _mainmatter: BeautifulSoup = BeautifulSoup(volume.mainmatter, "lxml")
-        _main_headings: list[ToCHeading] = list(
-            filter(lambda heading: heading.type in ["branch", "leaf"], volume.main_toc.headings)
-        )
-        _index: int = self._get_true_index(volume)
-        _tree: list[dict | str] = self.raw_data[_index].tree
-        self._set_chapter(
-            book=book, html=_mainmatter, headings=_main_headings, chapter_number=_chapter_number, tree=_tree
+        self._set_mainmatter_chapter(
+            book=book, html=_mainmatter, chapter_number=_chapter_number, volume=volume
         )
 
         # set backmatter
         for _part in volume.backmatter:
             _backmatter_part_html: BeautifulSoup = BeautifulSoup(_part, "lxml")
             _chapter_number += 1
-            if _backmatter_part_html.article:
-                _backmatter_part_id: str = _backmatter_part_html.article.get("id")
-                _backmatter_part_heading: list[ToCHeading] | None = next(
-                    ([h] for h in volume.main_toc.headings if h.uid == _backmatter_part_id), None
-                )
-                self._set_chapter(
-                    book=book,
-                    html=_backmatter_part_html,
-                    headings=_backmatter_part_heading,
-                    chapter_number=_chapter_number,
-                )
-            else:
-                self._set_chapter(book=book, html=_backmatter_part_html, chapter_number=_chapter_number)
+            self._set_matter_part_chapter(
+                book=book, html=_backmatter_part_html, chapter_number=_chapter_number, volume=volume
+            )
 
         # add navigation files
         book.add_item(EpubNcx())

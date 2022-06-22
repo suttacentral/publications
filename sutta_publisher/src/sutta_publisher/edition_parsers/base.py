@@ -393,15 +393,15 @@ class EditionParser(ABC):
         """Return a list of unique IDs of main toc headings"""
         return [tag["id"] if tag.get("id", None) else tag.parent["id"] for tag in tags]
 
-    def _create_extra_heading(self, heading: str, display_name: str) -> Tag:
-        """Create an extra Tag: <h1 id='{item}'>{item}</h1>"""
+    def _create_additional_heading(self, heading: str, display_name: str) -> Tag:
+        """Create an additional Tag: <h1 id='{item}'>{item}</h1>"""
         soup = BeautifulSoup(parser="lxml")
         tag = soup.new_tag("h1", id=heading)
         tag.string = display_name
         return tag
 
-    def _insert_extra_headings(self, _headings: list[ToCHeading], volume: Volume) -> None:
-        """Insert extra frontmatter heading at the beginning
+    def _insert_additional_headings(self, _headings: list[ToCHeading], volume: Volume) -> None:
+        """Insert additional frontmatter headings at the beginning
         and backmatter headings at the end of the collected_headings list"""
         _index: int = EditionParser._get_true_index(volume)
         frontmatter_headings: list[ToCHeading] = [
@@ -410,8 +410,8 @@ class EditionParser(ABC):
                     "acronym": None,
                     "depth": 1,
                     "name": display_name,
-                    "tag": self._create_extra_heading(heading=heading, display_name=display_name),
-                    "type": "front",
+                    "tag": self._create_additional_heading(heading=heading, display_name=display_name),
+                    "type": "frontmatter",
                     "uid": heading,
                 }
             )
@@ -426,8 +426,8 @@ class EditionParser(ABC):
                     "acronym": None,
                     "depth": 1,
                     "name": display_name,
-                    "tag": self._create_extra_heading(heading=heading, display_name=display_name),
-                    "type": "back",
+                    "tag": self._create_additional_heading(heading=heading, display_name=display_name),
+                    "type": "backmatter",
                     "uid": heading.replace("notes", "endnotes"),  # TODO: matter names should be unified
                 }
             )
@@ -461,7 +461,7 @@ class EditionParser(ABC):
             )
             for tag, node in zip(_heading_tags, _data)
         ]
-        self._insert_extra_headings(_headings=_headings, volume=volume)
+        self._insert_additional_headings(_headings=_headings, volume=volume)
         volume.main_toc = MainTableOfContents.parse_obj({"headings": _headings})
 
     @staticmethod

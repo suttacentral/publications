@@ -29,7 +29,7 @@ def run(editions: EditionsConfigs) -> None:
 
     for edition in edition_list:  # type: EditionParser
         # TODO: DELETE THIS IF AND FIX INDENTATION
-        if edition.edition_type == "epub":
+        if edition.edition_type in ("html", "epub"):
             log.debug(edition)
 
             try:

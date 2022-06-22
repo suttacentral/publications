@@ -44,12 +44,20 @@ class EpubEdition(EditionParser):
     def _make_chapter_toc(
         headings: list[ToCHeading],
         file_name: str,
-        tree: list[dict | str],
+        tree: list[dict | str] | None,
         section_name: str = "",
     ) -> list[tuple[Section, list[list[Section] | Link]]] | list[list[Section] | Link]:
 
+        # Firstly, we need a copy of headings as we will be poping items out
         _headings = copy(headings)
-        chapter_toc = [make_section_or_link(_headings, item, file_name) for item in tree]
+
+        # Time to create output list. Loop only through top level heading uids, lower levels will be handled recursively
+        if tree:
+            chapter_toc = [make_section_or_link(_headings, item, file_name) for item in tree]
+
+        # if not tree, it means that we are making chapter toc for frontmatter or backmatter. Loop through headings
+        else:
+            chapter_toc = [make_section_or_link(_headings, item.uid, file_name) for item in headings]
 
         if section_name:
             return [
@@ -73,11 +81,11 @@ class EpubEdition(EditionParser):
         chapter_number: int,
         section_name: str = "",
         headings: list[ToCHeading] = None,
-        tree: list[dict | str] = None,
+        tree: list[dict | str] | None = None,
     ) -> None:
         chapter = self._make_chapter(html=html, chapter_number=chapter_number)
         book.add_item(chapter)
-        if headings and tree:
+        if headings:
             toc = EpubEdition._make_chapter_toc(
                 headings=headings,
                 file_name=f"chapter_{chapter_number}.xhtml",
@@ -101,28 +109,53 @@ class EpubEdition(EditionParser):
 
         _chapter_number = 0
 
-        # TODO: fix - add generating ToCs for front and backmatters
         # set frontmatter
-        for _matter in volume.frontmatter:
-            _matter_html: BeautifulSoup = BeautifulSoup(_matter, "lxml")
+        for _part in volume.frontmatter:
+            _frontmatter_part_html: BeautifulSoup = BeautifulSoup(_part, "lxml")
             _chapter_number += 1
-            self._set_chapter(book=book, html=_matter_html, chapter_number=_chapter_number)
+            if _frontmatter_part_html.article:
+                _frontmatter_part_id: str = _frontmatter_part_html.article.get("id")
+                _frontmatter_part_heading: list[ToCHeading] | None = next(
+                    ([h] for h in volume.main_toc.headings if h.uid == _frontmatter_part_id), None
+                )
+                self._set_chapter(
+                    book=book,
+                    html=_frontmatter_part_html,
+                    headings=_frontmatter_part_heading,
+                    chapter_number=_chapter_number,
+                )
+            else:
+                self._set_chapter(book=book, html=_frontmatter_part_html, chapter_number=_chapter_number)
 
         # set mainmatter
         _chapter_number += 1
         _mainmatter: BeautifulSoup = BeautifulSoup(volume.mainmatter, "lxml")
-        _filtered_headings = list(filter(lambda heading: heading.type in ["branch", "leaf"], volume.main_toc.headings))
-        _index = self._get_true_index(volume)
-        _tree = self.raw_data[_index].tree
+        _main_headings: list[ToCHeading] = list(
+            filter(lambda heading: heading.type in ["branch", "leaf"], volume.main_toc.headings)
+        )
+        _index: int = self._get_true_index(volume)
+        _tree: list[dict | str] = self.raw_data[_index].tree
         self._set_chapter(
-            book=book, html=_mainmatter, headings=_filtered_headings, chapter_number=_chapter_number, tree=_tree
+            book=book, html=_mainmatter, headings=_main_headings, chapter_number=_chapter_number, tree=_tree
         )
 
         # set backmatter
-        for _matter in volume.backmatter:
-            _matter_html = BeautifulSoup(_matter, "lxml")
+        for _part in volume.backmatter:
+            _backmatter_part_html: BeautifulSoup = BeautifulSoup(_part, "lxml")
             _chapter_number += 1
-            self._set_chapter(book=book, html=_matter_html, chapter_number=_chapter_number)
+            if _backmatter_part_html.article:
+                _backmatter_part_id: str = _backmatter_part_html.article.get("id")
+                _backmatter_part_heading: list[ToCHeading] | None = next(
+                    ([h] for h in volume.main_toc.headings if h.uid == _backmatter_part_id), None
+                )
+                self._set_chapter(
+                    book=book,
+                    html=_backmatter_part_html,
+                    headings=_backmatter_part_heading,
+                    chapter_number=_chapter_number,
+                )
+            else:
+                self._set_chapter(book=book, html=_backmatter_part_html, chapter_number=_chapter_number)
 
         # add navigation files
         book.add_item(EpubNcx())

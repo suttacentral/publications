@@ -1,5 +1,3 @@
-# mypy: ignore-errors
-# TODO: REMOVE MYPY IGNORE
 import ast
 import os
 import re
@@ -16,6 +14,7 @@ ALL_REFERENCES_URL = os.getenv("ALL_REFERENCES_URL", "")
 ACCEPTED_REFERENCES = ast.literal_eval(os.getenv("ACCEPTED_REFERENCES", ""))
 MAX_HEADING_DEPTH = 6
 
+# TODO: DELETE
 HeadingsIndexTreeFrozen = namedtuple(
     "HeadingsIndexTreeFrozen", ["h1", "h2", "h3", "h4", "h5", "h6"]
 )  # this is needed for dictionary building, as dictionary keys must be immutable
@@ -147,6 +146,7 @@ def _make_section(tag: Tag, file_name: str) -> Section:
     return Section(title=tag.text, href=f"{file_name}#{tag['id']}")
 
 
+# TODO: DELETE
 def _nest_or_extend(headings: Iterator[Tag], file_name: str) -> Link | list | None:
     """Recursively build a nested links and sections structure ready to be used for epub ToC
 
@@ -169,6 +169,7 @@ def _nest_or_extend(headings: Iterator[Tag], file_name: str) -> Link | list | No
         return [_make_section(tag=current_tag, file_name=file_name), [_nest_or_extend(headings, file_name)]]
 
 
+# TODO: DELETE
 def _update_index(index: list[int], tag: Tag) -> None:
     """Increment index for this heading level **IN PLACE**
 
@@ -181,11 +182,13 @@ def _update_index(index: list[int], tag: Tag) -> None:
         index[i] = 0
 
 
+# TODO: DELETE
 def _find_index_root(index: HeadingsIndexTreeFrozen) -> tuple[int, ...]:
     """Find common index root for all children of this heading - i.e. a non-zero subset of this tuple"""
     return tuple([i for i in index if i != 0])
 
 
+# TODO: DELETE
 def _compare_index_with_root(index: HeadingsIndexTreeFrozen, root: tuple[int, ...]) -> bool:
     """Return True if index is in a given root (heading is a child of superheading with that root)"""
     for i, counter in enumerate(root):
@@ -194,6 +197,7 @@ def _compare_index_with_root(index: HeadingsIndexTreeFrozen, root: tuple[int, ..
     return True
 
 
+# TODO: DELETE
 def find_children_by_index(
     index: HeadingsIndexTreeFrozen, headings_tree: dict[HeadingsIndexTreeFrozen, Tag]
 ) -> list[HeadingsIndexTreeFrozen]:
@@ -207,6 +211,7 @@ def find_children_by_index(
     ]
 
 
+# TODO: DELETE
 def make_headings_tree(headings: list[ToCHeading]) -> dict[HeadingsIndexTreeFrozen, Tag]:
     """Build a tree of headings where structure is represented by tuple of indexes
 
@@ -228,7 +233,7 @@ def make_headings_tree(headings: list[ToCHeading]) -> dict[HeadingsIndexTreeFroz
     return headings_tree
 
 
-def make_section_or_link(headings: list[ToCHeading], item: dict | str, file_name: str):
+def make_section_or_link(headings: list[ToCHeading], item: dict | str, file_name: str) -> list[Section] | Link | None:
     """Create section (if has children) or link recursively"""
     if headings:
         if isinstance(item, dict) and list(item.keys())[0] == headings[0].uid:
@@ -238,6 +243,7 @@ def make_section_or_link(headings: list[ToCHeading], item: dict | str, file_name
             ]
         elif isinstance(item, str) and item == headings[0].uid:
             return _make_link(tag=headings.pop(0).tag, file_name=file_name)
+    return None
 
 
 def remove_all_header(headers: list[BeautifulSoup]) -> None:

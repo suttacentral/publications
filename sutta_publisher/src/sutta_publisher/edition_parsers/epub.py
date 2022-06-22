@@ -100,24 +100,18 @@ class EpubEdition(EditionParser):
     ) -> None:
         if html.article:
             _id: str = html.article.get("id")
-            _heading: list[ToCHeading] | None = next(
-                ([h] for h in volume.main_toc.headings if h.uid == _id), None
-            )
+            _heading: list[ToCHeading] | None = next(([h] for h in volume.main_toc.headings if h.uid == _id), None)
             self._set_chapter(book=book, html=html, headings=_heading, chapter_number=chapter_number)
         else:
             self._set_chapter(book=book, html=html, chapter_number=chapter_number)
 
-    def _set_mainmatter_chapter(
-        self, book: EpubBook, html: BeautifulSoup, chapter_number: int, volume: Volume
-    ) -> None:
+    def _set_mainmatter_chapter(self, book: EpubBook, html: BeautifulSoup, chapter_number: int, volume: Volume) -> None:
         _headings: list[ToCHeading] = list(
             filter(lambda heading: heading.type in ["branch", "leaf"], volume.main_toc.headings)
         )
         _index: int = self._get_true_index(volume)
         _tree: list[dict | str] = self.raw_data[_index].tree
-        self._set_chapter(
-            book=book, html=html, headings=_headings, chapter_number=chapter_number, tree=_tree
-        )
+        self._set_chapter(book=book, html=html, headings=_headings, chapter_number=chapter_number, tree=_tree)
 
     def _generate_epub(self, volume: Volume) -> None:
         log.debug("Generating epub...")
@@ -144,9 +138,7 @@ class EpubEdition(EditionParser):
         # set mainmatter
         _chapter_number += 1
         _mainmatter: BeautifulSoup = BeautifulSoup(volume.mainmatter, "lxml")
-        self._set_mainmatter_chapter(
-            book=book, html=_mainmatter, chapter_number=_chapter_number, volume=volume
-        )
+        self._set_mainmatter_chapter(book=book, html=_mainmatter, chapter_number=_chapter_number, volume=volume)
 
         # set backmatter
         for _part in volume.backmatter:

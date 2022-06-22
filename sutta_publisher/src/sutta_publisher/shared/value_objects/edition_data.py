@@ -90,7 +90,8 @@ class VolumeData:
     headings: VolumeHeadings
     # Return the mainmatter for a volume mainmatter
     mainmatter: MainMatter
-    depth_tree: dict[str, int]
+    tree: list[dict]
+    depths: dict[str, int]
 
     # `extras` - return all files that pertain to an edition as key:value pairs,
     # where the key is the filename as found in the config (these

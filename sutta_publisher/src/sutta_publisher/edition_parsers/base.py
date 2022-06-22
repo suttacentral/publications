@@ -19,11 +19,9 @@ from sutta_publisher.edition_parsers.helper_functions import (
     extract_string,
     fetch_possible_refs,
     find_all_headings,
-    find_children_by_index,
     find_sutta_title_depth,
     get_heading_depth,
     increment_heading_by_number,
-    make_headings_tree,
     parse_main_toc_depth,
     process_line,
     remove_all_header,
@@ -283,7 +281,7 @@ class EditionParser(ABC):
 
         _index: int = self._get_true_index(volume)
         _raw_data: VolumeData = self.raw_data[_index]
-        _sutta_title_depth: int = max(_raw_data.depth_tree.values())
+        _sutta_title_depth: int = max(_raw_data.depths.values())
 
         _header_tags = mainmatter.find_all("header")
         # Remove all <ul>...</ul> tags from <header>...</header> elements
@@ -301,7 +299,7 @@ class EditionParser(ABC):
         EditionParser._insert_preheadings(
             mainmatter=mainmatter,
             preheadings=_raw_data.preheadings,
-            tree=_raw_data.depth_tree,
+            tree=_raw_data.depths,
         )
 
         # Add class "heading" for all HTML headings between h1 and hX which has class "sutta-title"
@@ -395,15 +393,15 @@ class EditionParser(ABC):
         """Return a list of unique IDs of main toc headings"""
         return [tag["id"] if tag.get("id", None) else tag.parent["id"] for tag in tags]
 
-    def _create_additional_heading(self, heading: str) -> Tag:
-        """Create additional a new Tag: <h1 id='{item}'>{item.capitalized}</h1>"""
+    def _create_extra_heading(self, heading: str, display_name: str) -> Tag:
+        """Create an extra Tag: <h1 id='{item}'>{item}</h1>"""
         soup = BeautifulSoup(parser="lxml")
         tag = soup.new_tag("h1", id=heading)
-        tag.string = heading.capitalize()
+        tag.string = display_name
         return tag
 
-    def _insert_additional_headings(self, _headings: list[ToCHeading], volume: Volume) -> None:
-        """Insert additional frontmatter heading at the beginning
+    def _insert_extra_headings(self, _headings: list[ToCHeading], volume: Volume) -> None:
+        """Insert extra frontmatter heading at the beginning
         and backmatter headings at the end of the collected_headings list"""
         _index: int = EditionParser._get_true_index(volume)
         frontmatter_headings: list[ToCHeading] = [
@@ -412,8 +410,8 @@ class EditionParser(ABC):
                     "acronym": None,
                     "depth": 1,
                     "name": display_name,
-                    "tag": self._create_additional_heading(heading=heading),
-                    "type": "branch",
+                    "tag": self._create_extra_heading(heading=heading, display_name=display_name),
+                    "type": "front",
                     "uid": heading,
                 }
             )
@@ -428,8 +426,8 @@ class EditionParser(ABC):
                     "acronym": None,
                     "depth": 1,
                     "name": display_name,
-                    "tag": self._create_additional_heading(heading=heading),
-                    "type": "branch",
+                    "tag": self._create_extra_heading(heading=heading, display_name=display_name),
+                    "type": "back",
                     "uid": heading.replace("notes", "endnotes"),  # TODO: matter names should be unified
                 }
             )
@@ -447,7 +445,7 @@ class EditionParser(ABC):
         _data: list[Node] = [
             _node for _part in self.raw_data[_index].mainmatter for _node in _part if _node.uid in _heading_uids
         ]
-        _tree = self.raw_data[_index].depth_tree
+        _tree = self.raw_data[_index].depths
 
         _headings: list[ToCHeading] = [
             ToCHeading.parse_obj(
@@ -463,25 +461,15 @@ class EditionParser(ABC):
             )
             for tag, node in zip(_heading_tags, _data)
         ]
-        self._insert_additional_headings(_headings=_headings, volume=volume)
+        self._insert_extra_headings(_headings=_headings, volume=volume)
         volume.main_toc = MainTableOfContents.parse_obj({"headings": _headings})
 
     @staticmethod
     def _collect_secondary_toc(
         html: BeautifulSoup, main_toc_depth: int, secondary_toc_depth: int
     ) -> dict[Tag, list[Tag]]:
-        """Based on main ToC headings generate a collection secondary ToCs headings.
-
-        Args:
-            html: mainmatter to look for Tags to create secondary ToCs of
-            main_toc_depth: headings level, on which the main ToC ends
-            secondary_toc_depth: headings level, on which secondary ToCs end
-
-        Returns:
-            dict[Tag, list[Tag]]: mapping associating insertion targets with a list of headings required to build this
-                                  ToC.
-
-        """
+        """Generate a mapping of the deepest main ToC headings
+        and a list of their children secondary ToC headings"""
         log.debug("Collecting headings for secondary ToCs...")
 
         _secondary_tocs_headings: list[Tag] = collect_actual_headings(
@@ -490,20 +478,13 @@ class EditionParser(ABC):
 
         secondary_toc_mapping: dict[Tag, list[Tag]] = {}
 
-        _tree = make_headings_tree(headings=_secondary_tocs_headings)
-        _parents = [
-            (index, heading) for (index, heading) in _tree.items() if get_heading_depth(heading) == main_toc_depth
-        ]  # parents (targets) are all highest level headings from this collection
-
-        # We got indexed headings and parents, so all there is to do is map parents'
-        # to their respective children using their indices and build a mapping.
-        for _index, _target in _parents:
-            secondary_toc_mapping[_target] = [
-                _tree[child_index]
-                for child_index in find_children_by_index(
-                    index=_index, headings_tree=_tree, main_toc_depth=main_toc_depth
-                )
-            ]
+        _parent = None
+        for _heading in _secondary_tocs_headings:
+            if get_heading_depth(_heading) == main_toc_depth:
+                _parent = _heading
+                secondary_toc_mapping[_parent] = []
+            else:
+                secondary_toc_mapping[_parent].append(_heading)
 
         return secondary_toc_mapping
 
@@ -526,7 +507,7 @@ class EditionParser(ABC):
             _data: list[Node] = [
                 _node for _part in self.raw_data[_index].mainmatter for _node in _part if _node.uid in _heading_uids
             ]
-            _tree = self.raw_data[_index].depth_tree
+            _tree = self.raw_data[_index].depths
 
             _soc_headings: dict[Tag, list[ToCHeading]] = {}
             for heading, subheadings in _headings.items():

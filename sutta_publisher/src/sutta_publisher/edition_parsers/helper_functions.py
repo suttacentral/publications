@@ -181,9 +181,9 @@ def _update_index(index: list[int], tag: Tag) -> None:
         index[i] = 0
 
 
-def _find_index_root(index: HeadingsIndexTreeFrozen, main_toc_depth: int) -> tuple[int, ...]:
+def _find_index_root(index: HeadingsIndexTreeFrozen) -> tuple[int, ...]:
     """Find common index root for all children of this heading - i.e. a non-zero subset of this tuple"""
-    return tuple([i for n, i in enumerate(index) if i != 0 or n < main_toc_depth - 1])
+    return tuple([i for i in index if i != 0])
 
 
 def _compare_index_with_root(index: HeadingsIndexTreeFrozen, root: tuple[int, ...]) -> bool:
@@ -195,10 +195,10 @@ def _compare_index_with_root(index: HeadingsIndexTreeFrozen, root: tuple[int, ..
 
 
 def find_children_by_index(
-    index: HeadingsIndexTreeFrozen, headings_tree: dict[HeadingsIndexTreeFrozen, Tag], main_toc_depth: int
+    index: HeadingsIndexTreeFrozen, headings_tree: dict[HeadingsIndexTreeFrozen, Tag]
 ) -> list[HeadingsIndexTreeFrozen]:
     """Based on parents index, find all children and return their indices"""
-    parent_root = _find_index_root(index, main_toc_depth)
+    parent_root = _find_index_root(index)
     # Return all indexes with the same root except for the parent
     return [
         child_index
@@ -207,7 +207,7 @@ def find_children_by_index(
     ]
 
 
-def make_headings_tree(headings: list[Tag] | list[dict]) -> dict[HeadingsIndexTreeFrozen, Tag]:
+def make_headings_tree(headings: list[ToCHeading]) -> dict[HeadingsIndexTreeFrozen, Tag]:
     """Build a tree of headings where structure is represented by tuple of indexes
 
     Args:
@@ -221,28 +221,23 @@ def make_headings_tree(headings: list[Tag] | list[dict]) -> dict[HeadingsIndexTr
     # Build a tree of headings where structure is represented by tuple of indexes
     headings_tree: dict[HeadingsIndexTreeFrozen, Tag] = {}
     for heading in headings:
-        _update_index(index=heading_index, tag=heading)
+        _update_index(index=heading_index, tag=heading.tag)
         # This freezes and copies the current state of heading_index even though it is used in further iterations
-        headings_tree.update({HeadingsIndexTreeFrozen(*heading_index): heading})
+        headings_tree.update({HeadingsIndexTreeFrozen(*heading_index): heading.tag})
 
     return headings_tree
 
 
-def make_section_or_link(
-    index: HeadingsIndexTreeFrozen, headings_tree: dict[HeadingsIndexTreeFrozen, Tag], file_name: str
-) -> list[Section] | Link:
-    """Look up heading's children and accordingly create link or section recursively"""
-    children: list[HeadingsIndexTreeFrozen] = find_children_by_index(index=index, headings_tree=headings_tree)
-    heading: Tag = headings_tree[index]
-    # Heading has children (subheadings), so it's a Section
-    if children:
-        return [
-            _make_section(tag=heading, file_name=file_name),
-            [make_section_or_link(index=child, headings_tree=headings_tree, file_name=file_name) for child in children],
-        ]
-    # Heading is childless so it's a Link
-    else:
-        return _make_link(tag=heading, file_name=file_name)
+def make_section_or_link(headings: list[ToCHeading], item: dict | str, file_name: str):
+    """Create section (if has children) or link recursively"""
+    if headings:
+        if isinstance(item, dict) and list(item.keys())[0] == headings[0].uid:
+            return [
+                _make_section(tag=headings.pop(0).tag, file_name=file_name),
+                [make_section_or_link(headings, _item, file_name) for _item in list(item.values())[0]],
+            ]
+        elif isinstance(item, str) and item == headings[0].uid:
+            return _make_link(tag=headings.pop(0).tag, file_name=file_name)
 
 
 def remove_all_header(headers: list[BeautifulSoup]) -> None:

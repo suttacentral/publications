@@ -1,8 +1,7 @@
 import ast
 import os
 import re
-from collections import namedtuple
-from typing import Any, Iterator, cast
+from typing import Any, cast
 
 import requests
 from bs4 import BeautifulSoup, Tag
@@ -13,11 +12,6 @@ from sutta_publisher.shared.value_objects.parser_objects import ToCHeading
 ALL_REFERENCES_URL = os.getenv("ALL_REFERENCES_URL", "")
 ACCEPTED_REFERENCES = ast.literal_eval(os.getenv("ACCEPTED_REFERENCES", ""))
 MAX_HEADING_DEPTH = 6
-
-# TODO: DELETE
-HeadingsIndexTreeFrozen = namedtuple(
-    "HeadingsIndexTreeFrozen", ["h1", "h2", "h3", "h4", "h5", "h6"]
-)  # this is needed for dictionary building, as dictionary keys must be immutable
 
 
 def fetch_possible_refs() -> set[str]:
@@ -144,93 +138,6 @@ def _make_link(tag: Tag, file_name: str) -> Link:
 
 def _make_section(tag: Tag, file_name: str) -> Section:
     return Section(title=tag.text, href=f"{file_name}#{tag['id']}")
-
-
-# TODO: DELETE
-def _nest_or_extend(headings: Iterator[Tag], file_name: str) -> Link | list | None:
-    """Recursively build a nested links and sections structure ready to be used for epub ToC
-
-    Args:
-        headings:
-        file_name:
-
-    Returns:
-        Link | list | None:
-
-    """
-    current_tag = next(headings, None)
-    next_tag = next(headings, None)
-
-    if not current_tag:
-        return None  # reached the end of list
-    elif not next_tag or get_heading_depth(current_tag) <= get_heading_depth(next_tag):
-        return _make_link(tag=current_tag, file_name=file_name)
-    else:  # next heading is lower level, need to nest
-        return [_make_section(tag=current_tag, file_name=file_name), [_nest_or_extend(headings, file_name)]]
-
-
-# TODO: DELETE
-def _update_index(index: list[int], tag: Tag) -> None:
-    """Increment index for this heading level **IN PLACE**
-
-    e.g. [1, 1, 2+1, 0, 0, 0] - added another h3
-    """
-    index[get_heading_depth(tag) - 1] += 1
-
-    # When adding another heading all lower level headings counters are reset
-    for i in range(get_heading_depth(tag), 6):
-        index[i] = 0
-
-
-# TODO: DELETE
-def _find_index_root(index: HeadingsIndexTreeFrozen) -> tuple[int, ...]:
-    """Find common index root for all children of this heading - i.e. a non-zero subset of this tuple"""
-    return tuple([i for i in index if i != 0])
-
-
-# TODO: DELETE
-def _compare_index_with_root(index: HeadingsIndexTreeFrozen, root: tuple[int, ...]) -> bool:
-    """Return True if index is in a given root (heading is a child of superheading with that root)"""
-    for i, counter in enumerate(root):
-        if counter != index[i]:
-            return False
-    return True
-
-
-# TODO: DELETE
-def find_children_by_index(
-    index: HeadingsIndexTreeFrozen, headings_tree: dict[HeadingsIndexTreeFrozen, Tag]
-) -> list[HeadingsIndexTreeFrozen]:
-    """Based on parents index, find all children and return their indices"""
-    parent_root = _find_index_root(index)
-    # Return all indexes with the same root except for the parent
-    return [
-        child_index
-        for child_index in headings_tree.keys()
-        if _compare_index_with_root(index=child_index, root=parent_root) and child_index != index
-    ]
-
-
-# TODO: DELETE
-def make_headings_tree(headings: list[ToCHeading]) -> dict[HeadingsIndexTreeFrozen, Tag]:
-    """Build a tree of headings where structure is represented by tuple of indexes
-
-    Args:
-        headings: list of headings to create a tree of
-
-    Returns:
-        dict[tuple,  list[Tag]]: a structure of headings as index: heading
-    """
-    heading_index = [0, 0, 0, 0, 0, 0]
-
-    # Build a tree of headings where structure is represented by tuple of indexes
-    headings_tree: dict[HeadingsIndexTreeFrozen, Tag] = {}
-    for heading in headings:
-        _update_index(index=heading_index, tag=heading.tag)
-        # This freezes and copies the current state of heading_index even though it is used in further iterations
-        headings_tree.update({HeadingsIndexTreeFrozen(*heading_index): heading.tag})
-
-    return headings_tree
 
 
 def make_section_or_link(headings: list[ToCHeading], item: dict | str, file_name: str) -> list[Section] | Link | None:

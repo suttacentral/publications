@@ -428,7 +428,7 @@ class EditionParser(ABC):
                     "name": display_name,
                     "tag": self._create_additional_heading(heading=heading, display_name=display_name),
                     "type": "backmatter",
-                    "uid": heading.replace("notes", "endnotes"),  # TODO: matter names should be unified
+                    "uid": heading,
                 }
             )
             for heading, display_name in ADDITIONAL_HEADINGS["backmatter"]
@@ -652,15 +652,15 @@ class EditionParser(ABC):
         _matters: list[str] = self.config.edition.volumes[_index].frontmatter
         volume.frontmatter = self._collect_matters(volume=volume, matters=_matters)
 
-    def set_notes(self, volume: Volume) -> None:
-        """Add notes to a volume"""
+    def set_endnotes(self, volume: Volume) -> None:
+        """Add endnotes to a volume"""
         _index: int = EditionParser._get_true_index(volume)
         _raw_data: VolumeData = self.raw_data[_index]
         _raw_node_mainmatters = [node.mainmatter for part in _raw_data.mainmatter for node in part]
-        _raw_notes: list[str] = [
+        _raw_endnotes: list[str] = [
             note for mainmatter in _raw_node_mainmatters if mainmatter.notes for note in mainmatter.notes.values()
         ]
-        volume.notes = _raw_notes
+        volume.endnotes = _raw_endnotes
 
     def set_backmatter(self, volume: Volume) -> None:
         """Add a backmatter to a volume"""
@@ -725,7 +725,7 @@ class EditionParser(ABC):
             self.set_main_toc,
             self.set_secondary_toc,
             self.set_frontmatter,
-            self.set_notes,
+            self.set_endnotes,
             self.set_backmatter,
             self.add_secondary_toc_to_mainmatter,
         ]

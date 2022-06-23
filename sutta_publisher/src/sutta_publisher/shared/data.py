@@ -3,6 +3,7 @@ from __future__ import annotations
 import ast
 import os
 from copy import deepcopy
+from typing import NoReturn
 
 import requests
 
@@ -24,6 +25,7 @@ from sutta_publisher.shared.value_objects.edition_data import (
 
 API_URL = os.getenv("API_URL")
 API_ENDPOINTS = ast.literal_eval(os.getenv("API_ENDPOINTS", ""))
+SUPER_TREE_URL = os.getenv("SUPER_TREE_URL", "")
 TREE_URL = os.getenv("TREE_URL", "")
 
 
@@ -46,6 +48,17 @@ def get_mainmatter_data(edition_id: str, uids: list[str]) -> MainMatter:
     return MainMatter.parse_obj(_all_parts)
 
 
+def get_text_type(uid: str, super_tree: list[dict]) -> str | NoReturn:
+    """Get type of given text"""
+    for item in super_tree:
+        if f"'{uid}'" in str(item):
+            text_type: str = list(item.keys())[0]
+            return text_type
+
+    # If uid not found, we stop the app as we cannot get the structure tree
+    raise SystemExit(f"Publication '{uid}' type not found in super_tree.json")
+
+
 def get_depths(tree: list[dict] | list[str], depths: dict[str, int], initial_depth: int = 1) -> None:
     """Get all headings depth recursively"""
     for item in tree:
@@ -62,10 +75,14 @@ def get_depth_tree(uids: list[str]) -> tuple[list[dict], dict[str, int]]:
     depths: dict[str, int] = {}
     tree: list[dict] = []
 
-    for uid in uids:
-        response = requests.get(TREE_URL.format(uid=uid))
-        response.raise_for_status()
-        tree = response.json()[uid]
+    for _uid in uids:
+        _super_tree_response = requests.get(SUPER_TREE_URL)
+        _super_tree_response.raise_for_status()
+        _text_type = get_text_type(uid=_uid, super_tree=_super_tree_response.json())
+
+        _tree_response = requests.get(TREE_URL.format(text_type=_text_type, uid=_uid))
+        _tree_response.raise_for_status()
+        tree = _tree_response.json()[_uid]
         get_depths(tree, depths, initial_depth=1)
 
     return tree, depths

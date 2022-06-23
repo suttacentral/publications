@@ -91,7 +91,7 @@ class Volume(BaseModel):
     frontmatter: list[str] = []
     mainmatter: str = ""
     backmatter: list[str] = []
-    notes: list[str] | None = []
+    endnotes: list[str] | None = []
 
     # Edition metadata (common for all volumes)
     acronym: str = ""

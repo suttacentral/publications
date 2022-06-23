@@ -1,10 +1,7 @@
-# mypy: ignore-errors
-# TODO: REMOVE MYPY IGNORE
 import ast
 import os
 import re
-from collections import namedtuple
-from typing import Any, Iterator, cast
+from typing import Any, cast
 
 import requests
 from bs4 import BeautifulSoup, Tag
@@ -15,10 +12,6 @@ from sutta_publisher.shared.value_objects.parser_objects import ToCHeading
 ALL_REFERENCES_URL = os.getenv("ALL_REFERENCES_URL", "")
 ACCEPTED_REFERENCES = ast.literal_eval(os.getenv("ACCEPTED_REFERENCES", ""))
 MAX_HEADING_DEPTH = 6
-
-HeadingsIndexTreeFrozen = namedtuple(
-    "HeadingsIndexTreeFrozen", ["h1", "h2", "h3", "h4", "h5", "h6"]
-)  # this is needed for dictionary building, as dictionary keys must be immutable
 
 
 def fetch_possible_refs() -> set[str]:
@@ -147,102 +140,17 @@ def _make_section(tag: Tag, file_name: str) -> Section:
     return Section(title=tag.text, href=f"{file_name}#{tag['id']}")
 
 
-def _nest_or_extend(headings: Iterator[Tag], file_name: str) -> Link | list | None:
-    """Recursively build a nested links and sections structure ready to be used for epub ToC
-
-    Args:
-        headings:
-        file_name:
-
-    Returns:
-        Link | list | None:
-
-    """
-    current_tag = next(headings, None)
-    next_tag = next(headings, None)
-
-    if not current_tag:
-        return None  # reached the end of list
-    elif not next_tag or get_heading_depth(current_tag) <= get_heading_depth(next_tag):
-        return _make_link(tag=current_tag, file_name=file_name)
-    else:  # next heading is lower level, need to nest
-        return [_make_section(tag=current_tag, file_name=file_name), [_nest_or_extend(headings, file_name)]]
-
-
-def _update_index(index: list[int], tag: Tag) -> None:
-    """Increment index for this heading level **IN PLACE**
-
-    e.g. [1, 1, 2+1, 0, 0, 0] - added another h3
-    """
-    index[get_heading_depth(tag) - 1] += 1
-
-    # When adding another heading all lower level headings counters are reset
-    for i in range(get_heading_depth(tag), 6):
-        index[i] = 0
-
-
-def _find_index_root(index: HeadingsIndexTreeFrozen, main_toc_depth: int) -> tuple[int, ...]:
-    """Find common index root for all children of this heading - i.e. a non-zero subset of this tuple"""
-    return tuple([i for n, i in enumerate(index) if i != 0 or n < main_toc_depth - 1])
-
-
-def _compare_index_with_root(index: HeadingsIndexTreeFrozen, root: tuple[int, ...]) -> bool:
-    """Return True if index is in a given root (heading is a child of superheading with that root)"""
-    for i, counter in enumerate(root):
-        if counter != index[i]:
-            return False
-    return True
-
-
-def find_children_by_index(
-    index: HeadingsIndexTreeFrozen, headings_tree: dict[HeadingsIndexTreeFrozen, Tag], main_toc_depth: int
-) -> list[HeadingsIndexTreeFrozen]:
-    """Based on parents index, find all children and return their indices"""
-    parent_root = _find_index_root(index, main_toc_depth)
-    # Return all indexes with the same root except for the parent
-    return [
-        child_index
-        for child_index in headings_tree.keys()
-        if _compare_index_with_root(index=child_index, root=parent_root) and child_index != index
-    ]
-
-
-def make_headings_tree(headings: list[Tag] | list[dict]) -> dict[HeadingsIndexTreeFrozen, Tag]:
-    """Build a tree of headings where structure is represented by tuple of indexes
-
-    Args:
-        headings: list of headings to create a tree of
-
-    Returns:
-        dict[tuple,  list[Tag]]: a structure of headings as index: heading
-    """
-    heading_index = [0, 0, 0, 0, 0, 0]
-
-    # Build a tree of headings where structure is represented by tuple of indexes
-    headings_tree: dict[HeadingsIndexTreeFrozen, Tag] = {}
-    for heading in headings:
-        _update_index(index=heading_index, tag=heading)
-        # This freezes and copies the current state of heading_index even though it is used in further iterations
-        headings_tree.update({HeadingsIndexTreeFrozen(*heading_index): heading})
-
-    return headings_tree
-
-
-def make_section_or_link(
-    index: HeadingsIndexTreeFrozen, headings_tree: dict[HeadingsIndexTreeFrozen, Tag], file_name: str
-) -> list[Section] | Link:
-    """Look up heading's children and accordingly create link or section recursively"""
-    children: list[HeadingsIndexTreeFrozen] = find_children_by_index(index=index, headings_tree=headings_tree)
-    heading: Tag = headings_tree[index]
-    # Heading has children (subheadings), so it's a Section
-    if children:
-        return [
-            _make_section(tag=heading, file_name=file_name),
-            [make_section_or_link(index=child, headings_tree=headings_tree, file_name=file_name) for child in children],
-        ]
-    # Heading is childless so it's a Link
-    else:
-        return _make_link(tag=heading, file_name=file_name)
+def make_section_or_link(headings: list[ToCHeading], item: dict | str, file_name: str) -> list[Section] | Link | None:
+    """Create section (if has children) or link recursively"""
+    if headings:
+        if isinstance(item, dict) and list(item.keys())[0] == headings[0].uid:
+            return [
+                _make_section(tag=headings.pop(0).tag, file_name=file_name),
+                [make_section_or_link(headings, _item, file_name) for _item in list(item.values())[0]],
+            ]
+        elif isinstance(item, str) and item == headings[0].uid:
+            return _make_link(tag=headings.pop(0).tag, file_name=file_name)
+    return None
 
 
 def remove_all_header(headers: list[BeautifulSoup]) -> None:

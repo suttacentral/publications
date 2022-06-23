@@ -57,17 +57,18 @@ def get_depths(tree: list[dict] | list[str], depths: dict[str, int], initial_dep
             depths[item] = initial_depth
 
 
-def get_depth_tree(uids: list[str]) -> dict[str, int]:
+def get_depth_tree(uids: list[str]) -> tuple[list[dict], dict[str, int]]:
     """Get edition tree json and convert it into dict of all heading uids and their depth"""
     depths: dict[str, int] = {}
+    tree: list[dict] = []
 
     for uid in uids:
         response = requests.get(TREE_URL.format(uid=uid))
         response.raise_for_status()
-        tree: list[dict] = response.json()[uid]
+        tree = response.json()[uid]
         get_depths(tree, depths, initial_depth=1)
 
-    return depths
+    return tree, depths
 
 
 def get_mainmatter_preheadings(edition_id: str, uids: list[str]) -> VolumePreheadings:
@@ -136,7 +137,7 @@ def get_extras_data(edition_id: str) -> dict:
 def get_edition_data(edition_config: EditionConfig) -> EditionData:
     edition_data = EditionData()
     for _volume_details in edition_config.edition.volumes:
-        _depth_tree = get_depth_tree(
+        _tree, _depths = get_depth_tree(
             uids=_volume_details.mainmatter,
         )
         _preheadings = get_mainmatter_preheadings(
@@ -166,7 +167,8 @@ def get_edition_data(edition_config: EditionConfig) -> EditionData:
                 mainmatter=_mainmatter,
                 extras=_extras,
                 acronym=_acronym,
-                depth_tree=_depth_tree,
+                tree=_tree,
+                depths=_depths,
             )
         )
     return edition_data

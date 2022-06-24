@@ -712,9 +712,9 @@ class EditionParser(ABC):
         else:
             log.debug(f"Edition without secondary ToCs. {secondary_toc=}")
 
-    def process_relative_links(self, volume: Volume) -> None:
-        """Processed html file includes only relative links which are used on suttacentral website.
-        For links outside our html file, we have to make absolute links."""
+    def process_reference_links(self, volume: Volume) -> None:
+        """Processed html file includes only relative links which are used by suttacentral website,
+        but does not work within our file"""
         _acronym = volume.acronym.lower()
         _matter_types = ["frontmatter", "mainmatter", "backmatter"]
         for _attr in _matter_types:
@@ -750,7 +750,7 @@ class EditionParser(ABC):
             self.set_backmatter,
             # operations to execute when all matters are set
             self.add_secondary_toc_to_mainmatter,
-            self.process_relative_links,
+            self.process_reference_links,
         ]
         for _operation in _operations:
             EditionParser.on_each_volume(edition=edition, operation=_operation)

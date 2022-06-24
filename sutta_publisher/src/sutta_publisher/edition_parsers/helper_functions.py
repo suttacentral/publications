@@ -251,6 +251,8 @@ def extract_string(html: BeautifulSoup) -> str:
 
 
 def process_link(html: str, acronym: str) -> str:
+    """Make absolute links to references outside our html file.
+    Make relative links to references inside our html file."""
     _html = BeautifulSoup(html, "lxml")
     _links = _html.find_all("a", href=lambda value: value and not value.startswith("#"), text=lambda text: text)
 

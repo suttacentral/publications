@@ -713,8 +713,8 @@ class EditionParser(ABC):
             log.debug(f"Edition without secondary ToCs. {secondary_toc=}")
 
     def process_reference_links(self, volume: Volume) -> None:
-        """Processed html file includes only relative links which are used by suttacentral website,
-        but does not work within our file"""
+        """Processed html file includes only relative links which are used by suttacentral website, but do not work
+        within our publication file"""
         _acronym = volume.acronym.lower()
         _matter_types = ["frontmatter", "mainmatter", "backmatter"]
         for _attr in _matter_types:

@@ -51,7 +51,7 @@ interactions:
       Content-Type:
       - application/json
       Date:
-      - Wed, 15 Jun 2022 11:22:09 GMT
+      - Fri, 24 Jun 2022 09:56:05 GMT
       ETag:
       - W/"e2f8211ff3fe0c4e5e8a6f3222e621f1"
       Keep-Alive:
@@ -135,11 +135,11 @@ interactions:
       Content-Type:
       - text/plain; charset=utf-8
       Date:
-      - Wed, 15 Jun 2022 11:22:09 GMT
+      - Fri, 24 Jun 2022 09:56:05 GMT
       ETag:
       - W/"db4a4e0656bac11598a0e6018bb44a06ae356cabdb604314fb44e4257199f85d"
       Expires:
-      - Wed, 15 Jun 2022 11:27:09 GMT
+      - Fri, 24 Jun 2022 10:01:05 GMT
       Source-Age:
       - '0'
       Strict-Transport-Security:
@@ -155,15 +155,100 @@ interactions:
       X-Content-Type-Options:
       - nosniff
       X-Fastly-Request-ID:
-      - 4d35c6d42fcb40a79b7c68108a079aa28a666f4e
+      - d1f263745303466d7db3f4b52358d8261dd876c7
       X-Frame-Options:
       - deny
       X-GitHub-Request-Id:
-      - 081A:CD0D:15806A:186F0E:62A9BF88
+      - C884:2809:277751:2AB9AA:62B56C75
       X-Served-By:
-      - cache-lin2290033-LIN
+      - cache-fra19169-FRA
       X-Timer:
-      - S1655292129.324754,VS0,VE207
+      - S1656064566.707116,VS0,VE273
+      X-XSS-Protection:
+      - 1; mode=block
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.27.1
+    method: GET
+    uri: https://raw.githubusercontent.com/suttacentral/sc-data/master/structure/tree/super-tree.json
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAAA51Yy3LbIBTd+ys8WkczjZ1u+iuZLJCRJSKDqQSaOpn8e9Erki/nulIXnjHnwH1z
+        Ab3u9vvP8Nvvk8Y7J5Jf+9d+OME9dbmaYsH0mDTJ091Y0HF6dck38jb++3qKxWsl5SWnCjRRoAUd
+        r1ZwUabKJVXQEAWNoOP0ECHHCFlrhPE6y+vYDEHMyAUdUzPyLaE115po/Fz8D1MqQ/gBtXc6e0yW
+        APQyxpRTMdgYsLptY8wCzJWiQKiCqEgF0BVmQzwD+k5g3ruIMW2A+ycE2ibGTA7mAUyrS3KHvS1G
+        X098bmUpai2skKJBScYJBeHwLbDewuUFRg8YPkLYHZ5/QPQZogeIHpEbaVX8XyT7jZRePkoUxwCn
+        onaxwo5AZdPhJgMx7YgG7pSO6dIpDNhb/bK2euDaqm5xdWVep0V99fZxzxgmNgK2juYMNn8JoiNq
+        UGoClZpU7Q14LS5gr1RA6C3E+r/SPjj65+SQox71yJV6kuI+SklFxpaMHRn7MzgBdtOo1zUe7K0y
+        4sac7PaiUtemraKn0khkPm0zYtjIKI6pJIRtW2NBPrWaUxGYdSd82AC6AH6MBPBjZqyBjGhOeEXs
+        +cwwsoCTizWYaaxd53zYh9j5kRiUrxZ1uTKiAhGsNUoKE12VJpZGZmZoZCYmjv+C0ZCJMjPiuvUb
+        ykVx5aLYclFs8lVU9pOOBsthCkKxBdGvqcSGDSG5DSHZDSHZ8g4M8rDTATzs4ByLx45PDL3rzkbx
+        q7qg8BQvcXUwbSFxMEdiwwbrT+pw8DGZ6SkmNz2HcjAswmkbdIFU9IS3lhMnOALnb+ZQvCcL+ZUd
+        F+43vGCY5AXJqtWOi4oKmyp0ktWNkcnbNzW4787kmkonnMNV0nEzcAddxMidj4fnn/+Y8vLCTGhA
+        Q2UjvBS7qfFoz7VWz7ZWz7ZWj1trgMsWC2J6q2d7q4f+r31k98cscnkkqPkjPFRDkenom8I9HX2E
+        MJzBI6Wt29KSwu0Wmz8S1PwRBlGeGZrIiYnjPzPMmijLI+5dweG0F8x2rS7j4eKPq7gSXImFfhoo
+        mhStlVM30lCj1nsFyRxq4Lf6UPcvnf7gCUx2Ds/c2J/dNFo+A0RWqvCA1PrxU0Bk0Zc+cr7TPEnS
+        zKhj5EGW0EhY4VzZXSm3XGxiM5sAbTuCgYwizqmsiLnkGSNvJDx0Phm/k/Dottl4BIEUVQ+rYPf2
+        F7R9bFHoFQAA
+    headers:
+      Accept-Ranges:
+      - bytes
+      Access-Control-Allow-Origin:
+      - '*'
+      Cache-Control:
+      - max-age=300
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Length:
+      - '921'
+      Content-Security-Policy:
+      - default-src 'none'; style-src 'unsafe-inline'; sandbox
+      Content-Type:
+      - text/plain; charset=utf-8
+      Date:
+      - Fri, 24 Jun 2022 09:56:06 GMT
+      ETag:
+      - W/"277390cee2bd5c7b396385bbde2845f23e43b7b642d325f42e3375febd2bf133"
+      Expires:
+      - Fri, 24 Jun 2022 10:01:06 GMT
+      Source-Age:
+      - '0'
+      Strict-Transport-Security:
+      - max-age=31536000
+      Vary:
+      - Authorization,Accept-Encoding,Origin
+      Via:
+      - 1.1 varnish
+      X-Cache:
+      - HIT
+      X-Cache-Hits:
+      - '1'
+      X-Content-Type-Options:
+      - nosniff
+      X-Fastly-Request-ID:
+      - 88488ff10ff57763855e3da7e11c1eb2ebcb9ac2
+      X-Frame-Options:
+      - deny
+      X-GitHub-Request-Id:
+      - E8B0:AE53:238297:268484:62B55BC9
+      X-Served-By:
+      - cache-fra19155-FRA
+      X-Timer:
+      - S1656064566.095335,VS0,VE145
       X-XSS-Protection:
       - 1; mode=block
     status:
@@ -214,11 +299,11 @@ interactions:
       Content-Type:
       - text/plain; charset=utf-8
       Date:
-      - Wed, 15 Jun 2022 11:22:09 GMT
+      - Fri, 24 Jun 2022 09:56:06 GMT
       ETag:
       - W/"b78547d9636db2ab86b780ff7183e82d56b177774acb8194e01de9208fc28565"
       Expires:
-      - Wed, 15 Jun 2022 11:27:09 GMT
+      - Fri, 24 Jun 2022 10:01:06 GMT
       Source-Age:
       - '0'
       Strict-Transport-Security:
@@ -228,21 +313,21 @@ interactions:
       Via:
       - 1.1 varnish
       X-Cache:
-      - MISS
+      - HIT
       X-Cache-Hits:
-      - '0'
+      - '1'
       X-Content-Type-Options:
       - nosniff
       X-Fastly-Request-ID:
-      - 8604a69acc97c52e2416f7ddc29d244d08a33e7d
+      - fc0fdd8a8bf3b177777dcaf82ddcbade5920c049
       X-Frame-Options:
       - deny
       X-GitHub-Request-Id:
-      - A22C:1FF9:15594F:184C93:62A9C0E1
+      - 9A80:355D:1C6E06:1F037F:62B55BF8
       X-Served-By:
-      - cache-lin2290031-LIN
+      - cache-fra19180-FRA
       X-Timer:
-      - S1655292130.682699,VS0,VE162
+      - S1656064566.357895,VS0,VE162
       X-XSS-Protection:
       - 1; mode=block
     status:
@@ -16030,7 +16115,7 @@ interactions:
       Content-Type:
       - application/json
       Date:
-      - Wed, 15 Jun 2022 11:22:10 GMT
+      - Fri, 24 Jun 2022 09:56:06 GMT
       ETag:
       - W/"08329b8a28b47455b33bd11813b22de4"
       Keep-Alive:
@@ -31824,7 +31909,7 @@ interactions:
       Content-Type:
       - application/json
       Date:
-      - Wed, 15 Jun 2022 11:22:10 GMT
+      - Fri, 24 Jun 2022 09:56:06 GMT
       ETag:
       - W/"08329b8a28b47455b33bd11813b22de4"
       Keep-Alive:
@@ -47618,7 +47703,7 @@ interactions:
       Content-Type:
       - application/json
       Date:
-      - Wed, 15 Jun 2022 11:22:10 GMT
+      - Fri, 24 Jun 2022 09:56:06 GMT
       ETag:
       - W/"08329b8a28b47455b33bd11813b22de4"
       Keep-Alive:
@@ -48177,7 +48262,7 @@ interactions:
       Content-Type:
       - application/json
       Date:
-      - Wed, 15 Jun 2022 11:22:10 GMT
+      - Fri, 24 Jun 2022 09:56:07 GMT
       ETag:
       - W/"fb5f4aa9534ad27a72be1269942909b9"
       Keep-Alive:
@@ -48227,7 +48312,7 @@ interactions:
       Content-Type:
       - application/json
       Date:
-      - Wed, 15 Jun 2022 11:22:10 GMT
+      - Fri, 24 Jun 2022 09:56:07 GMT
       ETag:
       - W/"4bec41e61af086d1c12cb895e783b427"
       Keep-Alive:

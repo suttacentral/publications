@@ -244,7 +244,7 @@ class EditionParser(ABC):
                         )
                     )
                 except AttributeError:
-                    raise SystemExit(f"Error while processing segment {_id}. Stopping.")
+                    raise SystemExit(f"Error while processing segment '{_id}'. Stopping.")
             return "".join(single_lines)  # putting content of one node together
 
     @staticmethod
@@ -337,7 +337,8 @@ class EditionParser(ABC):
             for preheading_group in mainmatter_preheadings:
 
                 # Firstly we need the first sutta-title tag in given section (preheading group)
-                target: Tag = mainmatter.find(id=tree_keys[tree_keys.index(preheading_group[-1].uid) + 1])
+                _sutta_uid = tree_keys[tree_keys.index(preheading_group[-1].uid) + 1]
+                target: Tag = mainmatter.find(id=_sutta_uid)
 
                 for _preheading in preheading_group:
                     # Then we insert all section headings (preheadings) before that sutta-title tag.
@@ -360,12 +361,16 @@ class EditionParser(ABC):
                     #                                             - sutta                                          (h4 class="sutta-title")
                     #                                             - (...)                                          (h4 class="sutta-title")
                     # DEPTH OF PREHEADINGS VARIES! (not only between publications but between parts of a single publication)
-
-                    target.insert_before(
-                        create_html_heading_with_id(
-                            html=mainmatter, depth=tree[_preheading.uid], text=_preheading.name, id_=_preheading.uid
+                    try:
+                        target.insert_before(
+                            create_html_heading_with_id(
+                                html=mainmatter, depth=tree[_preheading.uid], text=_preheading.name, id_=_preheading.uid
+                            )
                         )
-                    )
+                    except AttributeError:
+                        raise SystemExit(
+                            f"Error while inserting section heading '{_preheading.uid}' before sutta heading '{_sutta_uid}'. Stopping."
+                        )
 
     def set_mainmatter(self, volume: Volume) -> None:
         """Add a mainmatter to a volume"""

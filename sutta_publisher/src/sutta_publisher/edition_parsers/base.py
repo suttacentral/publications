@@ -24,7 +24,7 @@ from sutta_publisher.edition_parsers.helper_functions import (
     increment_heading_by_number,
     parse_main_toc_depth,
     process_line,
-    process_relative_links,
+    process_link,
     remove_all_header,
     remove_all_ul,
 )
@@ -712,7 +712,7 @@ class EditionParser(ABC):
         else:
             log.debug(f"Edition without secondary ToCs. {secondary_toc=}")
 
-    def process_links(self, volume: Volume) -> None:
+    def process_relative_links(self, volume: Volume) -> None:
         """Processed html file includes only relative links which are used on suttacentral website.
         For links outside our html file, we have to make absolute links."""
         _acronym = volume.acronym.lower()
@@ -722,9 +722,9 @@ class EditionParser(ABC):
             if isinstance(_volume_matter, list):
                 _processed_matter = []
                 for _matter in _volume_matter:
-                    _processed_matter.append(process_relative_links(_matter, _acronym))
+                    _processed_matter.append(process_link(_matter, _acronym))
             else:
-                _processed_matter = process_relative_links(_volume_matter, _acronym)
+                _processed_matter = process_link(_volume_matter, _acronym)
             setattr(volume, _attr, _processed_matter)
 
     def _generate_cover(self, volume: Volume) -> Any:
@@ -750,7 +750,7 @@ class EditionParser(ABC):
             self.set_backmatter,
             # operations to execute when all matters are set
             self.add_secondary_toc_to_mainmatter,
-            self.process_links,
+            self.process_relative_links,
         ]
         for _operation in _operations:
             EditionParser.on_each_volume(edition=edition, operation=_operation)

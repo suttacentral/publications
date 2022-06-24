@@ -255,7 +255,7 @@ def process_relative_links(html: str, acronym: str) -> str:
     _links = _html.find_all("a", href=lambda value: value and not value.startswith("#"), text=lambda text: text)
 
     for _link in _links:
-        _match = re.match(re.compile(fr'^{acronym}\s'), _link.string.lower().strip())
+        _match = re.match(re.compile(rf"^{acronym}\s"), _link.string.lower().strip())
 
         if _match:
             _link["href"] = f'#{"".join(_link.string.lower().split())}'

@@ -24,9 +24,9 @@ from sutta_publisher.edition_parsers.helper_functions import (
     increment_heading_by_number,
     parse_main_toc_depth,
     process_line,
+    process_relative_links,
     remove_all_header,
     remove_all_ul,
-    process_relative_links,
 )
 from sutta_publisher.shared.value_objects.edition import EditionType
 from sutta_publisher.shared.value_objects.edition_config import EditionConfig

@@ -130,6 +130,11 @@ class EpubEdition(EditionParser):
         # set frontmatter
         for _matter_part in volume.frontmatter:
             _frontmatter_part_html: BeautifulSoup = BeautifulSoup(_matter_part, "lxml")
+
+            # Skip adding HTML main table of contents
+            if _frontmatter_part_html.section and _frontmatter_part_html.section["id"] == "main-toc":
+                continue
+
             _chapter_number += 1
             self._set_matter_part_chapter(
                 book=book, html=_frontmatter_part_html, chapter_number=_chapter_number, volume=volume

@@ -248,3 +248,23 @@ def extract_string(html: BeautifulSoup) -> str:
         if element := getattr(html, attr, None):
             element.unwrap()
     return cast(str, str(html))
+
+
+def process_link(html: str, acronym: str) -> str:
+    """Make absolute links to references outside our html file.
+    Make relative links to references inside our html file."""
+    _html = BeautifulSoup(html, "lxml")
+    _links = _html.find_all("a", href=lambda value: value and not value.startswith("#"), text=lambda text: text)
+
+    for _link in _links:
+        _match = re.match(re.compile(rf"^{acronym}\s"), _link.string.lower().strip())
+
+        if _match:
+            _link["href"] = f'#{"".join(_link.string.lower().split())}'
+        elif _link["href"].startswith("/"):
+            _link["href"] = f'https://suttacentral.net{_link["href"]}'
+            add_class([_link], "external-link")
+        else:
+            add_class([_link], "external-link")
+
+    return extract_string(_html)

@@ -712,19 +712,28 @@ class EditionParser(ABC):
         else:
             log.debug(f"Edition without secondary ToCs. {secondary_toc=}")
 
+    def collect_mainmatter_uids(self, volume: Volume) -> None:
+        """Add mainmatter uids to volume"""
+        _mainmatter = BeautifulSoup(volume.mainmatter, "lxml")
+
+        volume.mainmatter_uids = [
+            tag["id"] for tag in _mainmatter.find_all(id=lambda uid: uid and volume.acronym.lower() in uid)
+        ]
+
     def process_reference_links(self, volume: Volume) -> None:
         """Processed html file includes only relative links which are used by suttacentral website, but do not work
         within our publication file"""
-        _acronym = volume.acronym.lower()
-        _matter_types = ["frontmatter", "mainmatter", "backmatter"]
+        _acronym: str = volume.acronym.lower()
+        _matter_types: list[str] = ["frontmatter", "mainmatter", "backmatter"]
+        _mainmatter_uids: list[str] = volume.mainmatter_uids
         for _attr in _matter_types:
             _volume_matter = getattr(volume, _attr)
             if isinstance(_volume_matter, list):
                 _processed_matter = []
                 for _matter in _volume_matter:
-                    _processed_matter.append(process_link(_matter, _acronym))
+                    _processed_matter.append(process_link(_matter, _acronym, _mainmatter_uids))
             else:
-                _processed_matter = process_link(_volume_matter, _acronym)
+                _processed_matter = process_link(_volume_matter, _acronym, _mainmatter_uids)
             setattr(volume, _attr, _processed_matter)
 
     def _generate_cover(self, volume: Volume) -> Any:
@@ -750,6 +759,7 @@ class EditionParser(ABC):
             self.set_backmatter,
             # operations to execute when all matters are set
             self.add_secondary_toc_to_mainmatter,
+            self.collect_mainmatter_uids,
             self.process_reference_links,
         ]
         for _operation in _operations:

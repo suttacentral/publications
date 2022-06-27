@@ -1,6 +1,7 @@
 import ast
 import os
 import re
+import tempfile
 from typing import Any, cast
 
 import requests
@@ -250,20 +251,37 @@ def extract_string(html: BeautifulSoup) -> str:
     return cast(str, str(html))
 
 
-def process_link(html: str, acronym: str) -> str:
+def get_chapter_name(html: BeautifulSoup) -> str:
+    name: str = html.section.get("id", "") if html.section else html.article.get("id", "") if "id" in html.article else html.article.get("class", [""])[0]
+    return name
+
+def process_link(html: str, acronym: str, mainmatter_uids: list[str]) -> str:
     """Make absolute links to references outside our html file.
     Make relative links to references inside our html file."""
     _html = BeautifulSoup(html, "lxml")
     _links = _html.find_all("a", href=lambda value: value and not value.startswith("#"), text=lambda text: text)
 
     for _link in _links:
-        _match = re.match(re.compile(rf"^{acronym}\s"), _link.string.lower().strip())
+        _match = re.match(
+            re.compile(
+                rf"^(/{acronym}-[a-z]+)$|^(/{acronym}\d+)(-\d+)?(\.\d+)?(-\d+)?(?:/[a-z]+/[a-z]+)?(#\d+)?(-\d+)?(\.\d+)?(-\d+)?$"
+            ),
+            _link["href"],
+        )
 
         if _match:
-            _link["href"] = f'#{"".join(_link.string.lower().split())}'
+            target_id = "".join(m for m in _match.groups() if m).replace("#", ":").replace("/", "#")
+
+            if not (uid := target_id[1:]) in mainmatter_uids:
+                with open(os.path.join(tempfile.gettempdir(), f"missmatched_links.txt"), "a") as f:
+                    f.write(f"'{uid}' in '{_link}'\n")
+
+            _link["href"] = f"{target_id}"
+
         elif _link["href"].startswith("/"):
             _link["href"] = f'https://suttacentral.net{_link["href"]}'
             add_class([_link], "external-link")
+
         else:
             add_class([_link], "external-link")
 

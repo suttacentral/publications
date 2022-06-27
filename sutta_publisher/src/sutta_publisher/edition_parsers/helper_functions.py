@@ -252,8 +252,15 @@ def extract_string(html: BeautifulSoup) -> str:
 
 
 def get_chapter_name(html: BeautifulSoup) -> str:
-    name: str = html.section.get("id", "") if html.section else html.article.get("id", "") if "id" in html.article else html.article.get("class", [""])[0]
+    name: str = (
+        html.section.get("id", "")
+        if html.section
+        else html.article.get("id", "")
+        if "id" in html.article
+        else html.article.get("class", [""])[0]
+    )
     return name
+
 
 def process_link(html: str, acronym: str, mainmatter_uids: list[str]) -> str:
     """Make absolute links to references outside our html file.

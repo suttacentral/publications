@@ -2,7 +2,7 @@ import ast
 import os
 import re
 import tempfile
-from typing import Any, cast
+from typing import Any, cast, no_type_check
 
 import requests
 from bs4 import BeautifulSoup, Tag
@@ -251,15 +251,14 @@ def extract_string(html: BeautifulSoup) -> str:
     return cast(str, str(html))
 
 
+@no_type_check
 def get_chapter_name(html: BeautifulSoup) -> str:
-    name: str = (
-        html.section.get("id", "")
-        if html.section
-        else html.article.get("id", "")
-        if "id" in html.article
-        else html.article.get("class", [""])[0]
-    )
-    return name
+    if html.section and (name := html.section.get("id")):
+        return name
+    elif html.article and (name := html.article.get("id")):
+        return name
+    else:
+        return html.article.get("class", [""])[0]
 
 
 def process_link(html: str, acronym: str, mainmatter_uids: list[str]) -> str:

@@ -265,21 +265,20 @@ def process_link(html: str, acronym: str, mainmatter_uids: list[str]) -> str:
     """Make absolute links to references outside our html file.
     Make relative links to references inside our html file."""
     _html = BeautifulSoup(html, "lxml")
-    _links = _html.find_all("a", href=lambda value: value and not value.startswith("#"), text=lambda text: text)
+    _links = _html.find_all("a", href=lambda value: value and not value.startswith("#"), string=lambda text: text)
 
     for _link in _links:
-        _match = re.match(
+
+        if _match := re.match(
             re.compile(
-                rf"^(/{acronym}-[a-z]+)$|^(/{acronym}\d+)(-\d+)?(\.\d+)?(-\d+)?(?:/[a-z]+/[a-z]+)?(#\d+)?(-\d+)?(\.\d+)?(-\d+)?$"
+                rf"^(?:http(?:s)?://suttacentral.net)?(/{acronym})(?:(-[a-z]+$)|(\d+)(-\d+)?(\.\d+)?(-\d+)?(?:/[a-z]+/[a-z]+)?(#\d+)?(-\d+)?(\.\d+)?(-\d+)?$)"
             ),
             _link["href"],
-        )
-
-        if _match:
+        ):
             target_id = "".join(m for m in _match.groups() if m).replace("#", ":").replace("/", "#")
 
             if not (uid := target_id[1:]) in mainmatter_uids:
-                with open(os.path.join(tempfile.gettempdir(), f"missmatched_links.txt"), "a") as f:
+                with open(os.path.join(tempfile.gettempdir(), f"zzz_missmatched_links.txt"), "a") as f:
                     f.write(f"'{uid}' in '{_link}'\n")
 
             _link["href"] = f"{target_id}"

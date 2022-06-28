@@ -7,6 +7,7 @@ from sutta_publisher.edition_parsers.helper_functions import (
     _split_ref_and_number,
     fetch_possible_refs,
     process_line,
+    process_link,
 )
 
 
@@ -128,3 +129,62 @@ def test_should_check_that_a_full_mainmatter_item_is_processed(
         )
         == expected_line
     )
+
+
+@pytest.mark.parametrize(
+    "html, acronym, mainmatter_uids, expected",
+    [
+        # relative links
+        (
+            '<a href="/snp5.13/en/sujato#4.3">Snp 5.13:4.3</a>',
+            "snp",
+            "snp5.13:4.3",
+            '<a href="#snp5.13:4.3">Snp 5.13:4.3</a>',
+        ),
+        ('<a href="/mn-abcdef">MN 1</a>', "mn", "mn-abcdef", '<a href="#mn-abcdef">MN 1</a>'),
+        ('<a href="/snp5.13#4.3">Snp 5.13:4.3</a>', "snp", "snp5.13:43", '<a href="#snp5.13:4.3">Snp 5.13:4.3</a>'),
+        ('<a href="/snp1">Snp 1</a>', "snp", "snp1", '<a href="#snp1">Snp 1</a>'),
+        ('<a href="/sn1#2">SN 1:2</a>', "sn", "sn1:2", '<a href="#sn1:2">SN 1:2</a>'),
+        ('<a href="/snp1.1-2#2">Snp 1:1</a>', "snp", "snp1.1-2:2", '<a href="#snp1.1-2:2">Snp 1:1</a>'),
+        ('<a href="/an1#2-2">AN 1:2-2</a>', "an", "an1:2-2", '<a href="#an1:2-2">AN 1:2-2</a>'),
+        (
+            '<a href="https://suttacentral.net/iti1.2#3.4">Iti 1.2:3.4</a>',
+            "iti",
+            "iti1.2:3.4",
+            '<a href="#iti1.2:3.4">Iti 1.2:3.4</a>',
+        ),
+        (
+            '<a href="https://suttacentral.net/iti1.2/en/sujato#3.4">Iti 1.2:3.4</a>',
+            "iti",
+            "iti1.2:3.4",
+            '<a href="#iti1.2:3.4">Iti 1.2:3.4</a>',
+        ),
+        # absolute links
+        (
+            '<a href="/snp1.1-2#2">Snp 1:1</a>',
+            "mn",
+            "dummy",
+            '<a class="external-link" href="https://suttacentral.net/snp1.1-2#2">Snp 1:1</a>',
+        ),
+        (
+            '<a href="/an1#2-2">AN 1:2-2</a>',
+            "dn",
+            "dummy",
+            '<a class="external-link" href="https://suttacentral.net/an1#2-2">AN 1:2-2</a>',
+        ),
+        (
+            '<a href="https://suttacentral.net/iti1.2#3.4">Iti 1.2:3.4</a>',
+            "snp",
+            "dummy",
+            '<a class="external-link" href="https://suttacentral.net/iti1.2#3.4">Iti 1.2:3.4</a>',
+        ),
+        (
+            '<a href="https://suttacentral.net/iti1.2/en/sujato#3.4">Iti 1.2:3.4</a>',
+            "an",
+            "dummy",
+            '<a class="external-link" href="https://suttacentral.net/iti1.2/en/sujato#3.4">Iti 1.2:3.4</a>',
+        ),
+    ],
+)
+def test_should_return_processed_links(html: str, acronym: str, mainmatter_uids: str, expected: str) -> None:
+    assert process_link(html, acronym, [mainmatter_uids]) == expected

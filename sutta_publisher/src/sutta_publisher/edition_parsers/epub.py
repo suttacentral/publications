@@ -80,13 +80,8 @@ class EpubEdition(EditionParser):
         else:
             return chapter_toc
 
-    def _make_chapter(
-        self,
-        html: BeautifulSoup,
-        chapter_name: str,
-    ) -> EpubHtml:
+    def _make_chapter(self, html: BeautifulSoup, chapter_name: str) -> EpubHtml:
         self._make_reference_links(html=html, chapter_name=chapter_name)
-
         file_name = f"{chapter_name}.xhtml"
         return self._make_chapter_content(html=html, file_name=file_name)
 

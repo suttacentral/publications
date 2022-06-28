@@ -1,5 +1,6 @@
 import pytest
 
+from sutta_publisher.edition_parsers.base import RELATIVE_LINKS_PATTERN
 from sutta_publisher.edition_parsers.helper_functions import (
     _filter_refs,
     _flatten_list,
@@ -187,4 +188,5 @@ def test_should_check_that_a_full_mainmatter_item_is_processed(
     ],
 )
 def test_should_return_processed_links(html: str, acronym: str, mainmatter_uids: str, expected: str) -> None:
-    assert process_link(html, acronym, [mainmatter_uids]) == expected
+    pattern = RELATIVE_LINKS_PATTERN.format(acronym=acronym)
+    assert process_link(html, pattern, [mainmatter_uids]) == expected

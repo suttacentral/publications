@@ -2,7 +2,7 @@ import ast
 import os
 import re
 import tempfile
-from typing import Any, cast, no_type_check
+from typing import Any, Pattern, cast, no_type_check
 
 import requests
 from bs4 import BeautifulSoup, Tag
@@ -261,27 +261,21 @@ def get_chapter_name(html: BeautifulSoup) -> str:
         return html.article.get("class", [""])[0]
 
 
-def process_link(html: str, acronym: str, mainmatter_uids: list[str]) -> str:
+def process_link(html: str, pattern: Pattern, mainmatter_uids: list[str]) -> str:
     """Make absolute links to references outside our html file.
     Make relative links to references inside our html file."""
     _html = BeautifulSoup(html, "lxml")
     _links = _html.find_all("a", href=lambda value: value and not value.startswith("#"), string=lambda text: text)
 
     for _link in _links:
+        if _match := re.match(pattern, _link["href"]):
+            _target_id = "".join(m for m in _match.groups() if m).replace("#", ":").replace("/", "#")
 
-        if _match := re.match(
-            re.compile(
-                rf"^(?:http(?:s)?://suttacentral.net)?(/{acronym})(?:(-[a-z]+$)|(\d+)(-\d+)?(\.\d+)?(-\d+)?(?:/[a-z]+/[a-z]+)?(#\d+)?(-\d+)?(\.\d+)?(-\d+)?$)"
-            ),
-            _link["href"],
-        ):
-            target_id = "".join(m for m in _match.groups() if m).replace("#", ":").replace("/", "#")
-
-            if not (uid := target_id[1:]) in mainmatter_uids:
+            if not (_uid := _target_id[1:]) in mainmatter_uids:
                 with open(os.path.join(tempfile.gettempdir(), f"zzz_missmatched_links.txt"), "a") as f:
-                    f.write(f"'{uid}' in '{_link}'\n")
+                    f.write(f"'{_uid}' in '{_link}'\n")
 
-            _link["href"] = f"{target_id}"
+            _link["href"] = f"{_target_id}"
 
         elif _link["href"].startswith("/"):
             _link["href"] = f'https://suttacentral.net{_link["href"]}'

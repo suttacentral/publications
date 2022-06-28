@@ -3,9 +3,10 @@ from __future__ import annotations
 import ast
 import logging
 import os
+import re
 from abc import ABC
 from pathlib import Path
-from typing import Any, Callable, Type, cast
+from typing import Any, Callable, Pattern, Type, cast
 
 import jinja2
 import requests
@@ -50,6 +51,7 @@ from sutta_publisher.shared.value_objects.parser_objects import (
 log = logging.getLogger(__name__)
 
 ADDITIONAL_HEADINGS = ast.literal_eval(os.getenv("ADDITIONAL_HEADINGS", ""))
+RELATIVE_LINKS_PATTERN = r"^(?:http(?:s)?://suttacentral.net)?(/{acronym})(?:(-[a-z]+$)|(\d+)(-\d+)?(\.\d+)?(-\d+)?(?:/[a-z]+/[a-z]+)?(#\d+)?(-\d+)?(\.\d+)?(-\d+)?$)"
 
 
 class EditionParser(ABC):
@@ -723,17 +725,18 @@ class EditionParser(ABC):
     def process_reference_links(self, volume: Volume) -> None:
         """Processed html file includes only relative links which are used by suttacentral website, but do not work
         within our publication file"""
-        _acronym: str = volume.acronym.lower()
+        _relative_links_pattern: Pattern = re.compile(RELATIVE_LINKS_PATTERN.format(acronym=volume.acronym.lower()))
         _matter_types: list[str] = ["frontmatter", "mainmatter", "backmatter"]
         _mainmatter_uids: list[str] = volume.mainmatter_uids
+
         for _attr in _matter_types:
             _volume_matter = getattr(volume, _attr)
             if isinstance(_volume_matter, list):
                 _processed_matter = []
                 for _matter in _volume_matter:
-                    _processed_matter.append(process_link(_matter, _acronym, _mainmatter_uids))
+                    _processed_matter.append(process_link(_matter, _relative_links_pattern, _mainmatter_uids))
             else:
-                _processed_matter = process_link(_volume_matter, _acronym, _mainmatter_uids)
+                _processed_matter = process_link(_volume_matter, _relative_links_pattern, _mainmatter_uids)
             setattr(volume, _attr, _processed_matter)
 
     def _generate_cover(self, volume: Volume) -> Any:

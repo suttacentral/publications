@@ -1,7 +1,7 @@
 import ast
 import os
 import re
-from typing import Any, cast
+from typing import Any, Pattern, cast, no_type_check
 
 import requests
 from bs4 import BeautifulSoup, Tag
@@ -250,21 +250,37 @@ def extract_string(html: BeautifulSoup) -> str:
     return cast(str, str(html))
 
 
-def process_link(html: str, acronym: str) -> str:
+@no_type_check
+def get_chapter_name(html: BeautifulSoup) -> str:
+    if html.section and (name := html.section.get("id")):
+        return name
+    elif html.article and (name := html.article.get("id")):
+        return name
+    else:
+        return html.article.get("class", [""])[0]
+
+
+def process_links(html: str, pattern: Pattern, mainmatter_uids: list[str]) -> tuple[str, list]:
     """Make absolute links to references outside our html file.
     Make relative links to references inside our html file."""
     _html = BeautifulSoup(html, "lxml")
-    _links = _html.find_all("a", href=lambda value: value and not value.startswith("#"), text=lambda text: text)
+    _links = _html.find_all("a", href=lambda value: value and not value.startswith("#"), string=lambda text: text)
+    mismatched_links: list[str] = []
 
     for _link in _links:
-        _match = re.match(re.compile(rf"^{acronym}\s"), _link.string.lower().strip())
+        if _match := re.match(pattern, _link["href"]):
+            _target_id = "".join(m for m in _match.groups() if m).replace("#", ":").replace("/", "")
 
-        if _match:
-            _link["href"] = f'#{"".join(_link.string.lower().split())}'
+            if not _target_id in mainmatter_uids:
+                mismatched_links.append(str(_link))
+
+            _link["href"] = f"#{_target_id}"
+
         elif _link["href"].startswith("/"):
             _link["href"] = f'https://suttacentral.net{_link["href"]}'
             add_class([_link], "external-link")
+
         else:
             add_class([_link], "external-link")
 
-    return extract_string(_html)
+    return extract_string(_html), mismatched_links

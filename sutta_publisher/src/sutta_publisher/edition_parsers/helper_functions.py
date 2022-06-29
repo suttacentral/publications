@@ -1,7 +1,6 @@
 import ast
 import os
 import re
-import tempfile
 from typing import Any, Pattern, cast, no_type_check
 
 import requests

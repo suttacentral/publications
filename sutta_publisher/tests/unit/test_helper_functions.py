@@ -141,10 +141,16 @@ def test_should_check_that_a_full_mainmatter_item_is_processed(
             "snp",
             ["snp5.13:4.3"],
             '<a href="#snp5.13:4.3">Snp 5.13:4.3</a>',
-            []
+            [],
         ),
         ('<a href="/mn-abcdef">MN 1</a>', "mn", ["mn-abcdef"], '<a href="#mn-abcdef">MN 1</a>', []),
-        ('<a href="/snp5.13#4.3">Snp 5.13:4.3</a>', "snp", ["snp5.13:4.3"], '<a href="#snp5.13:4.3">Snp 5.13:4.3</a>', []),
+        (
+            '<a href="/snp5.13#4.3">Snp 5.13:4.3</a>',
+            "snp",
+            ["snp5.13:4.3"],
+            '<a href="#snp5.13:4.3">Snp 5.13:4.3</a>',
+            [],
+        ),
         ('<a href="/snp1">Snp 1</a>', "snp", ["snp1"], '<a href="#snp1">Snp 1</a>', []),
         ('<a href="/sn1#2">SN 1:2</a>', "sn", ["sn1:2"], '<a href="#sn1:2">SN 1:2</a>', []),
         ('<a href="/snp1.1-2#2">Snp 1:1</a>', "snp", ["snp1.1-2:2"], '<a href="#snp1.1-2:2">Snp 1:1</a>', []),

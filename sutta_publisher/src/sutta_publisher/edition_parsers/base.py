@@ -733,7 +733,6 @@ class EditionParser(ABC):
         except Exception as err:
             log.error(f"Unexpected error while saving mismatched links: {repr(err)}")
 
-
     def process_reference_links(self, volume: Volume) -> None:
         """Processed html file includes only relative links which are used by suttacentral website, but do not work
         within our publication file"""

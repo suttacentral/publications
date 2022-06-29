@@ -261,21 +261,21 @@ def get_chapter_name(html: BeautifulSoup) -> str:
         return html.article.get("class", [""])[0]
 
 
-def process_link(html: str, pattern: Pattern, mainmatter_uids: list[str]) -> str:
+def process_links(html: str, pattern: Pattern, mainmatter_uids: list[str]) -> tuple[str, list]:
     """Make absolute links to references outside our html file.
     Make relative links to references inside our html file."""
     _html = BeautifulSoup(html, "lxml")
     _links = _html.find_all("a", href=lambda value: value and not value.startswith("#"), string=lambda text: text)
+    mismatched_links: list[str] = []
 
     for _link in _links:
         if _match := re.match(pattern, _link["href"]):
-            _target_id = "".join(m for m in _match.groups() if m).replace("#", ":").replace("/", "#")
+            _target_id = "".join(m for m in _match.groups() if m).replace("#", ":").replace("/", "")
 
-            if not (_uid := _target_id[1:]) in mainmatter_uids:
-                with open(os.path.join(tempfile.gettempdir(), f"zzz_missmatched_links.txt"), "a") as f:
-                    f.write(f"'{_uid}' in '{_link}'\n")
+            if not _target_id in mainmatter_uids:
+                mismatched_links.append(str(_link))
 
-            _link["href"] = f"{_target_id}"
+            _link["href"] = f"#{_target_id}"
 
         elif _link["href"].startswith("/"):
             _link["href"] = f'https://suttacentral.net{_link["href"]}'
@@ -284,4 +284,4 @@ def process_link(html: str, pattern: Pattern, mainmatter_uids: list[str]) -> str
         else:
             add_class([_link], "external-link")
 
-    return extract_string(_html)
+    return extract_string(_html), mismatched_links

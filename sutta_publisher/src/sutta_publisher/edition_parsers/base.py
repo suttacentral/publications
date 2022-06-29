@@ -25,7 +25,7 @@ from sutta_publisher.edition_parsers.helper_functions import (
     increment_heading_by_number,
     parse_main_toc_depth,
     process_line,
-    process_link,
+    process_links,
     remove_all_header,
     remove_all_ul,
 )
@@ -722,22 +722,41 @@ class EditionParser(ABC):
             tag["id"] for tag in _mainmatter.find_all(id=lambda uid: uid and volume.acronym.lower() in uid)
         ]
 
+    def _save_mismatched_links(self, volume: Volume, links: list[str]) -> None:
+        log.debug("Saving mismatched links...")
+        _acronym = volume.acronym.lower()
+        _date: str = volume.updated if volume.updated else volume.created
+        _date = _date[:10]
+        try:
+            with open(f"zzz-{_acronym}-{_date}.txt", "w") as file:
+                file.write("\n".join(links))
+        except Exception as err:
+            log.error(f"Unexpected error while saving mismatched links: {repr(err)}")
+
+
     def process_reference_links(self, volume: Volume) -> None:
         """Processed html file includes only relative links which are used by suttacentral website, but do not work
         within our publication file"""
         _relative_links_pattern: Pattern = re.compile(RELATIVE_LINKS_PATTERN.format(acronym=volume.acronym.lower()))
         _matter_types: list[str] = ["frontmatter", "mainmatter", "backmatter"]
         _mainmatter_uids: list[str] = volume.mainmatter_uids
+        _mismatched_links: list[str] = []
 
         for _attr in _matter_types:
             _volume_matter = getattr(volume, _attr)
             if isinstance(_volume_matter, list):
                 _processed_matter = []
+                _links = []
                 for _matter in _volume_matter:
-                    _processed_matter.append(process_link(_matter, _relative_links_pattern, _mainmatter_uids))
+                    _html_str, _links = process_links(_matter, _relative_links_pattern, _mainmatter_uids)
+                    _processed_matter.append(_html_str)
             else:
-                _processed_matter = process_link(_volume_matter, _relative_links_pattern, _mainmatter_uids)
+                _processed_matter, _links = process_links(_volume_matter, _relative_links_pattern, _mainmatter_uids)
+
+            _mismatched_links.extend(_links)
             setattr(volume, _attr, _processed_matter)
+
+        self._save_mismatched_links(volume, _mismatched_links)
 
     def _generate_cover(self, volume: Volume) -> Any:
         log.debug("Generating covers...")

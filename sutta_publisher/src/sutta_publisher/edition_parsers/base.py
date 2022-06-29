@@ -4,6 +4,7 @@ import ast
 import logging
 import os
 import re
+import tempfile
 from abc import ABC
 from pathlib import Path
 from typing import Any, Callable, Pattern, Type, cast
@@ -727,8 +728,9 @@ class EditionParser(ABC):
         _acronym = volume.acronym.lower()
         _date: str = volume.updated if volume.updated else volume.created
         _date = _date[:10]
+        _filename = f"zzz-{_acronym}-{_date}.txt"
         try:
-            with open(f"zzz-{_acronym}-{_date}.txt", "w") as file:
+            with open(os.path.join(tempfile.gettempdir(), _filename), "w") as file:
                 file.write("\n".join(links))
         except Exception as err:
             log.error(f"Unexpected error while saving mismatched links: {repr(err)}")
@@ -745,17 +747,18 @@ class EditionParser(ABC):
             _volume_matter = getattr(volume, _attr)
             if isinstance(_volume_matter, list):
                 _processed_matter = []
-                _links = []
                 for _matter in _volume_matter:
                     _html_str, _links = process_links(_matter, _relative_links_pattern, _mainmatter_uids)
                     _processed_matter.append(_html_str)
+                    _mismatched_links.extend(_links)
             else:
                 _processed_matter, _links = process_links(_volume_matter, _relative_links_pattern, _mainmatter_uids)
+                _mismatched_links.extend(_links)
 
-            _mismatched_links.extend(_links)
             setattr(volume, _attr, _processed_matter)
 
-        self._save_mismatched_links(volume, _mismatched_links)
+        if _mismatched_links:
+            self._save_mismatched_links(volume, _mismatched_links)
 
     def _generate_cover(self, volume: Volume) -> Any:
         log.debug("Generating covers...")

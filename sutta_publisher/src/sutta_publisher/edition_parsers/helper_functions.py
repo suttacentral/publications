@@ -260,27 +260,41 @@ def get_chapter_name(html: BeautifulSoup) -> str:
         return html.article.get("class", [""])[0]
 
 
-def process_links(html: str, pattern: Pattern, mainmatter_uids: list[str]) -> tuple[str, list]:
+def process_links(html: str, pattern: Pattern, mainmatter_uids: list[str], acronym: str) -> tuple[str, list]:
     """Make absolute links to references outside our html file.
     Make relative links to references inside our html file."""
     _html = BeautifulSoup(html, "lxml")
-    _links = _html.find_all("a", href=lambda value: value and not value.startswith("#"), string=lambda text: text)
+    _links = _html.find_all("a", href=lambda value: value)
     mismatched_links: list[str] = []
 
     for _link in _links:
         if _match := re.match(pattern, _link["href"]):
             _target_id = "".join(m for m in _match.groups() if m).replace("#", ":").replace("/", "")
 
-            if not _target_id in mainmatter_uids:
+            if _target_id not in mainmatter_uids:
                 mismatched_links.append(str(_link))
 
             _link["href"] = f"#{_target_id}"
 
-        elif _link["href"].startswith("/"):
-            _link["href"] = f'https://suttacentral.net{_link["href"]}'
+        elif _link["href"].startswith(f"#{acronym}") and _link["href"].replace("#", "") not in mainmatter_uids:
+            mismatched_links.append(str(_link))
+
+        elif not _link["href"].startswith("http"):
+            _link["href"] = (
+                f'https://suttacentral.net{_link["href"]}'
+                if _link["href"].startswith("/")
+                else f'https://suttacentral.net/{_link["href"]}'
+            )
             add_class([_link], "external-link")
 
         else:
             add_class([_link], "external-link")
 
     return extract_string(_html), mismatched_links
+
+
+def remove_all_empty_tags(html: BeautifulSoup) -> None:
+    for _tag in html.find_all(
+        lambda tag: (not tag.contents or not len(tag.get_text(strip=True))) and not tag.name == "br"
+    ):
+        _tag.decompose()

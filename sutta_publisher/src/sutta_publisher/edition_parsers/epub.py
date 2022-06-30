@@ -38,16 +38,20 @@ class EpubEdition(EditionParser):
     def _make_reference_links(self, html: BeautifulSoup, chapter_name: str) -> None:
         if chapter_name == "blurbs":
             _links = html.find_all("a", class_="blurb-link")
-            for _link in _links:
-                _link["href"] = f'mainmatter.xhtml{_link["href"]}'
+            _target_chapter = "mainmatter"
         elif chapter_name == "mainmatter":
             _links = html.find_all("a", role="doc-noteref")
-            for _link in _links:
-                _link["href"] = f'endnotes.xhtml{_link["href"]}'
+            _target_chapter = "endnotes"
         else:
             _links = html.find_all("a", href=lambda x: x and x.startswith("#"))
-            for _link in _links:
-                _link["href"] = f'mainmatter.xhtml{_link["href"]}'
+            _target_chapter = "mainmatter"
+
+        for _link in _links:
+            # skip if link is an element of the chapter's contents list
+            if _link.find_parent("nav", class_="contents"):
+                continue
+            else:
+                _link["href"] = f'{_target_chapter}.xhtml{_link["href"]}'
 
     def _make_chapter_content(self, html: BeautifulSoup, file_name: str) -> EpubHtml:
         _chapter = EpubHtml(title=self.config.publication.translation_title, file_name=file_name)

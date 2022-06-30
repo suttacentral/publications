@@ -27,6 +27,7 @@ from sutta_publisher.edition_parsers.helper_functions import (
     parse_main_toc_depth,
     process_line,
     process_links,
+    remove_all_empty_tags,
     remove_all_header,
     remove_all_ul,
 )
@@ -52,7 +53,7 @@ from sutta_publisher.shared.value_objects.parser_objects import (
 log = logging.getLogger(__name__)
 
 ADDITIONAL_HEADINGS = ast.literal_eval(os.getenv("ADDITIONAL_HEADINGS", ""))
-RELATIVE_LINKS_PATTERN = r"^(?:http(?:s)?://suttacentral.net)?(/{acronym})(?:(-[a-z]+$)|(\d+)(-\d+)?(\.\d+)?(-\d+)?(?:/[a-z]+/[a-z]+)?(#\d+)?(-\d+)?(\.\d+)?(-\d+)?$)"
+RELATIVE_LINKS_PATTERN = r"^(?:http(?:s)?://suttacentral.net)?(/)?({acronym})(?:(-[a-z]+$)|(\d+)(-\d+)?(\.\d+)?(-\d+)?(?:/[a-z]+/[a-z]+)?(#\d+)?(-\d+)?(\.\d+)?(-\d+)?$)"
 
 
 class EditionParser(ABC):
@@ -305,6 +306,9 @@ class EditionParser(ABC):
             preheadings=_raw_data.preheadings,
             tree=_raw_data.depths,
         )
+
+        # Remove all empty tags
+        remove_all_empty_tags(html=mainmatter)
 
         # Add class "heading" for all HTML headings between h1 and hX which has class "sutta-title"
         _headings = collect_actual_headings(end_depth=_sutta_title_depth, html=mainmatter)
@@ -738,21 +742,32 @@ class EditionParser(ABC):
     def process_reference_links(self, volume: Volume) -> None:
         """Processed html file includes only relative links which are used by suttacentral website, but do not work
         within our publication file"""
-        _relative_links_pattern: Pattern = re.compile(RELATIVE_LINKS_PATTERN.format(acronym=volume.acronym.lower()))
-        _matter_types: list[str] = ["frontmatter", "mainmatter", "backmatter"]
+        _acronym: str = volume.acronym.lower()
+        _relative_links_pattern: Pattern = re.compile(RELATIVE_LINKS_PATTERN.format(acronym=_acronym))
         _mainmatter_uids: list[str] = volume.mainmatter_uids
         _mismatched_links: list[str] = []
+        _matter_types: list[str] = ["frontmatter", "mainmatter", "backmatter"]
 
         for _attr in _matter_types:
             _volume_matter = getattr(volume, _attr)
             if isinstance(_volume_matter, list):
                 _processed_matter = []
                 for _matter in _volume_matter:
-                    _html_str, _links = process_links(_matter, _relative_links_pattern, _mainmatter_uids)
+                    _html_str, _links = process_links(
+                        html=_matter,
+                        pattern=_relative_links_pattern,
+                        mainmatter_uids=_mainmatter_uids,
+                        acronym=_acronym,
+                    )
                     _processed_matter.append(_html_str)
                     _mismatched_links.extend(_links)
             else:
-                _processed_matter, _links = process_links(_volume_matter, _relative_links_pattern, _mainmatter_uids)
+                _processed_matter, _links = process_links(
+                    html=_volume_matter,
+                    pattern=_relative_links_pattern,
+                    mainmatter_uids=_mainmatter_uids,
+                    acronym=_acronym,
+                )
                 _mismatched_links.extend(_links)
 
             setattr(volume, _attr, _processed_matter)

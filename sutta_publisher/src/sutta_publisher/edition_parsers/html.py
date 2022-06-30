@@ -40,7 +40,7 @@ class HtmlEdition(EditionParser):
         _output = _template.render(css=_css, **volume.dict(exclude_none=True, exclude_unset=True))
 
         # TODO: Check for possibilities to get rid of spacing issue
-        _output = BeautifulSoup(_output, "lxml").prettify()
+        _output = BeautifulSoup(_output, "lxml").prettify(formatter=None)
 
         _path: str = os.path.join(tempfile.gettempdir(), volume.filename)
 

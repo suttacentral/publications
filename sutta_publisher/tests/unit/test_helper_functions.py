@@ -213,11 +213,11 @@ def test_should_check_that_a_full_mainmatter_item_is_processed(
         # links that should not be modified and returned in mismatches
         (
             '<a href="#snp-wrongid">Snp 1</a>',
-             "snp",
-             ["snp"],
-             '<a href="#snp-wrongid">Snp 1</a>',
-             ['<a href="#snp-wrongid">Snp 1</a>']
-         ),
+            "snp",
+            ["snp"],
+            '<a href="#snp-wrongid">Snp 1</a>',
+            ['<a href="#snp-wrongid">Snp 1</a>'],
+        ),
     ],
 )
 def test_should_return_processed_links(

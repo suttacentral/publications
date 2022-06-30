@@ -279,10 +279,10 @@ def process_links(html: str, pattern: Pattern, mainmatter_uids: list[str], acron
             _link["href"] = f"#{_target_id}"
 
         elif _link["href"].startswith(f"#{acronym}"):
-            if _link["href"][1:] not in mainmatter_uids:
-                mismatched_links.append(str(_link))
+            if _link["href"][1:] in mainmatter_uids:
+                continue  # do nothing if link has a corresponding id, e.g. href="#mn1"
             else:
-                continue
+                mismatched_links.append(str(_link))
 
         elif not _link["href"].startswith("http"):
             _link["href"] = (

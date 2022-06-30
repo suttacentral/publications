@@ -153,6 +153,7 @@ def test_should_check_that_a_full_mainmatter_item_is_processed(
         ),
         ('<a href="/snp1">Snp 1</a>', "snp", ["snp1"], '<a href="#snp1">Snp 1</a>', []),
         ('<a href="snp1">Snp 1</a>', "snp", ["snp1"], '<a href="#snp1">Snp 1</a>', []),
+        ('<a href="snp-test">The Great Book</a>', "snp", ["snp-test"], '<a href="#snp-test">The Great Book</a>', []),
         ('<a href="/sn1#2">SN 1:2</a>', "sn", ["sn1:2"], '<a href="#sn1:2">SN 1:2</a>', []),
         ('<a href="/snp1.1-2#2">Snp 1:1</a>', "snp", ["snp1.1-2:2"], '<a href="#snp1.1-2:2">Snp 1:1</a>', []),
         ('<a href="/an1#2-2">AN 1:2-2</a>', "an", ["an1:2-2"], '<a href="#an1:2-2">AN 1:2-2</a>', []),
@@ -206,6 +207,17 @@ def test_should_check_that_a_full_mainmatter_item_is_processed(
             '<a class="external-link" href="https://suttacentral.net/iti1.2/en/sujato#3.4">Iti 1.2:3.4</a>',
             [],
         ),
+        # links that should not be modified
+        ('<a href="#snp1">Snp 1</a>', "snp", ["snp1"], '<a href="#snp1">Snp 1</a>', []),
+        ('<a href="#item1">Test</a>', "snp", ["snp1"], '<a href="#item1">Test</a>', []),
+        # links that should not be modified and returned in mismatches
+        (
+            '<a href="#snp-wrongid">Snp 1</a>',
+             "snp",
+             ["snp"],
+             '<a href="#snp-wrongid">Snp 1</a>',
+             ['<a href="#snp-wrongid">Snp 1</a>']
+         ),
     ],
 )
 def test_should_return_processed_links(

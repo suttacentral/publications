@@ -264,7 +264,9 @@ def process_links(html: str, pattern: Pattern, mainmatter_uids: list[str], acron
     """Make absolute links to references outside our html file.
     Make relative links to references inside our html file."""
     _html = BeautifulSoup(html, "lxml")
-    _links = _html.find_all("a", href=lambda value: value)
+    _links = _html.find_all(
+        "a", href=lambda value: value and (value.startswith(f"#{acronym}") or not value.startswith("#"))
+    )
     mismatched_links: list[str] = []
 
     for _link in _links:
@@ -276,8 +278,11 @@ def process_links(html: str, pattern: Pattern, mainmatter_uids: list[str], acron
 
             _link["href"] = f"#{_target_id}"
 
-        elif _link["href"].startswith(f"#{acronym}") and _link["href"].replace("#", "") not in mainmatter_uids:
-            mismatched_links.append(str(_link))
+        elif _link["href"].startswith(f"#{acronym}"):
+            if _link["href"][1:] not in mainmatter_uids:
+                mismatched_links.append(str(_link))
+            else:
+                continue
 
         elif not _link["href"].startswith("http"):
             _link["href"] = (

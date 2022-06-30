@@ -27,9 +27,9 @@ from sutta_publisher.edition_parsers.helper_functions import (
     parse_main_toc_depth,
     process_line,
     process_links,
-    remove_empty_tags,
     remove_all_header,
     remove_all_ul,
+    remove_empty_tags,
 )
 from sutta_publisher.shared.value_objects.edition import EditionType
 from sutta_publisher.shared.value_objects.edition_config import EditionConfig

@@ -212,4 +212,4 @@ def test_should_return_processed_links(
     html: str, acronym: str, mainmatter_uids: list[str], expected_link: str, expected_mismatches: list[str]
 ) -> None:
     pattern = RELATIVE_LINKS_PATTERN.format(acronym=acronym)
-    assert process_links(html, pattern, mainmatter_uids, acronym=acronym) == (expected_link, expected_mismatches)
+    assert process_links(html, pattern, mainmatter_uids, acronym) == (expected_link, expected_mismatches)

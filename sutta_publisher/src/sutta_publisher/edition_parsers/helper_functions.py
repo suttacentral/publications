@@ -293,7 +293,7 @@ def process_links(html: str, pattern: Pattern, mainmatter_uids: list[str], acron
     return extract_string(_html), mismatched_links
 
 
-def remove_all_empty_tags(html: BeautifulSoup) -> None:
+def remove_empty_tags(html: BeautifulSoup) -> None:
     for _tag in html.find_all(
         lambda tag: (not tag.contents or not len(tag.get_text(strip=True))) and not tag.name == "br"
     ):

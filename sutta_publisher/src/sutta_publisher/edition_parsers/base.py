@@ -27,7 +27,7 @@ from sutta_publisher.edition_parsers.helper_functions import (
     parse_main_toc_depth,
     process_line,
     process_links,
-    remove_all_empty_tags,
+    remove_empty_tags,
     remove_all_header,
     remove_all_ul,
 )
@@ -308,7 +308,7 @@ class EditionParser(ABC):
         )
 
         # Remove all empty tags
-        remove_all_empty_tags(html=mainmatter)
+        remove_empty_tags(html=mainmatter)
 
         # Add class "heading" for all HTML headings between h1 and hX which has class "sutta-title"
         _headings = collect_actual_headings(end_depth=_sutta_title_depth, html=mainmatter)

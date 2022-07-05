@@ -229,7 +229,7 @@ class EditionParser(ABC):
         validate_node(node)
 
         # Some nodes are branches not leaves - they contain preheadings/headings but no mainmatter, we skip them.
-        if node.type == "branch":
+        if not node.mainmatter.markup:
             return ""
 
         else:

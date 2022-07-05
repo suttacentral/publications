@@ -7,6 +7,7 @@ import requests
 from bs4 import BeautifulSoup, Tag
 from ebooklib.epub import Link, Section
 
+from sutta_publisher.shared.value_objects.edition_data import Node
 from sutta_publisher.shared.value_objects.parser_objects import ToCHeading
 
 ALL_REFERENCES_URL = os.getenv("ALL_REFERENCES_URL", "")
@@ -303,3 +304,25 @@ def remove_empty_tags(html: BeautifulSoup) -> None:
         lambda tag: (not tag.contents or not len(tag.get_text(strip=True))) and not tag.name == "br"
     ):
         _tag.decompose()
+
+
+def validate_node(node: Node) -> None:
+    _attrs = ["root_name", "name"]
+    _errors = []
+
+    if node.type == "leaf":
+        headings = [_id for _id, _markup in node.mainmatter.markup.items() if _markup.startswith("<h1")]
+
+        if not headings:
+            _errors.append("missing <h1> tag")
+        elif len(headings) > 1:
+            _errors.append("too many <h1> tags")
+        elif not node.mainmatter.main_text.get(headings[0]):
+            _errors.append("empty <h1> tag")
+
+        _attrs.append("acronym")
+
+    _errors.extend([f"missing '{_attr}'" for _attr in _attrs if not getattr(node, _attr)])
+
+    if _errors:
+        raise SystemExit(f"Error while processing segment '{node.uid}'. Stopping. Details: {', '.join(_errors)}.")

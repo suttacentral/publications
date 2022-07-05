@@ -30,6 +30,7 @@ from sutta_publisher.edition_parsers.helper_functions import (
     remove_all_header,
     remove_all_ul,
     remove_empty_tags,
+    validate_node,
 )
 from sutta_publisher.shared.value_objects.edition import EditionType
 from sutta_publisher.shared.value_objects.edition_config import EditionConfig
@@ -224,10 +225,11 @@ class EditionParser(ABC):
         Each node's content is split between dictionaries with lines of text, markup and references.
         Keys are always segment IDs.
         """
-        single_lines: list[str] = []
+        # Check if node contains name, root_name if branch and name, root_name, acronym if leaf
+        validate_node(node)
 
         # Some nodes are branches not leaves - they contain preheadings/headings but no mainmatter, we skip them.
-        if not node.mainmatter.markup:
+        if node.type == "branch":
             return ""
 
         else:
@@ -235,6 +237,8 @@ class EditionParser(ABC):
             _segment_ids: list[str] = [
                 _id for _id, _markup in node.mainmatter.markup.items() if _markup
             ]  # type: ignore
+
+            single_lines: list[str] = []
 
             for _id in _segment_ids:
                 try:

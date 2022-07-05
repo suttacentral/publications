@@ -326,7 +326,15 @@ def test_should_return_processed_links(
         ),
     ],
 )
-def test_validate_node(acronym, name, root_name, type, uid, mainmatter, exception):
+def test_validate_node(
+    acronym: str,
+    name: str,
+    root_name: str,
+    type: str,
+    uid: str,
+    mainmatter: dict[str, str],
+    exception: bool,
+):
     node_details = NodeDetails(
         main_text=mainmatter["main_text"] if "main_text" in mainmatter else {},
         markup=mainmatter["markup"] if "markup" in mainmatter else {},

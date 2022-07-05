@@ -307,6 +307,7 @@ def remove_empty_tags(html: BeautifulSoup) -> None:
 
 
 def validate_node(node: Node) -> None:
+    """Raises SystemExit if node is not valid"""
     _attrs = ["root_name", "name"]
     _errors = []
 

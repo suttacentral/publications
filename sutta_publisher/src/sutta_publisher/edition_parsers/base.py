@@ -225,7 +225,7 @@ class EditionParser(ABC):
         Each node's content is split between dictionaries with lines of text, markup and references.
         Keys are always segment IDs.
         """
-        # Check if node contains name, root_name if branch and name, root_name, acronym if leaf
+
         validate_node(node)
 
         # Some nodes are branches not leaves - they contain preheadings/headings but no mainmatter, we skip them.

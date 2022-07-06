@@ -9,7 +9,9 @@ from sutta_publisher.edition_parsers.helper_functions import (
     fetch_possible_refs,
     process_line,
     process_links,
+    validate_node,
 )
+from sutta_publisher.shared.value_objects.edition_data import Node, NodeDetails
 
 
 @pytest.fixture
@@ -225,3 +227,127 @@ def test_should_return_processed_links(
 ) -> None:
     pattern = RELATIVE_LINKS_PATTERN.format(acronym=acronym)
     assert process_links(html, pattern, mainmatter_uids, acronym) == (expected_link, expected_mismatches)
+
+
+@pytest.mark.parametrize(
+    "acronym, name, root_name, type, uid, mainmatter, exception",
+    [
+        # correct segments, should not raise
+        (
+            "",
+            "Test Name",
+            "Test Root Name",
+            "branch",
+            "an1.1",
+            {},
+            False,
+        ),
+        (
+            "an1.1",
+            "Test Name",
+            "Test Root Name",
+            "leaf",
+            "an1.1",
+            {"main_text": {"an1.1:0.3": "Title"}, "markup": {"an1.1:0.3": "<h1>{}</h1>"}},
+            False,
+        ),
+        # incorrect segments which should raise exception
+        (
+            "",
+            "",
+            "Test Root Name",
+            "branch",
+            "an1.1",
+            {},
+            True,
+        ),
+        (
+            "",
+            "Test Name",
+            "",
+            "branch",
+            "an1.1",
+            {},
+            True,
+        ),
+        (
+            "",
+            "Test Name",
+            "Test Root Name",
+            "leaf",
+            "an1.1",
+            {"main_text": {"an1.1:0.3": "Title"}, "markup": {"an1.1:0.3": "<h1>{}</h1>"}},
+            True,
+        ),
+        (
+            "an1.1",
+            "",
+            "Test Root Name",
+            "leaf",
+            "an1.1",
+            {"main_text": {"an1.1:0.3": "Title"}, "markup": {"an1.1:0.3": "<h1>{}</h1>"}},
+            True,
+        ),
+        (
+            "an1.1",
+            "Test Name",
+            "",
+            "leaf",
+            "an1.1",
+            {"main_text": {"an1.1:0.3": "Title"}, "markup": {"an1.1:0.3": "<h1>{}</h1>"}},
+            True,
+        ),
+        (
+            "an1.1",
+            "Test Name",
+            "Test Root Name",
+            "leaf",
+            "an1.1",
+            {"main_text": {"an1.1:0.3": ""}, "markup": {"an1.1:0.3": "<h1>{}</h1>"}},
+            True,
+        ),
+        (
+            "an1.1",
+            "Test Name",
+            "Test Root Name",
+            "leaf",
+            "an1.1",
+            {"main_text": {"an1.1:0.3": "Title"}, "markup": {"an1.1:0.3": "<h1>{}</h1>", "an1.1:1.1": "<h1>{}</h1>"}},
+            True,
+        ),
+        (
+            "an1.1",
+            "Test Name",
+            "Test Root Name",
+            "leaf",
+            "an1.1",
+            {"main_text": {"an1.1:0.3": "Title"}, "markup": {"an1.1:0.3": "<h2>{}</h2>"}},
+            True,
+        ),
+    ],
+)
+def test_validate_node(
+    acronym: str,
+    name: str,
+    root_name: str,
+    type: str,
+    uid: str,
+    mainmatter: dict[str, str],
+    exception: bool,
+):
+    node_details = NodeDetails(
+        main_text=mainmatter["main_text"] if "main_text" in mainmatter else {},
+        markup=mainmatter["markup"] if "markup" in mainmatter else {},
+    )
+    node = Node(
+        acronym=acronym,
+        name=name,
+        root_name=root_name,
+        type=type,
+        uid=uid,
+        mainmatter=node_details,
+    )
+    try:
+        validate_node(node)
+    except SystemExit:
+        assert exception

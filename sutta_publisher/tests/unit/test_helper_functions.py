@@ -1,14 +1,13 @@
 import pytest
 
-from sutta_publisher.edition_parsers.base import RELATIVE_LINKS_PATTERN
 from sutta_publisher.edition_parsers.helper_functions import (
     _filter_refs,
     _flatten_list,
     _reference_to_html,
     _split_ref_and_number,
     fetch_possible_refs,
+    make_absolute_links,
     process_line,
-    process_links,
     validate_node,
 )
 from sutta_publisher.shared.value_objects.edition_data import Node, NodeDetails
@@ -95,7 +94,7 @@ def test_should_check_intersection_of_two_lists() -> None:
             "lorem ipsum",
             "test note for lorem ipsum",
             "vnp1.9, pts-vp-pli14.2",
-            "<p data-ref='dn1:0.1'><a class='pts-vp-pli' id='pts-vp-pli14.2'>PTS-VP-PLI 14.2</a>lorem ipsum<a href='#note-{number}' id='noteref-{number}' role='doc-noteref' epub:type='noteref'>{number}</a>",
+            "<p id='dn1:0.1'><a class='pts-vp-pli' id='pts-vp-pli14.2'>PTS-VP-PLI 14.2</a>lorem ipsum<a href='#note-{number}' id='noteref-{number}' role='doc-noteref' epub:type='noteref'>{number}</a>",
             ["pts-vp-pli"],
         ),
         (
@@ -135,98 +134,32 @@ def test_should_check_that_a_full_mainmatter_item_is_processed(
 
 
 @pytest.mark.parametrize(
-    "html, acronym, mainmatter_uids, expected_link, expected_mismatches",
+    "html, expected",
     [
-        # relative links
         (
-            '<a href="/snp5.13/en/sujato#4.3">Snp 5.13:4.3</a>',
-            "snp",
-            ["snp5.13:4.3"],
-            '<a href="#snp5.13:4.3">Snp 5.13:4.3</a>',
-            [],
-        ),
-        ('<a href="/mn-abcdef">MN 1</a>', "mn", ["mn-abcdef"], '<a href="#mn-abcdef">MN 1</a>', []),
-        (
-            '<a href="/snp5.13#4.3">Snp 5.13:4.3</a>',
-            "snp",
-            ["snp5.13:4.3"],
-            '<a href="#snp5.13:4.3">Snp 5.13:4.3</a>',
-            [],
-        ),
-        ('<a href="/snp1">Snp 1</a>', "snp", ["snp1"], '<a href="#snp1">Snp 1</a>', []),
-        ('<a href="snp1">Snp 1</a>', "snp", ["snp1"], '<a href="#snp1">Snp 1</a>', []),
-        ('<a href="snp-test">The Great Book</a>', "snp", ["snp-test"], '<a href="#snp-test">The Great Book</a>', []),
-        ('<a href="/sn1#2">SN 1:2</a>', "sn", ["sn1:2"], '<a href="#sn1:2">SN 1:2</a>', []),
-        ('<a href="/snp1.1-2#2">Snp 1:1</a>', "snp", ["snp1.1-2:2"], '<a href="#snp1.1-2:2">Snp 1:1</a>', []),
-        ('<a href="/an1#2-2">AN 1:2-2</a>', "an", ["an1:2-2"], '<a href="#an1:2-2">AN 1:2-2</a>', []),
-        (
-            '<a href="https://suttacentral.net/iti1.2#3.4">Iti 1.2:3.4</a>',
-            "iti",
-            ["iti1.2:3"],
-            '<a href="#iti1.2:3.4">Iti 1.2:3.4</a>',
-            ['<a href="https://suttacentral.net/iti1.2#3.4">Iti 1.2:3.4</a>'],
+            "<a href='/snp5.13/en/sujato#4.3'>Snp 5.13:4.3</a>",
+            "<a href='https://suttacentral.net/snp5.13/en/sujato#4.3'>Snp 5.13:4.3</a>",
         ),
         (
-            '<a href="https://suttacentral.net/iti1.2/en/sujato#3.4">Iti 1.2:3.4</a>',
-            "iti",
-            ["iti1.2:3"],
-            '<a href="#iti1.2:3.4">Iti 1.2:3.4</a>',
-            ['<a href="https://suttacentral.net/iti1.2/en/sujato#3.4">Iti 1.2:3.4</a>'],
-        ),
-        # absolute links
-        (
-            '<a href="/snp1.1-2#2">Snp 1:1</a>',
-            "mn",
-            ["dummy"],
-            '<a class="external-link" href="https://suttacentral.net/snp1.1-2#2">Snp 1:1</a>',
-            [],
+            "<a href='/mn-abcdef'>MN 1</a>",
+            "<a href='https://suttacentral.net/mn-abcdef'>MN 1</a>",
         ),
         (
-            '<a href="snp1.1-2#2">Snp 1:1</a>',
-            "mn",
-            ["dummy"],
-            '<a class="external-link" href="https://suttacentral.net/snp1.1-2#2">Snp 1:1</a>',
-            [],
+            "<a href='https://suttacentral.net/iti1.2#3.4'>Iti 1.2:3.4</a>",
+            "<a href='https://suttacentral.net/iti1.2#3.4'>Iti 1.2:3.4</a>",
         ),
         (
-            '<a href="/an1#2-2">AN 1:2-2</a>',
-            "dn",
-            ["dummy"],
-            '<a class="external-link" href="https://suttacentral.net/an1#2-2">AN 1:2-2</a>',
-            [],
+            "<a href='https://test.com/some-test-link'>Iti 1.2:3.4</a>",
+            "<a href='https://test.com/some-test-link'>Iti 1.2:3.4</a>",
         ),
         (
-            '<a href="https://suttacentral.net/iti1.2#3.4">Iti 1.2:3.4</a>',
-            "snp",
-            ["dummy"],
-            '<a class="external-link" href="https://suttacentral.net/iti1.2#3.4">Iti 1.2:3.4</a>',
-            [],
-        ),
-        (
-            '<a href="https://suttacentral.net/iti1.2/en/sujato#3.4">Iti 1.2:3.4</a>',
-            "an",
-            ["dummy"],
-            '<a class="external-link" href="https://suttacentral.net/iti1.2/en/sujato#3.4">Iti 1.2:3.4</a>',
-            [],
-        ),
-        # links that should not be modified
-        ('<a href="#snp1">Snp 1</a>', "snp", ["snp1"], '<a href="#snp1">Snp 1</a>', []),
-        ('<a href="#item1">Test</a>', "snp", ["snp1"], '<a href="#item1">Test</a>', []),
-        # links that should not be modified and returned in mismatches
-        (
-            '<a href="#snp-wrongid">Snp 1</a>',
-            "snp",
-            ["snp"],
-            '<a href="#snp-wrongid">Snp 1</a>',
-            ['<a href="#snp-wrongid">Snp 1</a>'],
+            "<a href='#mn1'>MN1</a>",
+            "<a href='#mn1'>MN1</a>",
         ),
     ],
 )
-def test_should_return_processed_links(
-    html: str, acronym: str, mainmatter_uids: list[str], expected_link: str, expected_mismatches: list[str]
-) -> None:
-    pattern = RELATIVE_LINKS_PATTERN.format(acronym=acronym)
-    assert process_links(html, pattern, mainmatter_uids, acronym) == (expected_link, expected_mismatches)
+def test_should_return_html_with_processed_link(html: str, expected: str) -> None:
+    assert make_absolute_links(html) == expected
 
 
 @pytest.mark.parametrize(
@@ -244,7 +177,7 @@ def test_should_return_processed_links(
         ),
         (
             "an1.1",
-            "Test Name",
+            "",
             "Test Root Name",
             "leaf",
             "an1.1",

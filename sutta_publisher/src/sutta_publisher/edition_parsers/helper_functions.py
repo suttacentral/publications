@@ -13,6 +13,9 @@ from sutta_publisher.shared.value_objects.parser_objects import ToCHeading
 ALL_REFERENCES_URL = os.getenv("ALL_REFERENCES_URL", "")
 ACCEPTED_REFERENCES = ast.literal_eval(os.getenv("ACCEPTED_REFERENCES", ""))
 MAX_HEADING_DEPTH = 6
+SUTTACENTRAL_URL = os.getenv("SUTTACENTRAL_URL", "")
+if not SUTTACENTRAL_URL.endswith("/"):
+    SUTTACENTRAL_URL += "/"
 
 
 def fetch_possible_refs() -> set[str]:
@@ -262,7 +265,7 @@ def get_chapter_name(html: BeautifulSoup) -> str:
 
 
 def make_absolute_links(html: str) -> str:
-    return html.replace("href='/", "href='https://suttacentral.net/")
+    return html.replace("href='/", f"href='{SUTTACENTRAL_URL}")
 
 
 def remove_empty_tags(html: BeautifulSoup) -> None:

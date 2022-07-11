@@ -90,7 +90,6 @@ class Volume(BaseModel):
     secondary_toc: SecondaryTablesOfContents | None = None
     frontmatter: list[str] = []
     mainmatter: str = ""
-    mainmatter_uids: list[str] = []
     backmatter: list[str] = []
     endnotes: list[str] | None = []
 

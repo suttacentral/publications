@@ -1,7 +1,7 @@
 import ast
 import os
 import re
-from typing import Any, Pattern, cast, no_type_check
+from typing import Any, cast, no_type_check
 
 import requests
 from bs4 import BeautifulSoup, Tag
@@ -13,6 +13,7 @@ from sutta_publisher.shared.value_objects.parser_objects import ToCHeading
 ALL_REFERENCES_URL = os.getenv("ALL_REFERENCES_URL", "")
 ACCEPTED_REFERENCES = ast.literal_eval(os.getenv("ACCEPTED_REFERENCES", ""))
 MAX_HEADING_DEPTH = 6
+SUTTACENTRAL_URL = os.getenv("SUTTACENTRAL_URL", "")
 
 
 def fetch_possible_refs() -> set[str]:
@@ -62,7 +63,7 @@ def process_line(markup: str, segment_id: str, text: str, note: str, references:
     # add data-ref attribute to <p>, <ul>, <ol>, <dl> tags (#2417)
     for tag in ["<p", "<ul", "<ol", "<dl"]:
         if tag in markup:
-            markup = markup.replace(tag, f"{tag} data-ref='{segment_id}'")
+            markup = markup.replace(tag, f"{tag} id='{segment_id}'")
 
     # references are passed as a string such as: "ref1, ref2, ref3"
     split_references: list[str] = [r.strip() for r in references.split(",")]
@@ -261,42 +262,8 @@ def get_chapter_name(html: BeautifulSoup) -> str:
         return html.article.get("class", [""])[0]
 
 
-def process_links(html: str, pattern: Pattern, mainmatter_uids: list[str], acronym: str) -> tuple[str, list]:
-    """Make absolute links to references outside our html file.
-    Make relative links to references inside our html file."""
-    _html = BeautifulSoup(html, "lxml")
-    _links = _html.find_all(
-        "a", href=lambda value: value and (value.startswith(f"#{acronym}") or not value.startswith("#"))
-    )
-    mismatched_links: list[str] = []
-
-    for _link in _links:
-        if _match := re.match(pattern, _link["href"]):
-            _target_id = "".join(m for m in _match.groups() if m).replace("#", ":").replace("/", "")
-
-            if _target_id not in mainmatter_uids:
-                mismatched_links.append(str(_link))
-
-            _link["href"] = f"#{_target_id}"
-
-        elif _link["href"].startswith(f"#{acronym}"):
-            if _link["href"][1:] in mainmatter_uids:
-                continue  # do nothing if link has a corresponding id, e.g. href="#mn1"
-            else:
-                mismatched_links.append(str(_link))
-
-        elif not _link["href"].startswith("http"):
-            _link["href"] = (
-                f'https://suttacentral.net{_link["href"]}'
-                if _link["href"].startswith("/")
-                else f'https://suttacentral.net/{_link["href"]}'
-            )
-            add_class([_link], "external-link")
-
-        else:
-            add_class([_link], "external-link")
-
-    return extract_string(_html), mismatched_links
+def make_absolute_links(html: str) -> str:
+    return html.replace("href='/", f"href='{SUTTACENTRAL_URL}")
 
 
 def remove_empty_tags(html: BeautifulSoup) -> None:
@@ -308,20 +275,23 @@ def remove_empty_tags(html: BeautifulSoup) -> None:
 
 def validate_node(node: Node) -> None:
     """Raises SystemExit if node is not valid"""
-    _attrs = ["root_name", "name"]
     _errors = []
 
     if node.type == "leaf":
-        headings = [_id for _id, _markup in node.mainmatter.markup.items() if _markup.startswith("<h1")]
+        _h1_ids = [_id for _id, _markup in node.mainmatter.markup.items() if "<h1" in _markup]
 
-        if not headings:
+        if not _h1_ids:
             _errors.append("missing <h1> tag")
-        elif len(headings) > 1:
+        elif len(_h1_ids) > 1:
             _errors.append("too many <h1> tags")
-        elif not node.mainmatter.main_text.get(headings[0]):
+        elif not node.mainmatter.main_text.get(_h1_ids[0]):
             _errors.append("empty <h1> tag")
 
-        _attrs.append("acronym")
+        # Required attrs for leaf
+        _attrs = ["acronym", "root_name"]
+    else:
+        # Required attrs for branch
+        _attrs = ["name", "root_name"]
 
     _errors.extend([f"missing '{_attr}'" for _attr in _attrs if not getattr(node, _attr)])
 

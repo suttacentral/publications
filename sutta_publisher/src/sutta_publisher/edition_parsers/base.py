@@ -3,11 +3,9 @@ from __future__ import annotations
 import ast
 import logging
 import os
-import re
-import tempfile
 from abc import ABC
 from pathlib import Path
-from typing import Any, Callable, Pattern, Type, cast
+from typing import Any, Callable, Type, cast
 
 import jinja2
 import requests
@@ -24,9 +22,9 @@ from sutta_publisher.edition_parsers.helper_functions import (
     find_sutta_title_depth,
     get_heading_depth,
     increment_heading_by_number,
+    make_absolute_links,
     parse_main_toc_depth,
     process_line,
-    process_links,
     remove_all_header,
     remove_all_ul,
     remove_empty_tags,
@@ -54,7 +52,6 @@ from sutta_publisher.shared.value_objects.parser_objects import (
 log = logging.getLogger(__name__)
 
 ADDITIONAL_HEADINGS = ast.literal_eval(os.getenv("ADDITIONAL_HEADINGS", ""))
-RELATIVE_LINKS_PATTERN = r"^(?:http(?:s)?://suttacentral.net)?(/)?({acronym})(?:(-[a-z]+$)|(\d+)(-\d+)?(\.\d+)?(-\d+)?(?:/[a-z]+/[a-z]+)?(#\d+)?(-\d+)?(\.\d+)?(-\d+)?$)"
 
 
 class EditionParser(ABC):
@@ -723,61 +720,15 @@ class EditionParser(ABC):
         else:
             log.debug(f"Edition without secondary ToCs. {secondary_toc=}")
 
-    def collect_mainmatter_uids(self, volume: Volume) -> None:
-        """Add mainmatter uids to volume"""
-        _mainmatter = BeautifulSoup(volume.mainmatter, "lxml")
-
-        volume.mainmatter_uids = [
-            tag["id"] for tag in _mainmatter.find_all(id=lambda uid: uid and volume.acronym.lower() in uid)
-        ]
-
-    def _save_mismatched_links(self, volume: Volume, links: list[str]) -> None:
-        log.debug("Saving mismatched links...")
-        _acronym = volume.acronym.lower()
-        _date: str = volume.updated if volume.updated else volume.created
-        _date = _date[:10]
-        _filename = f"zzz-{_acronym}-{_date}.txt"
-        try:
-            with open(os.path.join(tempfile.gettempdir(), _filename), "w") as file:
-                file.write("\n".join(links))
-        except Exception as err:
-            log.error(f"Unexpected error while saving mismatched links: {repr(err)}")
-
-    def process_reference_links(self, volume: Volume) -> None:
-        """Processed html file includes only relative links which are used by suttacentral website, but do not work
-        within our publication file"""
-        _acronym: str = volume.acronym.lower()
-        _relative_links_pattern: Pattern = re.compile(RELATIVE_LINKS_PATTERN.format(acronym=_acronym))
-        _mainmatter_uids: list[str] = volume.mainmatter_uids
-        _mismatched_links: list[str] = []
-        _matter_types: list[str] = ["frontmatter", "mainmatter", "backmatter"]
-
-        for _attr in _matter_types:
-            _volume_matter = getattr(volume, _attr)
-            if isinstance(_volume_matter, list):
-                _processed_matter = []
-                for _matter in _volume_matter:
-                    _html_str, _links = process_links(
-                        html=_matter,
-                        pattern=_relative_links_pattern,
-                        mainmatter_uids=_mainmatter_uids,
-                        acronym=_acronym,
-                    )
-                    _processed_matter.append(_html_str)
-                    _mismatched_links.extend(_links)
-            else:
-                _processed_matter, _links = process_links(
-                    html=_volume_matter,
-                    pattern=_relative_links_pattern,
-                    mainmatter_uids=_mainmatter_uids,
-                    acronym=_acronym,
-                )
-                _mismatched_links.extend(_links)
-
-            setattr(volume, _attr, _processed_matter)
-
-        if _mismatched_links:
-            self._save_mismatched_links(volume, _mismatched_links)
+    def process_front_and_backmatter_links(self, volume: Volume) -> None:
+        """Make all frontmatter and backmatter relative links absolute.
+        Relative links are used by Suttacentral website, but they do not work in our output files."""
+        _volume_matters = ["frontmatter", "backmatter"]
+        for _matters in _volume_matters:
+            _processed_matters = []
+            for _matter in getattr(volume, _matters):
+                _processed_matters.append(make_absolute_links(_matter))
+            setattr(volume, _matters, _processed_matters)
 
     def _generate_cover(self, volume: Volume) -> Any:
         log.debug("Generating covers...")
@@ -802,8 +753,7 @@ class EditionParser(ABC):
             self.set_backmatter,
             # operations to execute when all matters are set
             self.add_secondary_toc_to_mainmatter,
-            self.collect_mainmatter_uids,
-            self.process_reference_links,
+            self.process_front_and_backmatter_links,
         ]
         for _operation in _operations:
             EditionParser.on_each_volume(edition=edition, operation=_operation)

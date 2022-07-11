@@ -13,7 +13,7 @@ from sutta_publisher.shared.value_objects.parser_objects import ToCHeading
 ALL_REFERENCES_URL = os.getenv("ALL_REFERENCES_URL", "")
 ACCEPTED_REFERENCES = ast.literal_eval(os.getenv("ACCEPTED_REFERENCES", ""))
 MAX_HEADING_DEPTH = 6
-SUTTACENTRAL_URL = "https://suttacentral.net/"
+SUTTACENTRAL_URL = os.getenv("SUTTACENTRAL_URL", "")
 
 
 def fetch_possible_refs() -> set[str]:

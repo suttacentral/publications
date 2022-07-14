@@ -1,4 +1,5 @@
 import ast
+import logging
 import os
 import re
 from typing import Any, cast, no_type_check
@@ -277,15 +278,22 @@ def validate_node(node: Node) -> None:
     """Raises SystemExit if node is not valid"""
     _errors = []
 
+    # TODO: TO BE REFACTORED
     if node.type == "leaf":
-        _h1_ids = [_id for _id, _markup in node.mainmatter.markup.items() if "<h1" in _markup]
+        try:
+            if not f"id='{node.uid}'" in next(iter(node.mainmatter.markup.values())):
+                _errors.append("mismatching tag id")
 
-        if not _h1_ids:
-            _errors.append("missing <h1> tag")
-        elif len(_h1_ids) > 1:
-            _errors.append("too many <h1> tags")
-        elif not node.mainmatter.main_text.get(_h1_ids[0]):
-            _errors.append("empty <h1> tag")
+            _h1_ids = [_id for _id, _markup in node.mainmatter.markup.items() if "<h1" in _markup]
+        except AttributeError:
+            _errors.append("markup is none")
+        else:
+            if not _h1_ids:
+                _errors.append("missing <h1> tag")
+            elif len(_h1_ids) > 1:
+                _errors.append("too many <h1> tags")
+            elif not node.mainmatter.main_text.get(_h1_ids[0]):
+                _errors.append("empty <h1> tag")
 
         # Required attrs for leaf
         _attrs = ["acronym", "root_name"]
@@ -296,4 +304,12 @@ def validate_node(node: Node) -> None:
     _errors.extend([f"missing '{_attr}'" for _attr in _attrs if not getattr(node, _attr)])
 
     if _errors:
-        raise SystemExit(f"Error while processing segment '{node.uid}'. Stopping. Details: {', '.join(_errors)}.")
+        logging.error(f"Error while processing segment '{node.uid}'. Details: {', '.join(_errors)}.")
+
+
+def find_mainmatter_part_uids(html: BeautifulSoup, depth: int) -> list[str]:
+    """Return a set of heading uids occuring in a given mainmatter part"""
+    _tag_types = ["article", "section"] + [f"h{i}" for i in range(1, depth)]
+    _tags = html.find_all(_tag_types, id=True)
+    uids: list[str] = [_tag["id"] for _tag in _tags if hasattr(_tag, "id")]
+    return uids

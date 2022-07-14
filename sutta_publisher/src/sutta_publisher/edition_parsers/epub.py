@@ -8,7 +8,13 @@ from typing import Callable
 from bs4 import BeautifulSoup
 from ebooklib.epub import EpubBook, EpubHtml, EpubItem, EpubNav, EpubNcx, Link, Section, write_epub
 
-from sutta_publisher.edition_parsers.helper_functions import get_chapter_name, make_section_or_link
+from sutta_publisher.edition_parsers.helper_functions import (
+    extract_string,
+    find_mainmatter_part_uids,
+    find_sutta_title_depth,
+    get_chapter_name,
+    make_section_or_link,
+)
 from sutta_publisher.shared.value_objects.edition import EditionResult, EditionType
 from sutta_publisher.shared.value_objects.parser_objects import Edition, ToCHeading, Volume
 
@@ -36,6 +42,7 @@ class EpubEdition(EditionParser):
         book.add_item(default_css)
 
     def _make_reference_links(self, html: BeautifulSoup, chapter_name: str) -> None:
+        # TODO: ZNALEŹĆ SPOSÓB NA POŁĄCZENIE BLURBS I ENDNOTES Z POSZCZEGÓLNYMI MAINMATTER (PODZIELIĆ MAINMATTER I ZNALEŹĆ UID PRZED GENEROWANIEM FRONTMATTER W _generate_epub())
         if chapter_name == "blurbs":
             _links = html.find_all("a", class_="blurb-link")
             _target_chapter = "mainmatter"
@@ -102,14 +109,15 @@ class EpubEdition(EditionParser):
             chapter_name = get_chapter_name(html)
         chapter = self._make_chapter(html=html, chapter_name=chapter_name)
         book.add_item(chapter)
-        if headings:
-            toc = EpubEdition._make_chapter_toc(
-                headings=headings,
-                file_name=f"{chapter_name}.xhtml",
-                tree=tree,
-                section_name=section_name,
-            )
-            book.toc.extend(toc)
+        # TODO: REMOVE
+        # if headings:
+        #     toc = EpubEdition._make_chapter_toc(
+        #         headings=headings,
+        #         file_name=f"{chapter_name}.xhtml",
+        #         tree=tree,
+        #         section_name=section_name,
+        #     )
+        #     book.toc.extend(toc)
         book.spine.append(chapter)
 
     def _set_matter_part_chapter(self, book: EpubBook, html: BeautifulSoup, volume: Volume) -> None:
@@ -120,13 +128,39 @@ class EpubEdition(EditionParser):
         else:
             self._set_chapter(book=book, html=html)
 
-    def _set_mainmatter_chapter(self, book: EpubBook, html: BeautifulSoup, volume: Volume) -> None:
-        _headings: list[ToCHeading] = list(
-            filter(lambda heading: heading.type in ["branch", "leaf"], volume.main_toc.headings)
-        )
-        _index: int = self._get_true_index(volume)
-        _tree: list[dict | str] = self.raw_data[_index].tree
-        self._set_chapter(book=book, html=html, chapter_name="mainmatter", headings=_headings, tree=_tree)
+    def _split_mainmatter(self, mainmatter: str) -> list[BeautifulSoup]:
+        _html: BeautifulSoup = BeautifulSoup(mainmatter, "lxml")
+        for _tag in _html.find("body").children:
+
+            if (
+                _tag.name
+                and _tag.name in ("article", "section")
+                and _tag.next_sibling
+                and (
+                    (_tag.next_sibling.has_attr("class") and "section-title" in _tag.next_sibling["class"])
+                    or (_tag.has_attr("class") and "secondary-toc" in _tag["class"])
+                )
+            ):
+                _tag.insert_after("//split")
+
+        _mainmatter = extract_string(_html)
+        return [BeautifulSoup(_part, "lxml") for _part in _mainmatter.split("//split")]
+
+    def _get_mainmatter_uids(self, mainmatter_parts: list[BeautifulSoup], depth: int) -> list[list[str]]:
+        return [find_mainmatter_part_uids(html=_part, depth=depth) for _part in mainmatter_parts]
+
+    def _set_mainmatter_chapter(
+        self,
+        book: EpubBook,
+        html: BeautifulSoup,
+        volume: Volume,
+        uids: list[str],
+    ) -> None:
+        _volume_index: int = self._get_true_index(volume)
+        _chapter_name = uids[0]
+        # _tree: list[dict | str] = [self.raw_data[_volume_index].tree[index]]
+        # _headings: list[ToCHeading] = [_heading for _heading in volume.main_toc.headings if _heading.uid in uids]
+        self._set_chapter(book=book, html=html, chapter_name=_chapter_name)
 
     def _generate_epub(self, volume: Volume) -> None:
         log.debug("Generating epub...")
@@ -140,6 +174,14 @@ class EpubEdition(EditionParser):
         self._set_metadata(book)
         self._set_styles(book)
 
+        # divide mainmatter into separate chapters
+        volume_mainmatter: list[BeautifulSoup] = self._split_mainmatter(mainmatter=volume.mainmatter)
+        _sutta_depth = find_sutta_title_depth(html=BeautifulSoup(volume.mainmatter, "lxml"))
+        mainmatter_uids: list[list[str]] = self._get_mainmatter_uids(
+            mainmatter_parts=volume_mainmatter,
+            depth=_sutta_depth,
+        )
+
         # set frontmatter
         for _matter_part in volume.frontmatter:
             _frontmatter_part_html: BeautifulSoup = BeautifulSoup(_matter_part, "lxml")
@@ -151,13 +193,15 @@ class EpubEdition(EditionParser):
             self._set_matter_part_chapter(book=book, html=_frontmatter_part_html, volume=volume)
 
         # set mainmatter
-        _mainmatter: BeautifulSoup = BeautifulSoup(volume.mainmatter, "lxml")
-        self._set_mainmatter_chapter(book=book, html=_mainmatter, volume=volume)
+        for _part, _uids in zip(volume_mainmatter, mainmatter_uids):
+            self._set_mainmatter_chapter(book=book, html=_part, volume=volume, uids=_uids)
 
         # set backmatter
         for _part in volume.backmatter:
             _backmatter_part_html: BeautifulSoup = BeautifulSoup(_part, "lxml")
             self._set_matter_part_chapter(book=book, html=_backmatter_part_html, volume=volume)
+
+        # set table of contents
 
         # add navigation files
         book.add_item(EpubNcx())

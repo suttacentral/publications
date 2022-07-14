@@ -64,10 +64,11 @@
     <meta name="DC.Source" content="{{source_url | safe}}">
     <meta name="DC.Creator" content="{{creator_name | safe}}">
     <meta name="DC.Contributor" content="{{creator_name | safe}}">
+    <title>{{translation_title | safe}}</title>
     <style>{{css | safe}}</style>
 </head>
 
-<body>
+<body id="{{acronym | lower | safe}}">
     <section id='frontmatter'>{% for matter in frontmatter %}{{matter | safe}}{% endfor %}</section>
     <section id='mainmatter'>{{mainmatter | safe}}</section>
     <section id='backmatter'>{% for matter in backmatter %}{{matter | safe}}{% endfor %}</section>

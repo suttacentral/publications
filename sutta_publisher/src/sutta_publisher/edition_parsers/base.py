@@ -225,8 +225,8 @@ class EditionParser(ABC):
 
         validate_node(node)
 
-        # Some nodes are branches not leaves - they contain preheadings/headings but no mainmatter, we skip them.
-        if not node.mainmatter.markup:
+        # Some nodes are branches or empty leaves - they contain preheadings/headings but no mainmatter, we skip them.
+        if node.type == "branch" or not node.mainmatter.markup:
             return ""
 
         else:
@@ -320,7 +320,12 @@ class EditionParser(ABC):
 
         # Add <span> tags with acronyms, translated and root titles into sutta-title headings
         _sutta_headings: list[Tag] = [h for h in _headings if h.name == f"h{_sutta_title_depth}"]
-        _sutta_nodes: list[Node] = [_node for _part in _raw_data.mainmatter for _node in _part if _node.type == "leaf"]
+        _sutta_nodes: list[Node] = [
+            _node
+            for _part in _raw_data.mainmatter
+            for _node in _part
+            if _node.type == "leaf" and _node.mainmatter.markup
+        ]
         self._insert_span_tags(headings=_sutta_headings, nodes=_sutta_nodes)
 
         # Add class "subheading" for all HTML headings below hX with class "sutta-title"

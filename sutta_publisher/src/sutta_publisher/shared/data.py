@@ -70,10 +70,11 @@ def get_depths(tree: list[dict] | list[str], depths: dict[str, int], initial_dep
             depths[item] = initial_depth
 
 
-def get_depth_tree(uids: list[str]) -> tuple[list[dict], dict[str, int]]:
+def get_depth_tree(uids: list[str]) -> tuple[list[dict | str], dict[str, int]]:
     """Get edition tree json and convert it into dict of all heading uids and their depth"""
     depths: dict[str, int] = {}
-    tree: list[dict] = []
+    tree: list[dict | str] = []
+    _multiple_mainmatter: bool = len(uids) > 1
 
     for _uid in uids:
         _super_tree_response = requests.get(SUPER_TREE_URL)
@@ -82,14 +83,16 @@ def get_depth_tree(uids: list[str]) -> tuple[list[dict], dict[str, int]]:
 
         _tree_response = requests.get(TREE_URL.format(text_type=_text_type, uid=_uid))
         _tree_response.raise_for_status()
-        tree = _tree_response.json()[_uid]
-        get_depths(tree, depths, initial_depth=1)
+        _tree: list[dict] = _tree_response.json()[_uid] if not _multiple_mainmatter else [_tree_response.json()]
+        tree.extend(_tree)
+        get_depths(_tree, depths, initial_depth=1)
 
     return tree, depths
 
 
 def get_mainmatter_preheadings(edition_id: str, uids: list[str]) -> VolumePreheadings:
     all_matters_preheadings = VolumePreheadings()
+    multiple_mainmatter: bool = len(uids) > 1
 
     for uid in uids:
         response = requests.get(API_URL + API_ENDPOINTS["edition_mainmatter"].format(edition_id=edition_id, uid=uid))
@@ -101,7 +104,10 @@ def get_mainmatter_preheadings(edition_id: str, uids: list[str]) -> VolumePrehea
         )  # a collection of headings for a whole mainmatter (single uid)
         single_leaf_preheadings = PreheadingsGroup()  # a collection of headings to put before each "leaf"
 
-        for node in nodes[1:]:  # we want to skip the uid's preheading (e.g. mn)
+        if not multiple_mainmatter:
+            nodes = nodes[1:]
+
+        for node in nodes:  # we want to skip the uid's preheading (e.g. mn)
             if node["type"] == "branch":
                 single_leaf_preheadings.append(Preheading.parse_obj(node))
             elif node["type"] == "leaf" and single_leaf_preheadings:

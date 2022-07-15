@@ -21,6 +21,7 @@ from sutta_publisher.edition_parsers.helper_functions import (
     find_all_headings,
     find_sutta_title_depth,
     get_heading_depth,
+    get_true_volume_index,
     increment_heading_by_number,
     make_absolute_links,
     parse_main_toc_depth,
@@ -82,23 +83,13 @@ class EditionParser(ABC):
         return Edition(volumes=volumes)
 
     @staticmethod
-    def _get_true_index(volume: Volume) -> int:
-        """Get actual volume's index (i.e. where it is in the volumes list in raw_data and collect volume-specific
-        edition config)"""
-        if volume.volume_number is None:
-            return 0  # means there's only 1 volume, so index is 0
-        else:
-            # volume_number is 1-based index, whereas, lists have 0-based index
-            return cast(int, volume.volume_number - 1)
-
-    @staticmethod
     def on_each_volume(edition: Edition, operation: Callable) -> None:
         """Perform an operation on each volume in edition"""
         [operation(volume) for volume in edition.volumes]
 
     # --- operations on metadata
     def _collect_metadata(self, volume: Volume) -> dict[str, str | int | list[str] | list[Blurb]]:
-        _index = EditionParser._get_true_index(volume)
+        _index = get_true_volume_index(volume)
         return {
             "acronym": self.raw_data[_index].acronym,
             "blurbs": self._collect_blurbs(volume),
@@ -139,7 +130,7 @@ class EditionParser(ABC):
         """
         blurbs: list[Blurb] = []
 
-        _index: int = self._get_true_index(volume)
+        _index: int = get_true_volume_index(volume)
         _mainmatter: MainMatter = self.raw_data[_index].mainmatter
 
         for _part in _mainmatter:
@@ -198,7 +189,7 @@ class EditionParser(ABC):
         # so node1 is built of text1, markup1 and references1, mainmatter_part1 is built of node1 and node2 and so on...
 
         # Postprocess mainmatter
-        _index: int = EditionParser._get_true_index(volume)
+        _index: int = get_true_volume_index(volume)
         _raw_data: VolumeData = self.raw_data[_index]
         _mainmatter_raw: str = self._process_mainmatter(_raw_data.mainmatter)
 
@@ -285,7 +276,7 @@ class EditionParser(ABC):
     def _postprocess_mainmatter(self, mainmatter: BeautifulSoup, volume: Volume) -> str:
         """Apply some additional postprocessing and insert additional headings to a crude mainmatter"""
 
-        _index: int = self._get_true_index(volume)
+        _index: int = get_true_volume_index(volume)
         _raw_data: VolumeData = self.raw_data[_index]
         _sutta_title_depth: int = max(_raw_data.depths.values())
 
@@ -422,7 +413,7 @@ class EditionParser(ABC):
     def _insert_additional_headings(self, _headings: list[ToCHeading], volume: Volume) -> None:
         """Insert additional frontmatter headings at the beginning
         and backmatter headings at the end of the collected_headings list"""
-        _index: int = EditionParser._get_true_index(volume)
+        _index: int = get_true_volume_index(volume)
         frontmatter_headings: list[ToCHeading] = [
             ToCHeading.parse_obj(
                 {
@@ -438,6 +429,7 @@ class EditionParser(ABC):
             if any(heading in matter for matter in self.config.edition.volumes[_index].frontmatter)
         ]
         _headings[0:0] = frontmatter_headings
+        self.raw_data[_index].tree[0:0] = [_heading.uid for _heading in frontmatter_headings]
 
         backmatter_headings: list[ToCHeading] = [
             ToCHeading.parse_obj(
@@ -454,13 +446,14 @@ class EditionParser(ABC):
             if any(heading in matter for matter in self.config.edition.volumes[_index].backmatter)
         ]
         _headings.extend(backmatter_headings)
+        self.raw_data[_index].tree.extend([_heading.uid for _heading in backmatter_headings])
 
     def set_main_toc(self, volume: Volume) -> None:
         """Add main table of contents to a volume"""
         _mainmatter = BeautifulSoup(volume.mainmatter, "lxml")
         _heading_tags = self._collect_main_toc(html=_mainmatter)
         _heading_uids = self._collect_main_toc_uids(tags=_heading_tags)
-        _index = EditionParser._get_true_index(volume)
+        _index = get_true_volume_index(volume)
         _data: list[Node] = [
             _node for _part in self.raw_data[_index].mainmatter for _node in _part if _node.uid in _heading_uids
         ]
@@ -522,7 +515,7 @@ class EditionParser(ABC):
                 html=_mainmatter, main_toc_depth=_main_toc_depth, secondary_toc_depth=_secondary_toc_depth
             )
             _heading_uids: list[str] = self._collect_sec_toc_uids(headings=_headings)
-            _index: int = EditionParser._get_true_index(volume)
+            _index: int = get_true_volume_index(volume)
             _data: list[Node] = [
                 _node for _part in self.raw_data[_index].mainmatter for _node in _part if _node.uid in _heading_uids
             ]
@@ -667,13 +660,13 @@ class EditionParser(ABC):
 
     def set_frontmatter(self, volume: Volume) -> None:
         """Add a frontmatter to a volume"""
-        _index: int = EditionParser._get_true_index(volume)
+        _index: int = get_true_volume_index(volume)
         _matters: list[str] = self.config.edition.volumes[_index].frontmatter
         volume.frontmatter = self._collect_matters(volume=volume, matters=_matters)
 
     def set_endnotes(self, volume: Volume) -> None:
         """Add endnotes to a volume"""
-        _index: int = EditionParser._get_true_index(volume)
+        _index: int = get_true_volume_index(volume)
         _raw_data: VolumeData = self.raw_data[_index]
         _raw_node_mainmatters = [node.mainmatter for part in _raw_data.mainmatter for node in part]
         _raw_endnotes: list[str] = [
@@ -683,7 +676,7 @@ class EditionParser(ABC):
 
     def set_backmatter(self, volume: Volume) -> None:
         """Add a backmatter to a volume"""
-        _index: int = EditionParser._get_true_index(volume)
+        _index: int = get_true_volume_index(volume)
         _matters: list[str] = self.config.edition.volumes[_index].backmatter
         volume.backmatter = self._collect_matters(volume=volume, matters=_matters)
 

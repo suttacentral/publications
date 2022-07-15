@@ -9,7 +9,7 @@ from bs4 import BeautifulSoup, Tag
 from ebooklib.epub import Link, Section
 
 from sutta_publisher.shared.value_objects.edition_data import Node
-from sutta_publisher.shared.value_objects.parser_objects import ToCHeading
+from sutta_publisher.shared.value_objects.parser_objects import ToCHeading, Volume
 
 ALL_REFERENCES_URL = os.getenv("ALL_REFERENCES_URL", "")
 ACCEPTED_REFERENCES = ast.literal_eval(os.getenv("ACCEPTED_REFERENCES", ""))
@@ -133,27 +133,33 @@ def collect_actual_headings(start_depth: int = 1, *, end_depth: int, html: Beaut
     return cast(list[Tag], html.find_all(name=re.compile(rf"^h[{start_depth}-{end_depth}]$")))
 
 
-def _make_link(tag: Tag, file_name: str) -> Link:
+def _make_link(heading: ToCHeading, uid: str) -> Link:
     """Takes id from sutta-title heading tag or parent <article> tag"""
-    tag_id = tag.get("id") if tag.get("id") else tag.parent.get("id")
-    return Link(href=f"{file_name}#{tag_id}", title=tag.text, uid=tag_id)
+    return Link(title=heading.tag.get_text(), href=f"{uid}.xhtml#{heading.uid}", uid=heading.uid)
 
 
-def _make_section(tag: Tag, file_name: str) -> Section:
-    return Section(title=tag.text, href=f"{file_name}#{tag['id']}")
+def _make_section(heading: ToCHeading, uid: str) -> Section:
+    return Section(title=heading.tag.get_text(), href=f"{uid}.xhtml#{heading.uid}")
 
 
-def make_section_or_link(headings: list[ToCHeading], item: dict | str, file_name: str) -> list[Section] | Link | None:
+@no_type_check
+def make_section_or_link(headings: list[ToCHeading], item: dict | str, mapping: dict[str, str]) -> list[Section] | Link:
     """Create section (if has children) or link recursively"""
-    if headings:
-        if isinstance(item, dict) and list(item.keys())[0] == headings[0].uid:
-            return [
-                _make_section(tag=headings.pop(0).tag, file_name=file_name),
-                [make_section_or_link(headings, _item, file_name) for _item in list(item.values())[0]],
-            ]
-        elif isinstance(item, str) and item == headings[0].uid:
-            return _make_link(tag=headings.pop(0).tag, file_name=file_name)
-    return None
+
+    # If heading has children
+    if isinstance(item, dict) and list(item.keys())[0] == headings[0].uid:
+        _uid = mapping.get(headings[0].uid, headings[0].uid)
+        return [
+            _make_section(heading=headings.pop(0), uid=_uid),
+            [make_section_or_link(headings=headings, item=_item, mapping=mapping) for _item in list(item.values())[0]],
+        ]
+    # If no children
+    elif isinstance(item, str) and item == headings[0].uid:
+        _uid = mapping.get(headings[0].uid, headings[0].uid)
+        return _make_link(heading=headings.pop(0), uid=_uid)
+    # If heading has been removed (eg. empty leaf)
+    else:
+        pass
 
 
 def remove_all_header(headers: list[BeautifulSoup]) -> None:
@@ -313,3 +319,13 @@ def find_mainmatter_part_uids(html: BeautifulSoup, depth: int) -> list[str]:
     _tags = html.find_all(_tag_types, id=True)
     uids: list[str] = [_tag["id"] for _tag in _tags if hasattr(_tag, "id")]
     return uids
+
+
+def get_true_volume_index(volume: Volume) -> int:
+    """Get actual volume's index (i.e. where it is in the volumes list in raw_data and collect volume-specific
+    edition config)"""
+    if volume.volume_number is None:
+        return 0  # means there's only 1 volume, so index is 0
+    else:
+        # volume_number is 1-based index, whereas, lists have 0-based index
+        return cast(int, volume.volume_number - 1)

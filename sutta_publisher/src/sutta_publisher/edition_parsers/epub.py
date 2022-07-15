@@ -126,20 +126,23 @@ class EpubEdition(EditionParser):
 
         # divide mainmatter into separate chapters
         volume_mainmatter: list[BeautifulSoup] = self._split_mainmatter(mainmatter=volume.mainmatter)
+
+        # prepare helper data
         _sutta_depth = find_sutta_title_depth(html=BeautifulSoup(volume.mainmatter, "lxml"))
         mainmatter_uids: list[list[str]] = self._get_mainmatter_uids(
             mainmatter_parts=volume_mainmatter, depth=_sutta_depth
         )
-        mainmatter_uids_mapping = self._make_mainmatter_uids_mapping(mainmatter_uids=mainmatter_uids)
+        mainmatter_uids_mapping: dict[str, str] = self._make_mainmatter_uids_mapping(mainmatter_uids=mainmatter_uids)
 
         # set frontmatter
         for _matter_part in volume.frontmatter:
             _frontmatter_part_html: BeautifulSoup = BeautifulSoup(_matter_part, "lxml")
 
-            # Skip adding HTML main table of contents
+            # skip setting html main toc as chapter
             if _frontmatter_part_html.section and _frontmatter_part_html.section["id"] == "main-toc":
                 continue
 
+            # connect blurb links with appropriate chapters
             if _links := _frontmatter_part_html.find_all("a", class_="blurb-link"):
                 self._process_links(links=_links, mapping=mainmatter_uids_mapping)
 
@@ -147,19 +150,29 @@ class EpubEdition(EditionParser):
 
         # set mainmatter
         for _part, _uids in zip(volume_mainmatter, mainmatter_uids):
+
+            # connect secondary toc items to appropriate chapters
             if self.config.edition.secondary_toc and (_section := _part.find("section", class_="secondary-toc")):
                 self._process_secondary_toc_links(html=_section, mapping=mainmatter_uids_mapping)
+
+            # connect note references with endnotes chapter
             if _links := _part.find_all("a", role="doc-noteref"):
                 self._process_links(links=_links, chapter_name="endnotes")
+
+                # prepare helper data
                 for _link in _links:
                     mainmatter_uids_mapping[_link["id"]] = _uids[0]
+
             self._set_mainmatter_chapter(book=book, html=_part, volume=volume, uids=_uids)
 
         # set backmatter
         for _part in volume.backmatter:
             _backmatter_part_html: BeautifulSoup = BeautifulSoup(_part, "lxml")
+
+            # connect note backlinks to appropriate chapters
             if _links := _backmatter_part_html.find_all("a", role="doc-backlink"):
                 self._process_links(links=_links, mapping=mainmatter_uids_mapping)
+
             self._set_chapter(book=book, html=_backmatter_part_html)
 
         # set table of contents

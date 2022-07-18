@@ -51,19 +51,10 @@ class EpubEdition(EditionParser):
         file_name = f"{chapter_name}.xhtml"
         return self._make_chapter_content(html=html, file_name=file_name)
 
-    def _set_chapter(self, book: EpubBook, html: BeautifulSoup, chapter_name: str = "") -> None:
-        if not chapter_name:
-            chapter_name = get_chapter_name(html)
+    def _set_chapter(self, book: EpubBook, html: BeautifulSoup, chapter_name: str) -> None:
         chapter = self._make_chapter(html=html, chapter_name=chapter_name)
         book.add_item(chapter)
         book.spine.append(chapter)
-
-    def _set_matter_part_chapter(self, book: EpubBook, html: BeautifulSoup) -> None:
-        if html.article:
-            _id: str = html.article.get("id")
-            self._set_chapter(book=book, html=html)
-        else:
-            self._set_chapter(book=book, html=html)
 
     def _split_mainmatter(self, mainmatter: str) -> list[BeautifulSoup]:
         _html: BeautifulSoup = BeautifulSoup(mainmatter, "lxml")
@@ -137,16 +128,18 @@ class EpubEdition(EditionParser):
         # set frontmatter
         for _matter_part in volume.frontmatter:
             _frontmatter_part_html: BeautifulSoup = BeautifulSoup(_matter_part, "lxml")
+            _chapter_name = get_chapter_name(_frontmatter_part_html)
 
             # skip setting html main toc as chapter
-            if _frontmatter_part_html.section and _frontmatter_part_html.section["id"] == "main-toc":
+            if _chapter_name == "main-toc":
                 continue
 
             # connect blurb links with appropriate chapters
-            if _links := _frontmatter_part_html.find_all("a", class_="blurb-link"):
+            elif _chapter_name == "blurbs":
+                _links = _frontmatter_part_html.find_all("a", class_="blurb-link")
                 self._process_links(links=_links, mapping=mainmatter_uids_mapping)
 
-            self._set_chapter(book=book, html=_frontmatter_part_html)
+            self._set_chapter(book=book, html=_frontmatter_part_html, chapter_name=_chapter_name)
 
         # set mainmatter
         for _part, _uids in zip(volume_mainmatter, mainmatter_uids):
@@ -168,12 +161,14 @@ class EpubEdition(EditionParser):
         # set backmatter
         for _part in volume.backmatter:
             _backmatter_part_html: BeautifulSoup = BeautifulSoup(_part, "lxml")
+            _chapter_name = get_chapter_name(_backmatter_part_html)
 
             # connect note backlinks to appropriate chapters
-            if _links := _backmatter_part_html.find_all("a", role="doc-backlink"):
+            if _chapter_name == "endnotes":
+                _links = _backmatter_part_html.find_all("a", role="doc-backlink")
                 self._process_links(links=_links, mapping=mainmatter_uids_mapping)
 
-            self._set_chapter(book=book, html=_backmatter_part_html)
+            self._set_chapter(book=book, html=_backmatter_part_html, chapter_name=_chapter_name)
 
         # set table of contents
         book.toc.extend(self._set_main_toc(volume=volume, mapping=mainmatter_uids_mapping))

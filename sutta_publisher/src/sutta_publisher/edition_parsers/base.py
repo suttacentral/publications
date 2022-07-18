@@ -563,7 +563,7 @@ class EditionParser(ABC):
                 if item := [
                     matter
                     for matter, _ in ADDITIONAL_HEADINGS["frontmatter"] + ADDITIONAL_HEADINGS["backmatter"]
-                    if matter in _matter
+                    if _matter.endswith(f"/{matter}.html")
                 ]:
                     _html_str = _html_str.replace("<article", f"<article id='{item[0]}'")
 

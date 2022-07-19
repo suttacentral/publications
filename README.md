@@ -6,7 +6,7 @@ Central repo for SuttaCentra;s' publications WIP.
 
 <https://github.com/orgs/suttacentral/projects/2/views/1>
 
-## Features
+## Requirements
 * [Python 3.10](https://www.python.org/)
 * Docker and docker-compose
 
@@ -22,7 +22,7 @@ Install pre-commit git hooks:
 1. First install dependencies (libraries responsible for formatting). You fill find them in Makefile#lint
 e.g.
     ```bash
-    pip install black isort mypy bandit autoflake`
+    pip install black isort mypy bandit autoflake
     ```
 2. Then install the actual pre-commit hook
     ```bash
@@ -48,7 +48,7 @@ make run-dev bash
 make test or make test-ci
 
 # Lint code
-make make lint
+make lint
 ```
 
 ### Production stack

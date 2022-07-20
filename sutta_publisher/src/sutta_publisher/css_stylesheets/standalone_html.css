@@ -405,10 +405,3 @@ section+section {
         vertical-align: super;
     }
 }
-
-
-/*display reference numbers
-[data-ref]::before{
-    content: attr(data-ref);
-}
-*/

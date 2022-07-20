@@ -668,10 +668,8 @@ class EditionParser(ABC):
         """Add endnotes to a volume"""
         _index: int = get_true_volume_index(volume)
         _raw_data: VolumeData = self.raw_data[_index]
-        _raw_node_mainmatters = [node.mainmatter for part in _raw_data.mainmatter for node in part]
-        _raw_endnotes: list[str] = [
-            note for mainmatter in _raw_node_mainmatters if mainmatter.notes for note in mainmatter.notes.values()
-        ]
+        _raw_nodes = [node.mainmatter for part in _raw_data.mainmatter for node in part]
+        _raw_endnotes: list[str] = [note for node in _raw_nodes if node.notes for note in node.notes.values()]
         volume.endnotes = _raw_endnotes
 
     def set_backmatter(self, volume: Volume) -> None:

@@ -1,11 +1,13 @@
 import logging
 import os
+import re
 import tempfile
 from pathlib import Path
 from typing import Callable
 
 import jinja2
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
+from bs4.element import NavigableString
 from jinja2 import Environment, FileSystemLoader, Template
 
 from sutta_publisher.shared.value_objects.edition import EditionResult, EditionType
@@ -14,6 +16,27 @@ from sutta_publisher.shared.value_objects.parser_objects import Edition, Volume
 from .base import EditionParser
 
 log = logging.getLogger(__name__)
+
+
+class CustomTag(Tag):
+    def _should_pretty_print(self, indent_level: int | None) -> bool:
+        return (
+            indent_level is not None
+            and (not self.preserve_whitespace_tags or self.name not in self.preserve_whitespace_tags)
+            and (self.contents or self.name in ["meta", "link"])
+            and not (self.name in ["p", "h1", "h2", "h3", "h4", "h5", "h6", "address", "td"])
+            and not (
+                self.name in ["dt", "dd"] and [e for e in self.contents if isinstance(e, NavigableString) and e != "\n"]
+            )
+            and not (self.name in ["dt"] and len([e for e in self.contents if e.name == "b"]) == 1)
+            and not (self.contents and len(self.contents) == 1 and isinstance(self.contents[0], NavigableString))
+            and not (
+                self.name in ["li"]
+                and self.contents
+                and [e for e in self.contents if isinstance(e, NavigableString)]
+                and not [e for e in self.contents if e.name in ["ol", "ul"]]
+            )
+        )
 
 
 class HtmlEdition(EditionParser):
@@ -28,6 +51,13 @@ class HtmlEdition(EditionParser):
 
         return content
 
+    @staticmethod
+    def _apply_pretty_printing(html: str) -> str:
+        """Returns prettified html with no indent and custom breakline conditions"""
+        _element_classes = {Tag: CustomTag}
+        _soup = BeautifulSoup(html, "lxml", element_classes=_element_classes)
+        return re.compile(r"^(\s*)", re.MULTILINE).sub("", _soup.prettify(formatter=None))
+
     def generate_standalone_html(self, volume: Volume) -> None:
         log.debug("Generating a standalone html...")
 
@@ -37,10 +67,8 @@ class HtmlEdition(EditionParser):
         _css: str = self._get_css()
 
         # Generating output HTML
-        _output = _template.render(css=_css, **volume.dict(exclude_none=True, exclude_unset=True))
-
-        # TODO: Check for possibilities to get rid of spacing issue
-        _output = BeautifulSoup(_output, "lxml").prettify(formatter=None)
+        _html = _template.render(css=_css, **volume.dict(exclude_none=True, exclude_unset=True))
+        _output = self._apply_pretty_printing(html=_html)
 
         _path: str = os.path.join(tempfile.gettempdir(), volume.filename)
 

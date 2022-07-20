@@ -20,9 +20,9 @@ log = logging.getLogger(__name__)
 
 class CustomTag(Tag):
     def _should_pretty_print(self, indent_level: int | None) -> bool:
+        _original_output = super(CustomTag, self)._should_pretty_print(indent_level)
         return (
-            indent_level is not None
-            and (not self.preserve_whitespace_tags or self.name not in self.preserve_whitespace_tags)
+            _original_output
             and (self.contents or self.name in ["meta", "link"])
             and not (self.name in ["p", "h1", "h2", "h3", "h4", "h5", "h6", "address", "td"])
             and not (

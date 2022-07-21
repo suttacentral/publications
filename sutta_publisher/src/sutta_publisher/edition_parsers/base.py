@@ -248,11 +248,11 @@ class EditionParser(ABC):
     def _insert_span_tags(headings: list[Tag], nodes: list[Node]) -> None:
         """Inserts <span class='sutta-heading {acronym | translation-title | root-title}'> tags into
         sutta-title headings"""
-        span_tags_to_add = {"acronym": "acronym", "name": "translated-title", "root_name": "root-title"}
+        SPAN_TAGS_TO_ADD = {"acronym": "acronym", "name": "translated-title", "root_name": "root-title"}
         for heading, node in zip(headings, nodes):
             title = heading.get_text()
             heading.string = ""
-            for attr, css_class in span_tags_to_add.items():
+            for attr, css_class in SPAN_TAGS_TO_ADD.items():
                 if attr == "name":
                     span = BeautifulSoup(parser="lxml").new_tag("span", attrs={"class": f"sutta-heading {css_class}"})
                     span.string = title
@@ -563,7 +563,7 @@ class EditionParser(ABC):
                 if item := [
                     matter
                     for matter, _ in ADDITIONAL_HEADINGS["frontmatter"] + ADDITIONAL_HEADINGS["backmatter"]
-                    if matter in _matter
+                    if _matter.endswith(f"/{matter}.html")
                 ]:
                     _html_str = _html_str.replace("<article", f"<article id='{item[0]}'")
 
@@ -668,10 +668,8 @@ class EditionParser(ABC):
         """Add endnotes to a volume"""
         _index: int = get_true_volume_index(volume)
         _raw_data: VolumeData = self.raw_data[_index]
-        _raw_node_mainmatters = [node.mainmatter for part in _raw_data.mainmatter for node in part]
-        _raw_endnotes: list[str] = [
-            note for mainmatter in _raw_node_mainmatters if mainmatter.notes for note in mainmatter.notes.values()
-        ]
+        _raw_nodes = [node.mainmatter for part in _raw_data.mainmatter for node in part]
+        _raw_endnotes: list[str] = [note for node in _raw_nodes if node.notes for note in node.notes.values() if note]
         volume.endnotes = _raw_endnotes
 
     def set_backmatter(self, volume: Volume) -> None:

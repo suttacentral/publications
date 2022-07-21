@@ -67,6 +67,7 @@ class EpubEdition(EditionParser):
                 and (
                     (_tag.next_sibling.has_attr("class") and "section-title" in _tag.next_sibling["class"])
                     or (_tag.has_attr("class") and "secondary-toc" in _tag["class"])
+                    or (_tag.has_attr("data-split") and "epub" in _tag["data-split"])
                 )
             ):
                 _tag.insert_after("//split")

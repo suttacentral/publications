@@ -78,7 +78,8 @@ def process_line(markup: str, segment_id: str, text: str, note: str, references:
     list_of_refs_tags: list[str] = [_reference_to_html(reference) for reference in filtered_references]
     references_html = "".join(list_of_refs_tags)
     if note:
-        text += "<a href='#note-{number}' id='noteref-{number}' role='doc-noteref' epub:type='noteref'>{number}</a>"
+        text = text.rstrip()
+        text += "<a href='#note-{number}' id='noteref-{number}' role='doc-noteref' epub:type='noteref'>{number}</a> "
     return markup.format(f"{references_html}{text}")
 
 
@@ -300,6 +301,8 @@ def validate_node(node: Node) -> None:
                 _errors.append("too many <h1> tags")
             elif not node.mainmatter.main_text.get(_h1_ids[0]):
                 _errors.append("empty <h1> tag")
+            elif node.mainmatter.notes and node.mainmatter.notes.get(_h1_ids[0]):
+                _errors.append("<h1> tag contains children tags")
 
         # Required attrs for leaf
         _attrs = ["acronym", "root_name"]

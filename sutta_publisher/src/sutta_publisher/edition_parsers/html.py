@@ -19,23 +19,38 @@ log = logging.getLogger(__name__)
 
 
 class CustomTag(Tag):
+    TAGS_TO_IGNORE = ["p", "h1", "h2", "h3", "h4", "h5", "h6", "address", "td"]
+
+    def __has_contents_or_belong_to_head(self) -> bool:
+        return self.contents or self.name in ["meta", "link", "title"]
+
+    def __is_simple_description_list(self) -> bool:
+        return (
+            self.name in ["dt", "dd"]
+            and any(e for e in self.contents if isinstance(e, NavigableString) and e != "\n")
+            and len([e for e in self.contents if e.name == "b"]) == 1
+        )
+
+    def __is_simple_list_item(self) -> bool:
+        return (
+            self.name in ["li"]
+            and self.contents
+            and any(e for e in self.contents if isinstance(e, NavigableString))
+            and not any(e for e in self.contents if e.name in ["ol", "ul"])
+        )
+
+    def __contains_only_one_string(self) -> bool:
+        return len(self.contents) == 1 and isinstance(self.contents[0], NavigableString)
+
     def _should_pretty_print(self, indent_level: int | None) -> bool:
         _original_output = super(CustomTag, self)._should_pretty_print(indent_level)
         return (
             _original_output
-            and (self.contents or self.name in ["meta", "link"])
-            and not (self.name in ["p", "h1", "h2", "h3", "h4", "h5", "h6", "address", "td"])
-            and not (
-                self.name in ["dt", "dd"] and [e for e in self.contents if isinstance(e, NavigableString) and e != "\n"]
-            )
-            and not (self.name in ["dt"] and len([e for e in self.contents if e.name == "b"]) == 1)
-            and not (self.contents and len(self.contents) == 1 and isinstance(self.contents[0], NavigableString))
-            and not (
-                self.name in ["li"]
-                and self.contents
-                and [e for e in self.contents if isinstance(e, NavigableString)]
-                and not [e for e in self.contents if e.name in ["ol", "ul"]]
-            )
+            and self.__has_contents_or_belong_to_head()
+            and not self.name in self.TAGS_TO_IGNORE
+            and not self.__is_simple_description_list()
+            and not self.__is_simple_list_item()
+            and not self.__contains_only_one_string()
         )
 
 

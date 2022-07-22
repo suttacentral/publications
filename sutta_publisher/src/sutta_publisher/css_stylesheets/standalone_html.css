@@ -1,61 +1,63 @@
-
-
-* {
+:root 
+{
+  --primary-text-color: #222;
+  --primary-background-color: #fefefe;
+  --link-color: #E34234;
+  --border-color: #ccc;
+}
+*
+{
     box-sizing: border-box;
     margin: 0;
 }
 
-body {
+body
+{
     font-family: 'source serif 4', 'source serif pro', serif;
     font-size: 20px;
     line-height: 1.5;
+
     width: 100%;
     height: 100%;
-    color: var(--primary-text-color);
-    background-color: var(--primary-background-color);
-}
 
-main {
-    width: 100%;
-    margin-top: -32px;
     color: var(--primary-text-color);
     background-color: var(--primary-background-color);
 }
 
 #frontmatter,
 #mainmatter,
-#backmatter {
+#backmatter
+{
     max-width: 40em;
     margin: 2em auto;
 }
 
 article,
-.range {
-    width: 100%;
-    margin: 8em 0 8em 0;
+.range
+{
+    margin: 8em 0;
 }
 
-.range article{
-    margin: 0;
+.range article
+{
+    margin: 4em 0 0 0;
 }
 
-a {
+a
+{
     text-decoration: none;
+
     color: var(--link-color);
+
     overflow-wrap: anywhere;
 }
 
-a:hover {
+a:hover
+{
     text-decoration: underline;
-    text-underline-offset: .09em;
-    text-decoration-thickness: from-font;
-}
 
-#mainmatter .ref {
-    font-size: small;
-    font-weight: normal;
-    display: none;
-    margin-right: 1ex;
+    text-underline-offset: .1em;
+    text-decoration-thickness: from-font;
 }
 
 p,
@@ -67,276 +69,390 @@ h2,
 h3,
 h4,
 h5,
-h6 {
+h6
+{
     margin-top: 1em;
 }
 
+blockquote
+{
+    margin: 1em 1.5em;
+}
+
 ul,
-ol,
-dl {
+ol
+{
     padding-left: 2rem;
 }
 
 li  ol,
-li ul{
+li ul
+{
     margin-top: 0;
 }
 
-dt{
+dt
+{
     font-weight: bold;
 }
 
-nav ul {
+nav ul
+{
     font-weight: bold;
+
     list-style-type: none;
 }
 
-nav ul ul {
+nav ul ul
+{
     font-weight: normal;
 }
 
-nav li {
+nav li
+{
     margin: .75em 0;
 }
 
-.toc-uid {
+.toc-uid
+{
     display: inline-block;
+
     margin-right: 1em;
 }
 
-blockquote {
-    margin: 1em 1.5em;
-}
-
-.contents {
+.contents
+{
     margin: 2em 0;
 }
 
 #titlepage,
-#halftitlepage {
+#halftitlepage
+{
     line-height: 1;
+
     display: flex;
     flex-direction: column;
+
     width: 100%;
     height: 100vh;
+
     text-align: center;
+
     justify-content: space-between;
     align-content: center;
 }
 
-.front-top {
+.front-top
+{
     display: flex;
     flex-direction: column;
+
     height: 80vh;
+
     justify-content: space-between;
 }
 
-.translation-title {
+.translation-title
+{
     font-size: 4rem;
     line-height: 1.1;
+
     margin-top: 8rem;
+
     text-align: center;
 }
 
-.translation-subtitle {
+.translation-subtitle
+{
     font-size: 1.5em;
     font-style: italic;
     line-height: 1.2;
+
     margin-top: 1em;
+
     text-align: center;
 }
 
-.creator-name {
+.creator-name
+{
     font-size: 2em;
     line-height: 1.2;
+
     margin-bottom: 8rem;
+
     text-align: center;
 }
 
-.title-page-foot {
+.title-page-foot
+{
     display: flex;
     flex-direction: row;
+
     height: 20vh;
     padding: 0 6em;
+
     color: var(--link-color);
+
     justify-content: space-between;
     align-items: center;
 }
 
-#imprint {
-    font-size: .8rem;
+#imprint
+{
+    font-size: small;
+
     padding: 2em;
-    border: 1px solid #ccc;
+
+    border: 1px solid var(--border-color);
     border-radius: 1em;
-    background-color: var(--secondary-background-color);
 }
 
-.license {
+.license
+{
     margin: 2em 0;
-    padding: 1em;
-    background-color: var(--tertiary-background-color);
 }
 
-.license-statement {
+.license-statement
+{
+    font-style: italic;
+
     margin: 1em 2em;
+
     text-align: center;
 }
 
-#imprint td {
-    padding-right: 1em;
+#imprint table
+{
+    border-spacing: 0;
 }
 
-.byline {
+#imprint td
+{
+    padding: .25em 1em .25em 0;
+}
+
+address
+{
+    margin: 1em;
+}
+
+.byline
+{
     font-style: italic;
+
     margin-bottom: 1em;
 }
 
-.front-creator {
+.front-creator
+{
     text-align: center;
 }
 
-.volume-details {
+.volume-details
+{
     text-align: center;
 }
 
-.epigraph {
+.epigraph
+{
     display: flex;
     flex-direction: column;
+
     width: 100%;
     height: 100vh;
+
     text-align: center;
+
     justify-content: center;
     align-content: center;
 }
 
-.epigraph-attribution {
+.epigraph-attribution
+{
     font-style: italic;
 }
 
-header {
+header
+{
     text-align: center;
 }
 
-header ul {
+header ul
+{
     margin-bottom: .5em;
     padding: 0;
+
     list-style-type: none;
 }
 
-header ul li {
+header ul li
+{
     display: none;
 }
 
-header ul li:nth-of-type(1) {
+header ul li:nth-of-type(1)
+{
     display: list-item;
 }
 
-.sutta-title {
-    margin: 0 0 2em 0;
-    text-align: center;
-}
-
-h1 {
+h1
+{
     font-size: 3em;
     font-weight: normal;
     line-height: 1.2;
+
     width: 100%;
     margin-bottom: 1em;
+
     text-align: center;
 }
 
-h2 {
+h2
+{
     font-size: 2em;
     line-height: 1.3;
-    text-align: center;
+
+    text-align: left;
 }
 
-h3 {
+h3
+{
     font-size: 1.5em;
     line-height: 1.4;
+
     text-align: left;
 }
 
-h4 {
+h4
+{
     font-size: 1.33em;
     line-height: 1.4;
+
     text-align: left;
 }
 
-h5 {
+h5
+{
     font-size: 1.25em;
+
     text-align: left;
 }
 
-h6 {
+h6
+{
     font-size: 1em;
+
     text-align: left;
 }
 
-h3:not(.sutta-title,.subheading){
+.section-title
+{
+    font-weight: normal;
+
+    margin: 0 0 2em 0;
+    padding: .5em 0;
+
+    text-align: center;
+
+    border-top: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.section-title + .section-title
+{
+    margin-top: -3.6em;
+
+    border-top: 2em solid var(--primary-background-color);
+}
+
+.sutta-title
+{
+    margin: 0 0 2em 0;
+
     text-align: center;
 }
 
-#frontmatter h2,
-#backmatter h2{
-    text-align: left;
+.range-title
+{
+    border: none;
 }
 
-.namo {
+.sutta-heading.translated-title
+{
+    font-weight: bold;
+}
+
+.namo
+{
     font-style: italic;
+
     margin: 2em;
+
     text-align: center;
 }
 
 .endsutta,
 .endsection,
-.end {
+.end
+{
     font-style: italic;
+
     text-align: center;
 }
 
-.endbook {
+.endbook
+{
     font-weight: bold;
+
     text-align: center;
     letter-spacing: .05em;
     text-transform: uppercase;
 }
 
-dd {
+dd
+{
     margin-left: 2em;
 }
 
-section+section {
-    margin-top: 6rem;
+dd p
+{
+    margin-top: 0;
+
+    text-indent: 1em;
 }
 
-.verse-line {
+dd > p:first-of-type
+{
+    text-indent: 0;
+}
+
+.verse-line
+{
     display: block;
 }
 
-.bj {
-    margin-right: 1rem;
-}
-
-.pts-vp-pli {
-    margin-right: 1rem;
-}
-
-.secondary-toc{
+.secondary-toc
+{
     margin-bottom: 8em;
 }
 
-.main-toc-heading {
-    text-align: center;
+.main-toc-heading
+{
     font-size: 1.5rem;
+
     margin-bottom: 2em;
+
+    text-align: center;
     text-transform: uppercase;
 }
 
-.secondary-toc-heading {
+.secondary-toc-heading
+{
     font-size: 1.5rem;
-    margin-top: 4em;
-    margin-left: 2rem;
+
+    margin-bottom: 2em;
+
+    text-align: center;
     text-transform: uppercase;
 }
 
@@ -373,6 +489,8 @@ section+section {
 .sutta-heading
 {
     display: block;
+
+    padding: .05em;
 }
 
 .sutta-heading.acronym
@@ -392,6 +510,10 @@ section+section {
 {
     a[role='doc-noteref']
     {
+        font-weight: normal;
+
+        padding: 0 .1em;
+
         font-variant-position: super;
     }
 }
@@ -401,7 +523,33 @@ section+section {
     a[role='doc-noteref']
     {
         font-size: .8rem;
+        font-weight: normal;
+
+        padding: 0 .1em;
 
         vertical-align: super;
     }
+}
+
+/* overrides for specific texts */
+
+#dhp .range article
+{
+    margin: 0;
+}
+
+#dhp .range-title
+{
+    font-size: 2em;
+}
+
+#pli-tv-vi .secondary-toc:nth-of-type(1) .toc-item.acronym,
+#pli-tv-vi .secondary-toc:nth-of-type(2) .toc-item.acronym
+{
+    display: none;
+}
+
+.patimokkha .rule
+{
+    font-weight: bold;
 }

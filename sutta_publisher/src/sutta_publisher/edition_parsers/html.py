@@ -26,9 +26,13 @@ class CustomTag(Tag):
 
     def __is_simple_description_list(self) -> bool:
         return (
-            self.name in ["dt", "dd"]
-            and any(e for e in self.contents if isinstance(e, NavigableString) and e != "\n")
-            and len([e for e in self.contents if e.name == "b"]) == 1
+            (
+                self.name in ["dt", "dd"]
+                and any(e for e in self.contents if isinstance(e, NavigableString) and e != "\n"))
+            or (
+                self.name in ["dt"]
+                and len([e for e in self.contents if e.name == "b"]) == 1
+            )
         )
 
     def __is_simple_list_item(self) -> bool:

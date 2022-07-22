@@ -112,6 +112,7 @@ class Volume(BaseModel):
     root_title: str = ""
     source_url: str = ""
     text_description: str = ""
+    text_uid: str = ""
     translation_name: str = ""
     translation_subtitle: str = ""
     translation_title: str = ""

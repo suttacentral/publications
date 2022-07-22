@@ -52,6 +52,7 @@ class EditionDetails(BaseModel):
     edition_number: str
     publication_isbn: str
     noteref_id: int = 0  # Helper field for proper numbering of note references in editions with multiple volumes
+    text_uid: str
 
     class Config:
         extra = "ignore"

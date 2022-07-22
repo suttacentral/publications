@@ -576,7 +576,8 @@ dd > p:first-of-type
 
 /* overrides for specific texts */
 
-#dhp .range article
+#dhp .range article,
+#pli-tv-vi .range article
 {
     margin: 0;
 }

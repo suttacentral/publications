@@ -274,6 +274,15 @@ class EditionParser(ABC):
             tag.string = tag.string.format(number=last_id)
         self.config.edition.noteref_id = last_id
 
+    def _unwrap_verses(self, mainmatter: BeautifulSoup) -> None:
+        """Unwrap all <span class='verse-line'> tags and insert <br> at the end of each verse except the last one
+        in given paragraph"""
+        for _paragraph in mainmatter.find_all("p"):
+            for _i, _span in enumerate(_spans := _paragraph.find_all("span", class_="verse-line")):
+                if _i + 1 < len(_spans):
+                    _span.insert_after(mainmatter.new_tag("br"))
+                _span.unwrap()
+
     def _postprocess_mainmatter(self, mainmatter: BeautifulSoup, volume: Volume) -> str:
         """Apply some additional postprocessing and insert additional headings to a crude mainmatter"""
 
@@ -327,6 +336,9 @@ class EditionParser(ABC):
 
         # Add the numbering to note reference anchors
         self._add_indices_to_note_refs(mainmatter=mainmatter)
+
+        # Remove <span class="verse-line"> tags and insert <br> tags
+        self._unwrap_verses(mainmatter=mainmatter)
 
         return cast(str, extract_string(mainmatter))
 

@@ -77,7 +77,15 @@ h4,
 h5,
 h6
 {
-    margin-top: 1em;
+    margin: 1em 0 1rem 0;
+}
+
+p,
+ul,
+ol,
+dl
+{
+    margin-bottom: 1em;
 }
 
 blockquote
@@ -94,7 +102,7 @@ ol
 li  ol,
 li ul
 {
-    margin-top: 0;
+    margin-bottom: 0;
 }
 
 dt
@@ -366,6 +374,20 @@ h6
     text-align: left;
 }
 
+/* not a mistake: we need seven heading levels. this is a valid custom tag */
+
+h7
+{
+    font-style: italic;
+
+    display: block;
+}
+
+h6 + h7
+{
+    margin-top: -1rem;
+}
+
 .section-title
 {
     font-weight: normal;
@@ -412,6 +434,29 @@ h6
     text-align: center;
 }
 
+.speaker
+{
+    font-style: italic;
+
+    margin-left: 2em;
+}
+
+@supports (font-variant-caps: all-small-caps)
+{
+    .evam
+    {
+        font-variant-caps: all-small-caps;
+    }
+}
+
+@supports not (font-variant-caps: all-small-caps)
+{
+    .evam
+    {
+        text-transform: uppercase;
+    }
+}
+
 .endsutta,
 .endsection,
 .end
@@ -437,7 +482,7 @@ dd
 
 dd p
 {
-    margin-top: 0;
+    margin-bottom: 0;
 
     text-indent: 1em;
 }
@@ -537,7 +582,8 @@ a[epub|type~='noteref']
 
 /* overrides for specific texts */
 
-#dhp .range article
+#dhp .range article,
+#pli-tv-vi .range article
 {
     margin: 0;
 }

@@ -5,6 +5,7 @@
   --link-color: #E34234;
   --border-color: #ccc;
 }
+
 *
 {
     box-sizing: border-box;
@@ -60,10 +61,6 @@ a:hover
     text-decoration-thickness: from-font;
 }
 
-p,
-ul,
-ol,
-dl,
 h1,
 h2,
 h3,
@@ -71,12 +68,20 @@ h4,
 h5,
 h6
 {
-    margin-top: 1em;
+    margin: 1em 0 1rem 0;
+}
+
+p,
+ul,
+ol,
+dl
+{
+    margin-bottom: 1em;
 }
 
 blockquote
 {
-    margin: 1em 1.5em;
+    margin: 1em 2.5em;
 }
 
 ul,
@@ -88,7 +93,7 @@ ol
 li  ol,
 li ul
 {
-    margin-top: 0;
+    margin-bottom: 0;
 }
 
 dt
@@ -341,8 +346,23 @@ h5
 h6
 {
     font-size: 1em;
+    font-weight: bold;
 
     text-align: left;
+}
+
+/* not a mistake: we need seven heading levels. this is a valid custom tag */
+
+h7
+{
+    font-style: italic;
+
+    display: block;
+}
+
+h6 + h7
+{
+    margin-top: -1rem;
 }
 
 .section-title
@@ -391,6 +411,29 @@ h6
     text-align: center;
 }
 
+.speaker
+{
+    font-style: italic;
+
+    margin-left: 2em;
+}
+
+@supports (font-variant-caps: all-small-caps)
+{
+    .evam
+    {
+        font-variant-caps: all-small-caps;
+    }
+}
+
+@supports not (font-variant-caps: all-small-caps)
+{
+    .evam
+    {
+        text-transform: uppercase;
+    }
+}
+
 .endsutta,
 .endsection,
 .end
@@ -416,7 +459,7 @@ dd
 
 dd p
 {
-    margin-top: 0;
+    margin-bottom: 0;
 
     text-indent: 1em;
 }
@@ -533,7 +576,8 @@ dd > p:first-of-type
 
 /* overrides for specific texts */
 
-#dhp .range article
+#dhp .range article,
+#pli-tv-vi .range article
 {
     margin: 0;
 }

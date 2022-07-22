@@ -223,6 +223,7 @@ def generate_html_toc(headings: list[ToCHeading]) -> str:
     _anchors: list[str] = [_make_html_link_to_heading(heading=heading) for heading in headings]
     _list_items: list[str] = [f"<li>{link}</li>" for link in _anchors]
     _previous_h = 0
+    _current_depth = 0
 
     # we need delta level for proper secondary toc indentation
     _delta: int = headings[0].depth - 1 if headings else 0
@@ -236,14 +237,16 @@ def generate_html_toc(headings: list[ToCHeading]) -> str:
         _level_difference = abs(_current_depth - _previous_h)
         if _current_depth > _previous_h:
             if toc:
-                toc[-1].replace("</li>", "")
+                toc[-1] = toc[-1].replace("</li>", "")
             toc.append("<ul>" * _level_difference)
         # If next heading is higher level we close the current HTML list before it
         elif _current_depth < _previous_h:
-            toc.append("</ul>" * _level_difference + "</li>")
+            toc.append("</ul></li>" * _level_difference)
         toc.append(_li)
         _previous_h = _current_depth
 
+    if _current_depth > 1:
+        toc.append("</ul></li>" * (_current_depth - 1))
     toc.append("</ul>")
 
     return "".join(toc)

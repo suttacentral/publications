@@ -543,12 +543,6 @@ dd > p:first-of-type
     font-size: 2em;
 }
 
-#pli-tv-vi .secondary-toc:nth-of-type(1) .toc-item.acronym,
-#pli-tv-vi .secondary-toc:nth-of-type(2) .toc-item.acronym
-{
-    display: none;
-}
-
 .patimokkha .rule
 {
     font-weight: bold;

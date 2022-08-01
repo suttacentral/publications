@@ -102,11 +102,11 @@ class Volume(BaseModel):
     creator_name: str = ""
     creator_uid: str = ""
     edition_number: int | None = None
-    editions_url: str = ""
     first_published: str = ""
     number_of_volumes: int | None = None
     publication_isbn: str = ""
     publication_number: str = ""
+    publication_url: str = ""
     publication_type: str = ""
     root_name: str = ""
     root_title: str = ""

@@ -53,6 +53,7 @@ from sutta_publisher.shared.value_objects.parser_objects import (
 log = logging.getLogger(__name__)
 
 ADDITIONAL_HEADINGS = ast.literal_eval(os.getenv("ADDITIONAL_HEADINGS", ""))
+SUTTACENTRAL_URL = os.getenv("SUTTACENTRAL_URL", "/")
 
 
 class EditionParser(ABC):
@@ -99,11 +100,11 @@ class EditionParser(ABC):
             "creator_name": self.config.publication.creator_name,
             "creator_uid": self.config.publication.creator_uid,
             "edition_number": self.config.edition.edition_number,
-            "editions_url": self.config.publication.editions_url,
             "first_published": self.config.publication.first_published,
             "number_of_volumes": len(self.raw_data),
             "publication_isbn": self.config.edition.publication_isbn,
             "publication_number": self.config.edition.publication_number,
+            "publication_url": self._get_publication_url(),
             "publication_type": self.config.edition.publication_type.name,
             "root_name": self.config.publication.root_lang_name,
             "root_title": self.config.publication.root_title,
@@ -139,6 +140,10 @@ class EditionParser(ABC):
             blurbs.extend(_blurbs_in_mainmatter_part)
 
         return blurbs
+
+    def _get_publication_url(self) -> str:
+        """Returns publication url: {suttacentral_url}/editions/{UID}/{ISO}/{author}"""
+        return f"{SUTTACENTRAL_URL}editions/{self.config.edition.text_uid}/{self.config.publication.translation_lang_iso}/{self.config.publication.creator_uid}"
 
     def set_metadata(self, volume: Volume) -> None:
         """Set attributes with metadata for a volume. If attribute name is unknown

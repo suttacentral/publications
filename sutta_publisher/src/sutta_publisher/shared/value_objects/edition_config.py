@@ -66,7 +66,6 @@ class PublicationDetails(BaseModel):
     translation_title: str
     translation_lang_iso: str
     creation_process: str
-    editions_url: str
     first_published: str
     root_lang_name: str
     root_title: str

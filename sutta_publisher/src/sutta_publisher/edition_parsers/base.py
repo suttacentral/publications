@@ -466,6 +466,20 @@ class EditionParser(ABC):
         _headings.extend(backmatter_headings)
         self.raw_data[_index].tree.extend([_heading.uid for _heading in backmatter_headings])
 
+    @staticmethod
+    def _insert_samyutta_numbers(headings: list[ToCHeading]) -> None:
+        """Inserts uids into samyutta headings in place. E.g.:
+
+        Before:
+            Linked Discourses With Deities
+        After:
+            SN 1. Linked Discourses With Deities"""
+        for _heading in headings:
+            if _heading.depth == 2:
+                _new_name = f"{_heading.uid[:2].upper()} {_heading.uid[2:]}. {_heading.name}"
+                _heading.name = _new_name
+                _heading.tag.string = _new_name
+
     def set_main_toc(self, volume: Volume) -> None:
         """Add main table of contents to a volume"""
         _mainmatter = BeautifulSoup(volume.mainmatter, "lxml")
@@ -492,6 +506,11 @@ class EditionParser(ABC):
             for tag, node in zip(_heading_tags, _data)
         ]
         self._insert_additional_headings(_headings=_headings, volume=volume)
+
+        # Applies to SN edition only. Insert hardcoded uid at the beginning of every heading's name if its depth == 2
+        if volume.text_uid == "sn":
+            self._insert_samyutta_numbers(headings=_headings)
+
         volume.main_toc = MainTableOfContents.parse_obj({"headings": _headings})
 
     @staticmethod

@@ -53,6 +53,7 @@ from sutta_publisher.shared.value_objects.parser_objects import (
 log = logging.getLogger(__name__)
 
 ADDITIONAL_HEADINGS = ast.literal_eval(os.getenv("ADDITIONAL_HEADINGS", ""))
+SUTTACENTRAL_URL = os.getenv("SUTTACENTRAL_URL", "/")
 
 
 class EditionParser(ABC):
@@ -99,16 +100,17 @@ class EditionParser(ABC):
             "creator_name": self.config.publication.creator_name,
             "creator_uid": self.config.publication.creator_uid,
             "edition_number": self.config.edition.edition_number,
-            "editions_url": self.config.publication.editions_url,
             "first_published": self.config.publication.first_published,
             "number_of_volumes": len(self.raw_data),
             "publication_isbn": self.config.edition.publication_isbn,
             "publication_number": self.config.edition.publication_number,
+            "publication_url": self._get_publication_url(),
             "publication_type": self.config.edition.publication_type.name,
             "root_name": self.config.publication.root_lang_name,
             "root_title": self.config.publication.root_title,
             "source_url": self.config.publication.source_url,
             "text_description": self.config.publication.text_description,
+            "text_uid": self.config.edition.text_uid,
             "translation_name": self.config.publication.translation_lang_name,
             "translation_subtitle": self.config.publication.translation_subtitle,
             "translation_title": self.config.publication.translation_title,
@@ -138,6 +140,10 @@ class EditionParser(ABC):
             blurbs.extend(_blurbs_in_mainmatter_part)
 
         return blurbs
+
+    def _get_publication_url(self) -> str:
+        """Returns publication url: {suttacentral_url}/editions/{UID}/{ISO}/{author}"""
+        return f"{SUTTACENTRAL_URL}editions/{self.config.edition.text_uid}/{self.config.publication.translation_lang_iso}/{self.config.publication.creator_uid}"
 
     def set_metadata(self, volume: Volume) -> None:
         """Set attributes with metadata for a volume. If attribute name is unknown
@@ -273,6 +279,15 @@ class EditionParser(ABC):
             tag.string = tag.string.format(number=last_id)
         self.config.edition.noteref_id = last_id
 
+    def _unwrap_verses(self, mainmatter: BeautifulSoup) -> None:
+        """Unwrap all <span class='verse-line'> tags and insert <br> at the end of each verse except the last one
+        in given paragraph"""
+        for _paragraph in mainmatter.find_all("p"):
+            for _i, _span in enumerate(_spans := _paragraph.find_all("span", class_="verse-line")):
+                if _i + 1 < len(_spans):
+                    _span.insert_after(mainmatter.new_tag("br"))
+                _span.unwrap()
+
     def _postprocess_mainmatter(self, mainmatter: BeautifulSoup, volume: Volume) -> str:
         """Apply some additional postprocessing and insert additional headings to a crude mainmatter"""
 
@@ -326,6 +341,9 @@ class EditionParser(ABC):
 
         # Add the numbering to note reference anchors
         self._add_indices_to_note_refs(mainmatter=mainmatter)
+
+        # Remove <span class="verse-line"> tags and insert <br> tags
+        self._unwrap_verses(mainmatter=mainmatter)
 
         return cast(str, extract_string(mainmatter))
 
@@ -448,6 +466,20 @@ class EditionParser(ABC):
         _headings.extend(backmatter_headings)
         self.raw_data[_index].tree.extend([_heading.uid for _heading in backmatter_headings])
 
+    @staticmethod
+    def _insert_samyutta_numbers(headings: list[ToCHeading]) -> None:
+        """Insert hardcoded uid at the beginning of every samyutta heading in place
+
+        Before:
+            Linked Discourses With Deities
+        After:
+            SN 1. Linked Discourses With Deities"""
+        for _heading in headings:
+            if _heading.depth == 2:
+                _new_name = f"{_heading.uid[:2].upper()} {_heading.uid[2:]}. {_heading.name}"
+                _heading.name = _new_name
+                _heading.tag.string = _new_name
+
     def set_main_toc(self, volume: Volume) -> None:
         """Add main table of contents to a volume"""
         _mainmatter = BeautifulSoup(volume.mainmatter, "lxml")
@@ -474,6 +506,11 @@ class EditionParser(ABC):
             for tag, node in zip(_heading_tags, _data)
         ]
         self._insert_additional_headings(_headings=_headings, volume=volume)
+
+        # Applies to SN edition only
+        if volume.text_uid == "sn":
+            self._insert_samyutta_numbers(headings=_headings)
+
         volume.main_toc = MainTableOfContents.parse_obj({"headings": _headings})
 
     @staticmethod

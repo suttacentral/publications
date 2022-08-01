@@ -1,6 +1,5 @@
 <section id="imprint" epub:type="imprint">
-    <p><cite property="dc:title">{{translation_title | safe}}</cite> is a translation of the <span property="dc:title">{{root_title | safe}}</span> by <span property="dc:creator">{{creator_name |
-            safe}}</span>.</p>
+    <p><cite property="dc:title">{{translation_title | safe}}</cite> is a translation of the <span property="dc:title">{{root_title | safe}}</span> by <span property="dc:creator">{{creator_name | safe}}</span>.</p>
     <div class="license">
         <p property="dc:rights"><a rel="license" href="https://creativecommons.org/publicdomain/zero/1.0/legalcode" target="_blank">Creative Commons Zero (<span class="license-abbreviation">CC0</span>)</a></p>
         <p>To the extent possible under law, <span property="dc:creator">{{creator_name | safe}}</span> has waived all copyright and related or neighboring rights to <cite property="dct:title">{{translation_title | safe}}</cite>.</p>
@@ -49,7 +48,7 @@
             {% endif %}
             <tr class="editions-url">
                 <td>Publication URL</td>
-                <td><a href="{{editions_url}}">{{editions_url | safe}}</a></td>
+                <td><a href="{{publication_url}}">{{publication_url | safe}}</a></td>
             </tr>
             <tr class="source-url">
                 <td>Source URL</td>

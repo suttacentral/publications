@@ -68,7 +68,7 @@
     <style>{{css | safe}}</style>
 </head>
 
-<body id="{{acronym | lower | safe}}">
+<body id="{{text_uid | safe}}">
     <section id='frontmatter'>{% for matter in frontmatter %}{{matter | safe}}{% endfor %}</section>
     <section id='mainmatter'>{{mainmatter | safe}}</section>
     <section id='backmatter'>{% for matter in backmatter %}{{matter | safe}}{% endfor %}</section>

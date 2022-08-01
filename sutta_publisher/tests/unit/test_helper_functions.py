@@ -1,4 +1,5 @@
 import pytest
+from bs4 import BeautifulSoup
 
 from sutta_publisher.edition_parsers.helper_functions import (
     _filter_refs,
@@ -6,11 +7,17 @@ from sutta_publisher.edition_parsers.helper_functions import (
     _reference_to_html,
     _split_ref_and_number,
     fetch_possible_refs,
+    generate_html_toc,
     make_absolute_links,
     process_line,
     validate_node,
 )
 from sutta_publisher.shared.value_objects.edition_data import Node, NodeDetails
+from sutta_publisher.shared.value_objects.parser_objects import ToCHeading
+
+
+def soup():
+    return BeautifulSoup(parser="lxml")
 
 
 @pytest.fixture
@@ -284,3 +291,175 @@ def test_validate_node(
         validate_node(node)
     except SystemExit:
         assert exception
+
+
+@pytest.mark.parametrize(
+    "headings, expected",
+    [
+        (
+            [
+                ToCHeading(
+                    acronym=None,
+                    depth=1,
+                    name="Foo1",
+                    root_name=None,
+                    tag=soup().new_tag('<h1 id="foo1">Foo1</h1>'),
+                    type="frontmatter",
+                    uid="foo1",
+                ),
+                ToCHeading(
+                    acronym=None,
+                    depth=1,
+                    name="Foo2",
+                    root_name=None,
+                    tag=soup().new_tag('<h1 id="foo2">Foo2</h1>'),
+                    type="branch",
+                    uid="foo2",
+                ),
+                ToCHeading(
+                    acronym=None,
+                    depth=2,
+                    name="Foo3",
+                    root_name=None,
+                    tag=soup().new_tag('<h1 id="foo3">Foo3</h1>'),
+                    type="branch",
+                    uid="foo3",
+                ),
+                ToCHeading(
+                    acronym=None,
+                    depth=3,
+                    name="Foo4",
+                    root_name=None,
+                    tag=soup().new_tag('<h1 id="foo4">Foo4</h1>'),
+                    type="branch",
+                    uid="foo4",
+                ),
+                ToCHeading(
+                    acronym=None,
+                    depth=3,
+                    name="Foo5",
+                    root_name=None,
+                    tag=soup().new_tag('<h1 id="foo5">Foo5</h1>'),
+                    type="branch",
+                    uid="foo5",
+                ),
+                ToCHeading(
+                    acronym=None,
+                    depth=2,
+                    name="Foo6",
+                    root_name=None,
+                    tag=soup().new_tag('<h1 id="foo6">Foo6</h1>'),
+                    type="branch",
+                    uid="foo6",
+                ),
+                ToCHeading(
+                    acronym=None,
+                    depth=3,
+                    name="Foo7",
+                    root_name=None,
+                    tag=soup().new_tag('<h1 id="foo7">Foo7</h1>'),
+                    type="branch",
+                    uid="foo7",
+                ),
+                ToCHeading(
+                    acronym=None,
+                    depth=3,
+                    name="Foo8",
+                    root_name=None,
+                    tag=soup().new_tag('<h1 id="foo8">Foo8</h1>'),
+                    type="branch",
+                    uid="foo8",
+                ),
+                ToCHeading(
+                    acronym=None,
+                    depth=1,
+                    name="Foo9",
+                    root_name=None,
+                    tag=soup().new_tag('<h1 id="foo9">Foo9</h1>'),
+                    type="backmatter",
+                    uid="foo9",
+                ),
+            ],
+            "<ul><li><a href='#foo1'>Foo1</a></li><li><a href='#foo2'>Foo2</a><ul><li><a href='#foo3'>Foo3</a><ul><li><a href='#foo4'>Foo4</a></li><li><a href='#foo5'>Foo5</a></li></ul></li><li><a href='#foo6'>Foo6</a><ul><li><a href='#foo7'>Foo7</a></li><li><a href='#foo8'>Foo8</a></li></ul></li></ul></li><li><a href='#foo9'>Foo9</a></li></ul>",
+        ),
+        (
+            [
+                ToCHeading(
+                    acronym=None,
+                    depth=1,
+                    name="Foo1",
+                    root_name=None,
+                    tag=soup().new_tag('<h1 id="foo1">Foo1</h1>'),
+                    type="frontmatter",
+                    uid="foo1",
+                ),
+                ToCHeading(
+                    acronym=None,
+                    depth=1,
+                    name="Foo2",
+                    root_name=None,
+                    tag=soup().new_tag('<h1 id="foo2">Foo2</h1>'),
+                    type="branch",
+                    uid="foo2",
+                ),
+                ToCHeading(
+                    acronym=None,
+                    depth=2,
+                    name="Foo3",
+                    root_name=None,
+                    tag=soup().new_tag('<h1 id="foo3">Foo3</h1>'),
+                    type="branch",
+                    uid="foo3",
+                ),
+                ToCHeading(
+                    acronym=None,
+                    depth=3,
+                    name="Foo4",
+                    root_name=None,
+                    tag=soup().new_tag('<h1 id="foo4">Foo4</h1>'),
+                    type="branch",
+                    uid="foo4",
+                ),
+                ToCHeading(
+                    acronym=None,
+                    depth=3,
+                    name="Foo5",
+                    root_name=None,
+                    tag=soup().new_tag('<h1 id="foo5">Foo5</h1>'),
+                    type="branch",
+                    uid="foo5",
+                ),
+                ToCHeading(
+                    acronym=None,
+                    depth=2,
+                    name="Foo6",
+                    root_name=None,
+                    tag=soup().new_tag('<h1 id="foo6">Foo6</h1>'),
+                    type="branch",
+                    uid="foo6",
+                ),
+                ToCHeading(
+                    acronym=None,
+                    depth=3,
+                    name="Foo7",
+                    root_name=None,
+                    tag=soup().new_tag('<h1 id="foo7">Foo7</h1>'),
+                    type="branch",
+                    uid="foo7",
+                ),
+                ToCHeading(
+                    acronym=None,
+                    depth=3,
+                    name="Foo8",
+                    root_name=None,
+                    tag=soup().new_tag('<h1 id="foo8">Foo8</h1>'),
+                    type="branch",
+                    uid="foo8",
+                ),
+            ],
+            "<ul><li><a href='#foo1'>Foo1</a></li><li><a href='#foo2'>Foo2</a><ul><li><a href='#foo3'>Foo3</a><ul><li><a href='#foo4'>Foo4</a></li><li><a href='#foo5'>Foo5</a></li></ul></li><li><a href='#foo6'>Foo6</a><ul><li><a href='#foo7'>Foo7</a></li><li><a href='#foo8'>Foo8</a></li></ul></li></ul></li></ul>",
+        ),
+    ],
+)
+def test_generate_html_toc(headings, expected):
+    assert generate_html_toc(headings) == expected

@@ -468,7 +468,7 @@ class EditionParser(ABC):
 
     @staticmethod
     def _insert_samyutta_numbers(headings: list[ToCHeading]) -> None:
-        """Inserts uids into samyutta headings in place. E.g.:
+        """Insert hardcoded uid at the beginning of every samyutta heading in place
 
         Before:
             Linked Discourses With Deities
@@ -507,7 +507,7 @@ class EditionParser(ABC):
         ]
         self._insert_additional_headings(_headings=_headings, volume=volume)
 
-        # Applies to SN edition only. Insert hardcoded uid at the beginning of every heading's name if its depth == 2
+        # Applies to SN edition only
         if volume.text_uid == "sn":
             self._insert_samyutta_numbers(headings=_headings)
 

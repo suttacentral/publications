@@ -135,8 +135,12 @@ def collect_actual_headings(start_depth: int = 1, *, end_depth: int, html: Beaut
 
 
 def _make_link(heading: ToCHeading, uid: str) -> Link:
-    """Takes id from sutta-title heading tag or parent <article> tag"""
-    return Link(title=heading.tag.get_text(), href=f"{uid}.xhtml#{heading.uid}", uid=heading.uid)
+    if heading.type == "leaf":
+        _acronym, _translated, _root = [_string for _string in heading.tag.stripped_strings]
+        _title = f"{_acronym}: {_translated} — {_root}"
+    else:
+        _title = heading.tag.string.strip()
+    return Link(title=_title, href=f"{uid}.xhtml#{heading.uid}", uid=heading.uid)
 
 
 def _make_section(heading: ToCHeading, uid: str) -> Section:

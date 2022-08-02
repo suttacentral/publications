@@ -27,6 +27,7 @@ log = logging.getLogger(__name__)
 class EpubEdition(EditionParser):
     CSS_PATH: Path = Path(__file__).parent.parent / "css_stylesheets/epub.css"
     edition_type: EditionType = EditionType.epub
+    default_style: EpubItem
 
     def _set_metadata(self, book: EpubBook) -> None:
         book.set_identifier(self.config.edition.edition_id)
@@ -34,13 +35,12 @@ class EpubEdition(EditionParser):
         book.set_language(self.config.publication.translation_lang_iso)
         book.add_author(self.config.publication.creator_name)
 
-    def _set_styles(self, book: EpubBook) -> None:
+    def _set_default_style(self) -> EpubItem:
         with open(file=self.CSS_PATH) as f:
             EPUB_CSS = f.read()
-        default_css = EpubItem(
+        return EpubItem(
             uid="style_default", file_name="style/default.css", media_type="text/css", content=EPUB_CSS
         )
-        book.add_item(default_css)
 
     def _make_chapter_content(self, html: BeautifulSoup, file_name: str) -> EpubHtml:
         _chapter = EpubHtml(title=self.config.publication.translation_title, file_name=file_name)
@@ -53,6 +53,7 @@ class EpubEdition(EditionParser):
 
     def _set_chapter(self, book: EpubBook, html: BeautifulSoup, chapter_name: str) -> None:
         chapter = self._make_chapter(html=html, chapter_name=chapter_name)
+        chapter.add_item(self.default_style)
         book.add_item(chapter)
         book.spine.append(chapter)
 
@@ -114,7 +115,10 @@ class EpubEdition(EditionParser):
 
         # set metadata
         self._set_metadata(book)
-        self._set_styles(book)
+
+        # set style
+        self.default_style = self._set_default_style()
+        book.add_item(self.default_style)
 
         # divide mainmatter into separate chapters
         volume_mainmatter: list[BeautifulSoup] = self._split_mainmatter(mainmatter=volume.mainmatter)

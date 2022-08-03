@@ -38,9 +38,7 @@ class EpubEdition(EditionParser):
     def _set_default_style(self) -> EpubItem:
         with open(file=self.CSS_PATH) as f:
             EPUB_CSS = f.read()
-        return EpubItem(
-            uid="style_default", file_name="style/default.css", media_type="text/css", content=EPUB_CSS
-        )
+        return EpubItem(uid="style_default", file_name="style/default.css", media_type="text/css", content=EPUB_CSS)
 
     def _make_chapter_content(self, html: BeautifulSoup, file_name: str) -> EpubHtml:
         _chapter = EpubHtml(title=self.config.publication.translation_title, file_name=file_name)

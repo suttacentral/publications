@@ -473,10 +473,10 @@ class EditionParser(ABC):
         Before:
             Linked Discourses With Deities
         After:
-            SN 1. Linked Discourses With Deities"""
+            SN 1: Linked Discourses With Deities"""
         for _heading in headings:
             if _heading.depth == 2:
-                _new_name = f"{_heading.uid[:2].upper()} {_heading.uid[2:]}. {_heading.name}"
+                _new_name = f"{_heading.uid[:2].upper()} {_heading.uid[2:]}: {_heading.name}"
                 _heading.name = _new_name
                 _heading.tag.string = _new_name
 

@@ -319,8 +319,8 @@ class PdfEdition(EditionParser):
 
         _path: str = os.path.join(tempfile.gettempdir(), volume.filename[:-4])
         doc = self._generate_latex(volume=volume)
-        # doc.generate_tex(filepath=_path)
-        doc.generate_pdf(filepath=_path, clean_tex=False, compiler="latexmk")
+        doc.generate_tex(filepath=_path)
+        # doc.generate_pdf(filepath=_path, clean_tex=False, compiler="latexmk")
 
     def collect_all(self):  # type: ignore
         _edition: Edition = super().collect_all()

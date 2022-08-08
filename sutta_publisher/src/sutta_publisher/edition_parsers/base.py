@@ -10,7 +10,7 @@ from typing import Any, Callable, Type, cast
 import jinja2
 import requests
 from bs4 import BeautifulSoup, Tag
-from jinja2 import Environment, FileSystemLoader, Template
+from jinja2 import Environment, FileSystemLoader, Template, TemplateNotFound
 
 from sutta_publisher.edition_parsers.helper_functions import (
     add_class,
@@ -662,13 +662,13 @@ class EditionParser(ABC):
                 _template_env: Environment = jinja2.Environment(loader=_template_loader, autoescape=True)
                 _template: Template = _template_env.get_template(name=_template_name)
 
-                # Throw all all attributes at the templates, only relevant variables will stick as long as
+                # Throw all attributes at the templates, only relevant variables will stick as long as
                 # their names match variable names in jinja2 template.
                 matter_html: str = _template.render(**volume.dict())
 
                 return matter_html
 
-            except FileNotFoundError:
+            except TemplateNotFound:
                 log.warning(f"Matter '{matter}' is not supported.")
                 return ""
 

@@ -1,10 +1,13 @@
+import ast
 import logging
 import os.path
 import tempfile
+from pathlib import Path
 from typing import Callable, cast
 
 from bs4 import BeautifulSoup, NavigableString, PageElement, Tag
-from pylatex import Document, NewPage, NoEscape
+from jinja2 import Environment as jinja2_Environment, FileSystemLoader, Template, TemplateNotFound
+from pylatex import Document, NoEscape
 from pylatex.base_classes import Command, Environment, UnsafeCommand
 from pylatex.package import Package
 from pylatex.utils import bold, italic
@@ -22,11 +25,22 @@ STYLING_CLASSES = [
     "endbook",
     "endkanda",
     "end",
-    "uddana-intro" "endvagga",
+    "uddana-intro",
+    "endvagga",
     "rule",
     "add",
     "evam",
+    "speaker",
 ]
+MATTERS_TO_SKIP = [
+    "endnotes",
+]
+MATTERS_WITH_TEX_TEMPLATES = [
+    "titlepage",
+    "imprint",
+    "halftitlepage",
+]
+TEX_TEMPLATES_DIR = Path(__file__).parent.parent / "templates" / "tex"
 
 
 class PdfEdition(EditionParser):
@@ -85,7 +99,7 @@ class PdfEdition(EditionParser):
 
     def _append_emphasis(self, doc: Document, tag: Tag) -> str:
         _tex: str = self._process_contents(doc=doc, contents=tag.contents)
-        return cast(str, NoEscape(rf"\emph{{{_tex}}}"))
+        return cast(str, Command("emph", _tex).dumps())
 
     def _append_italic(self, doc: Document, tag: Tag) -> str:
         _tex: str = self._process_contents(doc=doc, contents=tag.contents)
@@ -93,7 +107,7 @@ class PdfEdition(EditionParser):
 
     def _append_foreign_script_macro(self, doc: Document, tag: Tag) -> str:
         _tex: str = self._process_contents(doc=doc, contents=tag.contents)
-        return cast(str, NoEscape(rf'\text{tag["lang"]}{{{_tex}}}'))
+        return cast(str, Command(f'text{tag["lang"]}', _tex).dumps())
 
     def _append_footnote(self, doc: Document, tag: Tag) -> str:
         if self.endnotes:
@@ -121,10 +135,6 @@ class PdfEdition(EditionParser):
         tex += Command("addcontentsline", arguments=["toc", "chapter", _title]).dumps() + NoEscape("\n")
         tex += Command("markboth", arguments=[_title, _title]).dumps() + NoEscape("\n")
         return tex
-
-    @staticmethod
-    def _append_new_page() -> str:
-        return cast(str, NewPage().dumps())
 
     @staticmethod
     def _append_tableofcontents() -> str:
@@ -157,7 +167,16 @@ class PdfEdition(EditionParser):
         return cast(str, list_env.dumps() + NoEscape("\n"))
 
     def _process_tag(self, doc: Document, tag: Tag) -> str:
-        if tag.name == "p":
+        if tag.has_attr("id") and tag["id"] == "main-toc":
+            return self._append_tableofcontents()
+
+        elif tag.has_attr("class") and "epigraph" in tag["class"]:
+            return self._append_epigraph(doc, tag)
+
+        elif tag.has_attr("role") and "doc-noteref" in tag["role"]:
+            return self._append_footnote(doc, tag)
+
+        elif tag.name == "p":
             return self._append_paragraph(doc, tag)
 
         elif tag.name == "span":
@@ -187,23 +206,11 @@ class PdfEdition(EditionParser):
         elif tag.name == "cite":
             return self._append_italic(doc, tag)
 
-        elif tag.has_attr("role") and "doc-noteref" in tag["role"]:
-            return self._append_footnote(doc, tag)
-
-        elif tag.name == "h2" and tag.has_attr("class") and "sutta-title" in tag["class"]:
-            return self._append_section(tag)
-
         elif tag.name == "h1":
             return self._append_chapter(tag)
 
-        elif tag.has_attr("id") and tag["id"] in self.new_pages:
-            return self._append_new_page()
-
-        elif tag.has_attr("id") and tag["id"] == "main-toc":
-            return self._append_tableofcontents()
-
-        elif tag.has_attr("class") and "epigraph" in tag["class"]:
-            return self._append_epigraph(doc, tag)
+        elif tag.name == "h2" and tag.has_attr("class") and "sutta-title" in tag["class"]:
+            return self._append_section(tag)
 
         elif tag.name in ["ol", "ul"]:
             return self._append_list(doc, tag)
@@ -225,9 +232,39 @@ class PdfEdition(EditionParser):
 
         return cast(str, NoEscape(tex))
 
-    def _process_html_element(self, doc: Document, element: PageElement) -> str:
-        if isinstance(element, Tag) and not (element.has_attr("id") and element["id"] == "endnotes"):
-            return cast(str, NoEscape(self._process_tag(doc=doc, tag=element)))
+    @staticmethod
+    def _process_template(volume: Volume, name: str) -> str:
+        MATTERS_TO_TEMPLATES_NAMES_MAPPING: dict[str, str] = ast.literal_eval(
+            os.getenv("MATTERS_TO_TEMPLATES_NAMES_MAPPING")  # type: ignore
+        )
+        if not MATTERS_TO_TEMPLATES_NAMES_MAPPING:
+            raise EnvironmentError(
+                "Missing .env_public file or the file lacks required variable MATTERS_TO_TEMPLATES_NAMES_MAPPING."
+            )
+        else:
+            try:
+                _template_name: str = MATTERS_TO_TEMPLATES_NAMES_MAPPING[name].replace(".html", ".tex")
+                _template_loader: FileSystemLoader = FileSystemLoader(searchpath=TEX_TEMPLATES_DIR)
+                _template_env: jinja2_Environment = jinja2_Environment(loader=_template_loader, autoescape=True)
+                _template: Template = _template_env.get_template(name=_template_name)
+                tex: str = _template.render(**volume.dict())
+                return tex
+
+            except TemplateNotFound:
+                log.warning(f"Matter '{name}' is not supported.")
+                return ""
+
+    @staticmethod
+    def _get_matter_name(matter: Tag) -> str:
+        name: str = matter["id"] if matter.has_attr("id") else matter["class"][0] if matter.has_attr("class") else ""
+        return name
+
+    def _process_html_element(self, volume: Volume, doc: Document, element: PageElement) -> str:
+        if isinstance(element, Tag) and not (element.has_attr("id") and element["id"] in MATTERS_TO_SKIP):
+            if (name := self._get_matter_name(element)) in MATTERS_WITH_TEX_TEMPLATES:
+                return cast(str, NoEscape(self._process_template(volume=volume, name=name)))
+            else:
+                return cast(str, NoEscape(self._process_tag(doc=doc, tag=element)))
         elif isinstance(element, NavigableString) and element != "\n":
             return cast(str, element)
         else:
@@ -235,103 +272,19 @@ class PdfEdition(EditionParser):
 
     @staticmethod
     def _append_new_commands(doc: Document) -> None:
-        doc.preamble.append(
-            UnsafeCommand(
-                "newcommand*",
-                arguments="\scnamo",
-                options=1,
-                extra_arguments="\\begin{center}\\textit{#1}\\end{center}",
-            )
-        )
-        doc.preamble.append(
-            UnsafeCommand(
-                "newcommand*",
-                arguments="\scendsection",
-                options=1,
-                extra_arguments="\\begin{center}\\textit{#1}\\end{center}",
-            )
-        )
-        doc.preamble.append(
-            UnsafeCommand(
-                "newcommand*",
-                arguments="\scendsutta",
-                options=1,
-                extra_arguments="\\begin{center}\\textit{#1}\\end{center}",
-            )
-        )
-        doc.preamble.append(
-            UnsafeCommand(
-                "newcommand*",
-                arguments="\scendbook",
-                options=1,
-                extra_arguments="\\begin{center}\\uppercase{#1}\\end{center}",
-            )
-        )
-        doc.preamble.append(
-            UnsafeCommand(
-                "newcommand*",
-                arguments="\scendkanda",
-                options=1,
-                extra_arguments="\\begin{center}\\textbf{#1}\\end{center}",
-            )
-        )
-        doc.preamble.append(
-            UnsafeCommand(
-                "newcommand*",
-                arguments="\scend",
-                options=1,
-                extra_arguments="\\begin{center}\\textit{#1}\\end{center}",
-            )
-        )
-        doc.preamble.append(
-            UnsafeCommand(
-                "newcommand*",
-                arguments="\scuddanaintro",
-                options=1,
-                extra_arguments="\\textit{#1}",
-            )
-        )
-        doc.preamble.append(
-            UnsafeCommand(
-                "newcommand*",
-                arguments="\scendvagga",
-                options=1,
-                extra_arguments="\\begin{center}\\textbf{#1}\\end{center}",
-            )
-        )
-        doc.preamble.append(
-            UnsafeCommand(
-                "newcommand*",
-                arguments="\scrule",
-                options=1,
-                extra_arguments="\\textbf{#1}",
-            )
-        )
-        doc.preamble.append(
-            UnsafeCommand(
-                "newcommand*",
-                arguments="\scadd",
-                options=1,
-                extra_arguments="\\textit{#1}",
-            )
-        )
-        doc.preamble.append(
-            UnsafeCommand(
-                "newcommand*",
-                arguments="\scevam",
-                extra_arguments="\\caps",
-            )
-        )
+        for _command in COMMANDS:
+            doc.preamble.append(_command)
 
     @staticmethod
     def _append_packages(doc: Document) -> None:
+        doc.packages.append(Package("epigraph"))
         doc.packages.append(Package("marginnote"))
+        doc.packages.append(Package("setspace"))
         doc.packages.append(Package("soul"))
 
     def _generate_latex(self, volume: Volume) -> Document:
         # setup
         self.endnotes: list[str] | None = volume.endnotes if volume.endnotes else None
-        self.new_pages: list[str] = ["imprint", "halftitlepage"]
 
         doc = Document(documentclass="book")
 
@@ -345,19 +298,19 @@ class PdfEdition(EditionParser):
         doc.append(Command("frontmatter"))
         for _page in volume.frontmatter:
             _frontmatter_element: PageElement = BeautifulSoup(_page, "lxml").find("body").next_element
-            doc.append(self._process_html_element(doc=doc, element=_frontmatter_element))
+            doc.append(self._process_html_element(volume=volume, doc=doc, element=_frontmatter_element))
 
         # set mainmatter
         doc.append(Command("mainmatter"))
         _mainmatter: list[PageElement] = BeautifulSoup(volume.mainmatter, "lxml").find("body").contents
         for _mainmatter_element in _mainmatter:
-            doc.append(self._process_html_element(doc=doc, element=_mainmatter_element))
+            doc.append(self._process_html_element(volume=volume, doc=doc, element=_mainmatter_element))
 
         # set backmatter
         doc.append(Command("backmatter"))
         for _page in volume.backmatter:
             _backmatter_element: PageElement = BeautifulSoup(_page, "lxml").find("body").next_element
-            doc.append(self._process_html_element(doc=doc, element=_backmatter_element))
+            doc.append(self._process_html_element(volume=volume, doc=doc, element=_backmatter_element))
 
         return doc
 
@@ -383,3 +336,156 @@ class PdfEdition(EditionParser):
         result.write(txt)
         result.seek(0)
         return result
+
+
+COMMANDS = [
+    # titlepage
+    UnsafeCommand(
+        "newcommand*",
+        arguments="\\titlepageTranslationTitle",
+        options=1,
+        extra_arguments="{\\begin{center}\\begin{large}{#1}\\end{large}\\end{center}}",
+    ),
+    UnsafeCommand(
+        "newcommand*",
+        arguments="\\titlepageCreatorName",
+        options=1,
+        extra_arguments="{\\begin{center}\\begin{normalsize}{#1}\\end{normalsize}\\end{center}}",
+    ),
+    # halftitlepage
+    UnsafeCommand(
+        "newcommand*",
+        arguments="\\halftitlepageTranslationTitle",
+        options=1,
+        extra_arguments="\\setstretch{2.5}{\\begin{center}\\begin{Huge}\\uppercase{\\so{#1}}\\end{Huge}\\end{center}}",
+    ),
+    UnsafeCommand(
+        "newcommand*",
+        arguments="\\halftitlepageTranslationSubtitle",
+        options=1,
+        extra_arguments="\\setstretch{1.2}{\\begin{center}\\begin{large}{#1}\\end{large}\\end{center}}",
+    ),
+    # TODO: Uncomment when ready to use Arno
+    # UnsafeCommand(
+    #     "newcommand*",
+    #     arguments="\\halftitlepageFleuron",
+    #     options=1,
+    #     extra_arguments="{\\begin{center}\\begin{large}\\ArnoProornmZero{{#1}}\\end{large}\\end{center}}"
+    # ),
+    UnsafeCommand(
+        "newcommand*",
+        arguments="\\halftitlepageByline",
+        options=1,
+        extra_arguments="{\\begin{center}\\begin{normalsize}\\textit{{#1}}\\end{normalsize}\\end{center}}",
+    ),
+    UnsafeCommand(
+        "newcommand*",
+        arguments="\\halftitlepageCreatorName",
+        options=1,
+        extra_arguments="{\\begin{center}\\begin{LARGE}{\\caps{#1}}\\end{LARGE}\\end{center}}",
+    ),
+    UnsafeCommand(
+        "newcommand*",
+        arguments="\\halftitlepageVolumeNumber",
+        options=1,
+        extra_arguments="{\\begin{center}\\begin{normalsize}{#1}\\end{normalsize}\\end{center}}",
+    ),
+    UnsafeCommand(
+        "newcommand*",
+        arguments="\\halftitlepageVolumeAcronym",
+        options=1,
+        extra_arguments="{\\begin{center}\\begin{normalsize}{#1}\\end{normalsize}\\end{center}}",
+    ),
+    UnsafeCommand(
+        "newcommand*",
+        arguments="\\halftitlepageVolumeTranslationTitle",
+        options=1,
+        extra_arguments="{\\begin{center}\\begin{normalsize}{#1}\\end{normalsize}\\end{center}}",
+    ),
+    UnsafeCommand(
+        "newcommand*",
+        arguments="\\halftitlepageVolumeRootTitle",
+        options=1,
+        extra_arguments="{\\begin{center}\\begin{normalsize}{#1}\\end{normalsize}\\end{center}}",
+    ),
+    # TODO: Uncomment when ready to use Arno
+    # UnsafeCommand(
+    #     "newcommand*",
+    #     arguments="\\halftitlepagePublisher",
+    #     options=1,
+    #     extra_arguments="{\\begin{center}\\begin{LARGE}{\\ArnoProNoLigatures\\caps{#1}}\\end{LARGE}\\end{center}}"
+    # ),
+    # mainmatter
+    UnsafeCommand(
+        "newcommand*",
+        arguments="\\scnamo",
+        options=1,
+        extra_arguments="\\begin{center}\\textit{#1}\\end{center}",
+    ),
+    UnsafeCommand(
+        "newcommand",
+        arguments="\\scendsection",
+        options=1,
+        extra_arguments="\\begin{center}\\textit{#1}\\end{center}",
+    ),
+    UnsafeCommand(
+        "newcommand",
+        arguments="\\scendsutta",
+        options=1,
+        extra_arguments="\\begin{center}\\textit{#1}\\end{center}",
+    ),
+    UnsafeCommand(
+        "newcommand",
+        arguments="\\scendbook",
+        options=1,
+        extra_arguments="\\begin{center}\\uppercase{#1}\\end{center}",
+    ),
+    UnsafeCommand(
+        "newcommand",
+        arguments="\\scendkanda",
+        options=1,
+        extra_arguments="\\begin{center}\\textbf{#1}\\end{center}",
+    ),
+    UnsafeCommand(
+        "newcommand",
+        arguments="\\scend",
+        options=1,
+        extra_arguments="\\begin{center}\\textit{#1}\\end{center}",
+    ),
+    UnsafeCommand(
+        "newcommand",
+        arguments="\\scuddanaintro",
+        options=1,
+        extra_arguments="\\textit{#1}",
+    ),
+    UnsafeCommand(
+        "newcommand",
+        arguments="\\scendvagga",
+        options=1,
+        extra_arguments="\\begin{center}\\textbf{#1}\\end{center}",
+    ),
+    UnsafeCommand(
+        "newcommand",
+        arguments="\\scrule",
+        options=1,
+        extra_arguments="\\textbf{#1}",
+    ),
+    UnsafeCommand(
+        "newcommand",
+        arguments="\\scadd",
+        options=1,
+        extra_arguments="\\textit{#1}",
+    ),
+    UnsafeCommand(
+        "newcommand*",
+        arguments="\\scevam",
+        options=1,
+        extra_arguments="\\caps{#1}",
+    ),
+    UnsafeCommand(
+        "newcommand*",
+        arguments="\\scspeaker",
+        options=1,
+        extra_arguments="\\hspace{2em}\\textit{#1}",
+    ),
+]

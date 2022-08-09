@@ -6,3 +6,4 @@ ebooklib
 beautifulsoup4
 lxml
 jinja2
+pylatex

@@ -28,8 +28,7 @@ def run(editions: EditionsConfigs) -> None:
             log.exception("Can't parse publication_type='%s'. Error: %s", edition_config.edition.publication_type, e)
 
     for edition in edition_list:  # type: EditionParser
-        # TODO: DELETE THIS IF AND FIX INDENTATION
-        if edition.edition_type in ("html", "epub"):
+        if edition.edition_type in ("html", "epub", "pdf"):
             log.debug(edition)
 
             try:

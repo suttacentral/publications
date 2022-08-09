@@ -10,7 +10,7 @@ from typing import Any, Callable, Type, cast
 import jinja2
 import requests
 from bs4 import BeautifulSoup, Tag
-from jinja2 import Environment, FileSystemLoader, Template
+from jinja2 import Environment, FileSystemLoader, Template, TemplateNotFound
 
 from sutta_publisher.edition_parsers.helper_functions import (
     add_class,
@@ -345,6 +345,9 @@ class EditionParser(ABC):
         # Remove <span class="verse-line"> tags and insert <br> tags
         self._unwrap_verses(mainmatter=mainmatter)
 
+        # Insert <br> after <span class="speaker">
+        any(_span.insert_after(mainmatter.new_tag("br")) for _span in mainmatter.find_all("span", class_="speaker"))
+
         return cast(str, extract_string(mainmatter))
 
     @staticmethod
@@ -473,10 +476,10 @@ class EditionParser(ABC):
         Before:
             Linked Discourses With Deities
         After:
-            SN 1. Linked Discourses With Deities"""
+            SN 1: Linked Discourses With Deities"""
         for _heading in headings:
             if _heading.depth == 2:
-                _new_name = f"{_heading.uid[:2].upper()} {_heading.uid[2:]}. {_heading.name}"
+                _new_name = f"{_heading.uid[:2].upper()} {_heading.uid[2:]}: {_heading.name}"
                 _heading.name = _new_name
                 _heading.tag.string = _new_name
 
@@ -659,13 +662,13 @@ class EditionParser(ABC):
                 _template_env: Environment = jinja2.Environment(loader=_template_loader, autoescape=True)
                 _template: Template = _template_env.get_template(name=_template_name)
 
-                # Throw all all attributes at the templates, only relevant variables will stick as long as
+                # Throw all attributes at the templates, only relevant variables will stick as long as
                 # their names match variable names in jinja2 template.
                 matter_html: str = _template.render(**volume.dict())
 
                 return matter_html
 
-            except FileNotFoundError:
+            except TemplateNotFound:
                 log.warning(f"Matter '{matter}' is not supported.")
                 return ""
 

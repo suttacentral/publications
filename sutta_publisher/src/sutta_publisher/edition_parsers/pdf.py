@@ -36,7 +36,7 @@ class PdfEdition(EditionParser):
         tex: str = ""
 
         if tag.has_attr("id"):
-            tex += Command("marginnote", tag["id"], tag["id"]).dumps()
+            tex += Command("marginnote", tag["id"].split(":")[1], tag["id"].split(":")[1]).dumps()
 
         tex += self._process_contents(doc=doc, contents=tag.contents)
 
@@ -103,14 +103,10 @@ class PdfEdition(EditionParser):
         else:
             return ""
 
-    @staticmethod
-    def _append_section(tag: Tag) -> str:
-        tex: str = ""
-        _title: str = " ".join(tag.stripped_strings)
-        tex += Command("section*", _title).dumps() + NoEscape("\n")
-        tex += Command("addcontentsline", arguments=["toc", "section", _title]).dumps() + NoEscape("\n")
-        tex += Command("markboth", arguments=[_title, _title]).dumps() + NoEscape("\n")
-        return tex
+    def _append_section(self, tag: Tag) -> str:
+        _acronym, _name, _root_name = tag.stripped_strings
+        _template: Template = self._get_template("heading")
+        return _template.render(acronym=_acronym, name=_name, root_name=_root_name)
 
     @staticmethod
     def _append_chapter(tag: Tag) -> str:
@@ -275,7 +271,9 @@ class PdfEdition(EditionParser):
 
     @staticmethod
     def _append_packages(doc: Document) -> None:
+        doc.packages.append(Package("extramarks"))
         doc.packages.append(Package("epigraph"))
+        doc.packages.append(Package("fancyhdr"))
         doc.packages.append(Package("marginnote"))
         doc.packages.append(Package("setspace"))
         doc.packages.append(Package("soul"))
@@ -297,6 +295,18 @@ class PdfEdition(EditionParser):
 
         # set mainmatter
         doc.append(Command("mainmatter"))
+        doc.append(NoEscape("""\\setlength{\\headheight}{19pt}
+\\pagestyle{fancy}
+\\fancyhf{}
+\\fancyfoot[RE,LO]{\\thepage}
+\\fancyfoot[LE,RO]{\\footnotesize\\lastleftxmark}
+\\fancyhead[CE]{\\setstretch{.85}\\MakeLowercase{\\textsc{\\firstrightmark}}}
+\\fancyhead[CO]{\\setstretch{.85}\\MakeLowercase{\\textsc{\\firstleftmark}}}
+\\renewcommand{\\headrulewidth}{0pt}
+\\fancypagestyle{plain}{ %
+\\fancyhf{} % remove everything
+\\renewcommand{\\headrulewidth}{0pt}
+\\renewcommand{\\footrulewidth}{0pt}}"""))
         _mainmatter: list[PageElement] = BeautifulSoup(volume.mainmatter, "lxml").find("body").contents
         for _mainmatter_element in _mainmatter:
             doc.append(self._process_html_element(volume=volume, doc=doc, element=_mainmatter_element))
@@ -317,8 +327,8 @@ class PdfEdition(EditionParser):
 
         _path: str = os.path.join(tempfile.gettempdir(), volume.filename[:-4])
         doc = self._generate_latex(volume=volume)
-        doc.generate_tex(filepath=_path)
-        # doc.generate_pdf(filepath=_path, clean_tex=False, compiler="latexmk")
+        # doc.generate_tex(filepath=_path)
+        doc.generate_pdf(filepath=_path, clean_tex=False, compiler="latexmk")
 
     def collect_all(self):  # type: ignore
         _edition: Edition = super().collect_all()

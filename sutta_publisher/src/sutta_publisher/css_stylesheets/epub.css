@@ -246,9 +246,43 @@ address
     text-align: center;
 }
 
+.front-bottom
+{
+    display: flex;
+    flex-direction: column;
+
+    height: 40vh;
+
+    justify-content: space-between;
+}
+
 .volume-details
 {
     text-align: center;
+}
+
+.publisher-branding
+{
+    font-size: 1.5em;
+
+    display: flex;
+    flex-direction: row;
+
+    margin-top: 4rem;
+
+    justify-content: center;
+    gap: .5em;
+}
+
+.publisher-logo svg
+{
+    width: 1em;
+    height: 1em;
+}
+
+.publisher-name
+{
+    font-variant-caps: small-caps;
 }
 
 .epigraph

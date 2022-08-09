@@ -126,10 +126,14 @@ class PdfEdition(EditionParser):
         return cast(str, Command("tableofcontents").dumps())
 
     def _append_epigraph(self, doc: Document, tag: Tag) -> str:
-        _text_tag, _source_tag = tag.find_all("p")
-        _text: str = NoEscape(self._process_tag(doc=doc, tag=_text_tag))
-        _source: str = italic(NoEscape(self._process_tag(doc=doc, tag=_source_tag)))
-        return cast(str, Command("epigraph", arguments=[_text, _source]).dumps())
+        _template: Template = self._get_template(name="epigraph")
+        _text_tag: Tag = tag.find(class_="epigraph-text").p
+        _source_tag: Tag = tag.find(class_="epigraph-attribution")
+        self._strip_tag_string(_text_tag)
+        self._strip_tag_string(_source_tag)
+        _epigraph_text: str = self._process_contents(doc=doc, contents=_text_tag.contents)
+        _epigraph_source: str = self._process_contents(doc=doc, contents=_source_tag.contents)
+        return _template.render(epigraph_text=_epigraph_text, epigraph_source=_epigraph_source)
 
     def _append_list(self, doc: Document, tag: Tag) -> str:
         _command: str = Command("item").dumps()
@@ -221,7 +225,13 @@ class PdfEdition(EditionParser):
         return cast(str, NoEscape(tex))
 
     @staticmethod
-    def _process_template(volume: Volume, name: str) -> str:
+    def _strip_tag_string(tag: Tag) -> None:
+        for _element in tag:
+            if isinstance(_element, NavigableString):
+                _element.string.replace_with(_element.string.strip())
+
+    @staticmethod
+    def _get_template(name: str) -> Template:
         MATTERS_TO_TEMPLATES_NAMES_MAPPING: dict[str, str] = ast.literal_eval(
             os.getenv("MATTERS_TO_TEMPLATES_NAMES_MAPPING")  # type: ignore
         )
@@ -234,13 +244,11 @@ class PdfEdition(EditionParser):
                 _template_name: str = MATTERS_TO_TEMPLATES_NAMES_MAPPING[name].replace(".html", ".tex")
                 _template_loader: FileSystemLoader = FileSystemLoader(searchpath=TEX_TEMPLATES_DIR)
                 _template_env: jinja2_Environment = jinja2_Environment(loader=_template_loader, autoescape=True)
-                _template: Template = _template_env.get_template(name=_template_name)
-                tex: str = _template.render(**volume.dict())
-                return tex
+                template: Template = _template_env.get_template(name=_template_name)
+                return template
 
             except TemplateNotFound:
-                log.warning(f"Matter '{name}' is not supported.")
-                return ""
+                raise TemplateNotFound(f"Template '{name}-template.tex' for Latex edition is missing.")
 
     @staticmethod
     def _get_matter_name(matter: Tag) -> str:
@@ -250,7 +258,8 @@ class PdfEdition(EditionParser):
     def _process_html_element(self, volume: Volume, doc: Document, element: PageElement) -> str:
         if isinstance(element, Tag) and not (element.has_attr("id") and element["id"] in MATTERS_TO_SKIP):
             if (name := self._get_matter_name(element)) in MATTERS_WITH_TEX_TEMPLATES:
-                return cast(str, NoEscape(self._process_template(volume=volume, name=name)))
+                _template: Template = self._get_template(name=name)
+                return cast(str, NoEscape(_template.render(**volume.dict())))
             else:
                 return cast(str, NoEscape(self._process_tag(doc=doc, tag=element)))
         elif isinstance(element, NavigableString) and element != "\n":

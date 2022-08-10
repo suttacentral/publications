@@ -9,10 +9,9 @@ from bs4 import BeautifulSoup, NavigableString, PageElement, Tag
 from jinja2 import Environment as jinja2_Environment, FileSystemLoader, Template, TemplateNotFound
 from pylatex import Document, NoEscape
 from pylatex.base_classes import Command, Environment
-from pylatex.package import Package
 from pylatex.utils import bold, italic
 
-from sutta_publisher.edition_parsers.latex_constants import MATTERS_TO_SKIP, NEW_COMMANDS, STYLING_CLASSES
+from sutta_publisher.edition_parsers.latex_constants import MATTERS_TO_SKIP, STYLING_CLASSES
 from sutta_publisher.shared.value_objects.edition import EditionResult, EditionType
 from sutta_publisher.shared.value_objects.parser_objects import Edition, Volume
 
@@ -36,7 +35,7 @@ class PdfEdition(EditionParser):
         tex: str = ""
 
         if tag.has_attr("id"):
-            tex += Command("marginnote", tag["id"], tag["id"]).dumps()
+            tex += Command("marginnote", tag["id"].split(":")[1], tag["id"].split(":")[1]).dumps()
 
         tex += self._process_contents(doc=doc, contents=tag.contents)
 
@@ -103,14 +102,10 @@ class PdfEdition(EditionParser):
         else:
             return ""
 
-    @staticmethod
-    def _append_section(tag: Tag) -> str:
-        tex: str = ""
-        _title: str = " ".join(tag.stripped_strings)
-        tex += Command("section*", _title).dumps() + NoEscape("\n")
-        tex += Command("addcontentsline", arguments=["toc", "section", _title]).dumps() + NoEscape("\n")
-        tex += Command("markboth", arguments=[_title, _title]).dumps() + NoEscape("\n")
-        return tex
+    def _append_section(self, tag: Tag) -> str:
+        _acronym, _name, _root_name = tag.stripped_strings
+        _template: Template = self._get_template("heading")
+        return _template.render(acronym=_acronym, name=_name, root_name=_root_name)
 
     @staticmethod
     def _append_chapter(tag: Tag) -> str:
@@ -126,10 +121,14 @@ class PdfEdition(EditionParser):
         return cast(str, Command("tableofcontents").dumps())
 
     def _append_epigraph(self, doc: Document, tag: Tag) -> str:
-        _text_tag, _source_tag = tag.find_all("p")
-        _text: str = NoEscape(self._process_tag(doc=doc, tag=_text_tag))
-        _source: str = italic(NoEscape(self._process_tag(doc=doc, tag=_source_tag)))
-        return cast(str, Command("epigraph", arguments=[_text, _source]).dumps())
+        _text_tag: Tag = tag.find(class_="epigraph-text").p
+        _source_tag: Tag = tag.find(class_="epigraph-attribution")
+        self._strip_tag_string(_text_tag)
+        self._strip_tag_string(_source_tag)
+        _epigraph_text: str = self._process_contents(doc=doc, contents=_text_tag.contents)
+        _epigraph_source: str = self._process_contents(doc=doc, contents=_source_tag.contents)
+        _template: Template = self._get_template(name="epigraph")
+        return _template.render(epigraph_text=_epigraph_text, epigraph_source=_epigraph_source)
 
     def _append_list(self, doc: Document, tag: Tag) -> str:
         _command: str = Command("item").dumps()
@@ -154,6 +153,11 @@ class PdfEdition(EditionParser):
     def _process_tag(self, doc: Document, tag: Tag) -> str:  # type: ignore
 
         match tag.name:
+
+            case section if tag.has_attr("class") and any(
+                _class in tag["class"] for _class in ["sutta-title", "range-title"]
+            ):
+                return self._append_section(tag)
 
             case "a" if tag.has_attr("role") and "doc-noteref" in tag["role"]:
                 return self._append_footnote(doc, tag)
@@ -184,9 +188,6 @@ class PdfEdition(EditionParser):
 
             case "h1":
                 return self._append_chapter(tag)
-
-            case "h2" if tag.has_attr("class") and "sutta-title" in tag["class"]:
-                return self._append_section(tag)
 
             case "i" if tag.has_attr("lang") and any(_lang in tag["lang"] for _lang in ["pi", "san"]):
                 return self._append_italic(doc, tag)
@@ -221,26 +222,42 @@ class PdfEdition(EditionParser):
         return cast(str, NoEscape(tex))
 
     @staticmethod
-    def _process_template(volume: Volume, name: str) -> str:
-        MATTERS_TO_TEMPLATES_NAMES_MAPPING: dict[str, str] = ast.literal_eval(
-            os.getenv("MATTERS_TO_TEMPLATES_NAMES_MAPPING")  # type: ignore
+    def _strip_tag_string(tag: Tag) -> None:
+        for _element in tag:
+            if isinstance(_element, NavigableString):
+                _element.string.replace_with(_element.string.strip())
+
+    @staticmethod
+    def _get_template(name: str) -> Template:
+        LATEX_TEMPLATES_NAMES_MAPPING: dict[str, str] = ast.literal_eval(
+            os.getenv("LATEX_TEMPLATES_NAMES_MAPPING")  # type: ignore
         )
-        if not MATTERS_TO_TEMPLATES_NAMES_MAPPING:
+        if not LATEX_TEMPLATES_NAMES_MAPPING:
             raise EnvironmentError(
-                "Missing .env_public file or the file lacks required variable MATTERS_TO_TEMPLATES_NAMES_MAPPING."
+                "Missing .env_public file or the file lacks required variable LATEX_TEMPLATES_NAMES_MAPPING."
             )
         else:
             try:
-                _template_name: str = MATTERS_TO_TEMPLATES_NAMES_MAPPING[name].replace(".html", ".tex")
+                _template_name: str = LATEX_TEMPLATES_NAMES_MAPPING[name]
                 _template_loader: FileSystemLoader = FileSystemLoader(searchpath=TEX_TEMPLATES_DIR)
-                _template_env: jinja2_Environment = jinja2_Environment(loader=_template_loader, autoescape=True)
-                _template: Template = _template_env.get_template(name=_template_name)
-                tex: str = _template.render(**volume.dict())
-                return tex
+                _template_env: jinja2_Environment = jinja2_Environment(
+                    block_start_string="\BLOCK{",
+                    block_end_string="}",
+                    variable_start_string="\VAR{",
+                    variable_end_string="}",
+                    comment_start_string="\#{",
+                    comment_end_string="}",
+                    line_statement_prefix="%%",
+                    line_comment_prefix="%#",
+                    trim_blocks=True,
+                    autoescape=True,
+                    loader=_template_loader,
+                )
+                template: Template = _template_env.get_template(name=_template_name)
+                return template
 
             except TemplateNotFound:
-                log.warning(f"Matter '{name}' is not supported.")
-                return ""
+                raise TemplateNotFound(f"Template '{name}-template.tex' for Latex edition is missing.")
 
     @staticmethod
     def _get_matter_name(matter: Tag) -> str:
@@ -250,7 +267,8 @@ class PdfEdition(EditionParser):
     def _process_html_element(self, volume: Volume, doc: Document, element: PageElement) -> str:
         if isinstance(element, Tag) and not (element.has_attr("id") and element["id"] in MATTERS_TO_SKIP):
             if (name := self._get_matter_name(element)) in MATTERS_WITH_TEX_TEMPLATES:
-                return cast(str, NoEscape(self._process_template(volume=volume, name=name)))
+                _template: Template = self._get_template(name=name)
+                return cast(str, NoEscape(_template.render(**volume.dict())))
             else:
                 return cast(str, NoEscape(self._process_tag(doc=doc, tag=element)))
         elif isinstance(element, NavigableString) and element != "\n":
@@ -258,19 +276,9 @@ class PdfEdition(EditionParser):
         else:
             return ""
 
-    @staticmethod
-    def _append_new_commands(doc: Document) -> None:
-        _doc: str = doc.dumps()
-        for _name, _command in NEW_COMMANDS.items():
-            if f"\\{_name}" in _doc:
-                doc.preamble.append(_command)
-
-    @staticmethod
-    def _append_packages(doc: Document) -> None:
-        doc.packages.append(Package("epigraph"))
-        doc.packages.append(Package("marginnote"))
-        doc.packages.append(Package("setspace"))
-        doc.packages.append(Package("soul"))
+    def _append_preamble(self, doc: Document) -> None:
+        _template: Template = self._get_template(name="preamble")
+        doc.preamble.append(NoEscape(_template.render()))
 
     def _generate_latex(self, volume: Volume) -> Document:
         # setup
@@ -278,8 +286,8 @@ class PdfEdition(EditionParser):
 
         doc = Document(documentclass="book")
 
-        # set packages
-        self._append_packages(doc)
+        # set preamble
+        self._append_preamble(doc)
 
         # set frontmatter
         doc.append(Command("frontmatter"))
@@ -289,6 +297,7 @@ class PdfEdition(EditionParser):
 
         # set mainmatter
         doc.append(Command("mainmatter"))
+        doc.append(Command("pagestyle", "fancy"))
         _mainmatter: list[PageElement] = BeautifulSoup(volume.mainmatter, "lxml").find("body").contents
         for _mainmatter_element in _mainmatter:
             doc.append(self._process_html_element(volume=volume, doc=doc, element=_mainmatter_element))
@@ -299,9 +308,6 @@ class PdfEdition(EditionParser):
             _backmatter_element: PageElement = BeautifulSoup(_page, "lxml").find("body").next_element
             doc.append(self._process_html_element(volume=volume, doc=doc, element=_backmatter_element))
 
-        # set new commands
-        self._append_new_commands(doc)
-
         return doc
 
     def _generate_pdf(self, volume: Volume) -> None:
@@ -309,8 +315,7 @@ class PdfEdition(EditionParser):
 
         _path: str = os.path.join(tempfile.gettempdir(), volume.filename[:-4])
         doc = self._generate_latex(volume=volume)
-        doc.generate_tex(filepath=_path)
-        # doc.generate_pdf(filepath=_path, clean_tex=False, compiler="latexmk")
+        doc.generate_pdf(filepath=_path, clean_tex=False, compiler="latexmk")
 
     def collect_all(self):  # type: ignore
         _edition: Edition = super().collect_all()

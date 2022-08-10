@@ -1,15 +1,15 @@
 \vspace*{-2em}
 
-\halftitlepageTranslationTitle{{ '{' }}{{ translation_title }}{{ '}' }}
+\halftitlepageTranslationTitle{\VAR{translation_title}}
 
 \vspace*{-1em}
 
-\halftitlepageTranslationSubtitle{{ '{' }}{{ translation_subtitle }}{{ '}' }}
+\halftitlepageTranslationSubtitle{\VAR{translation_subtitle}}
 
 \vspace*{1em}
 
-{# TODO: Uncomment when ready to use Arno #}
-%\halftitlepageFleuron{•}
+% TODO: Uncomment when ready to use Arno
+% \halftitlepageFleuron{•}
 
 \vspace*{1em}
 
@@ -17,21 +17,21 @@
 
 \vspace*{-1.5em}
 
-\halftitlepageCreatorName{{ '{' }}{{ creator_name }}{{ '}' }}
+\halftitlepageCreatorName{\VAR{creator_name}}
 
 \vspace*{1em}
 
-\halftitlepageVolumeNumber{{ '{' }}{% if volume_number %}Volume {{ volume_number }}{% endif %}{{ '}' }}
+\halftitlepageVolumeNumber{\BLOCK{if volume_number}Volume \VAR{volume_number}\BLOCK{endif}}
 
-\halftitlepageVolumeAcronym{{ '{' }}{% if volume_acronym %}{{ volume_acronym }}{% endif %}{{ '}' }}
+\halftitlepageVolumeAcronym{\BLOCK{if volume_acronym}\VAR{volume_acronym}\BLOCK{endif}}
 
-\halftitlepageVolumeTranslationTitle{{ '{' }}{% if volume_translation_title %}{{ volume_translation_title }}{% endif %}{{ '}' }}
+\halftitlepageVolumeTranslationTitle{\BLOCK{if volume_translation_title}\VAR{volume_translation_title}\BLOCK{endif}}
 
-\halftitlepageVolumeRootTitle{{ '{' }}{% if volume_root_title %}{{ volume_root_title }}{% endif %}{{ '}' }}
+\halftitlepageVolumeRootTitle{\BLOCK{if volume_root_title}\VAR{volume_root_title}\BLOCK{endif}}
 
 \vspace*{\fill}
 
-{# TODO: Uncomment when ready to use Arno #}
-%\halftitlepagePublisher{SuttaCentral}
+% TODO: Uncomment when ready to use Arno
+% \halftitlepagePublisher{SuttaCentral}
 
 \newpage

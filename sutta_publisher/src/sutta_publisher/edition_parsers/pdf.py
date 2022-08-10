@@ -121,14 +121,23 @@ class PdfEdition(EditionParser):
         return cast(str, Command("tableofcontents").dumps())
 
     def _append_epigraph(self, doc: Document, tag: Tag) -> str:
-        _text_tag: Tag = tag.find(class_="epigraph-text").p
-        _source_tag: Tag = tag.find(class_="epigraph-attribution")
-        self._strip_tag_string(_text_tag)
-        self._strip_tag_string(_source_tag)
-        _epigraph_text: str = self._process_contents(doc=doc, contents=_text_tag.contents)
-        _epigraph_source: str = self._process_contents(doc=doc, contents=_source_tag.contents)
+        _data: dict[str, str] = {}
+        _epigraph_classes: dict[str, str] = {
+            "text": "epigraph-text",
+            "name": "epigraph-translated-title",
+            "root_name": "epigraph-root-title",
+            "acronym": "epigraph-reference",
+        }
+
+        for _var, _class in _epigraph_classes.items():
+            _tag: Tag = tag.find(class_=_class)
+            if _class == "epigraph-text":
+                _tag = _tag.p
+            self._strip_tag_string(_tag)
+            _data[_var] = self._process_contents(doc=doc, contents=_tag.contents)
+
         _template: Template = self._get_template(name="epigraph")
-        return _template.render(epigraph_text=_epigraph_text, epigraph_source=_epigraph_source)
+        return _template.render(_data)
 
     def _append_list(self, doc: Document, tag: Tag) -> str:
         _command: str = Command("item").dumps()

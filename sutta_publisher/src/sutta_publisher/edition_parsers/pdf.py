@@ -9,10 +9,9 @@ from bs4 import BeautifulSoup, NavigableString, PageElement, Tag
 from jinja2 import Environment as jinja2_Environment, FileSystemLoader, Template, TemplateNotFound
 from pylatex import Document, NoEscape
 from pylatex.base_classes import Command, Environment
-from pylatex.package import Package
 from pylatex.utils import bold, italic
 
-from sutta_publisher.edition_parsers.latex_constants import MATTERS_TO_SKIP, NEW_COMMANDS, STYLING_CLASSES
+from sutta_publisher.edition_parsers.latex_constants import MATTERS_TO_SKIP, STYLING_CLASSES
 from sutta_publisher.shared.value_objects.edition import EditionResult, EditionType
 from sutta_publisher.shared.value_objects.parser_objects import Edition, Volume
 
@@ -122,9 +121,10 @@ class PdfEdition(EditionParser):
         return cast(str, Command("tableofcontents").dumps())
 
     def _append_epigraph(self, doc: Document, tag: Tag) -> str:
-        self._strip_tag_string(tag)
         _text_tag: Tag = tag.find(class_="epigraph-text").p
         _source_tag: Tag = tag.find(class_="epigraph-attribution")
+        self._strip_tag_string(_text_tag)
+        self._strip_tag_string(_source_tag)
         _epigraph_text: str = self._process_contents(doc=doc, contents=_text_tag.contents)
         _epigraph_source: str = self._process_contents(doc=doc, contents=_source_tag.contents)
         _template: Template = self._get_template(name="epigraph")
@@ -227,18 +227,30 @@ class PdfEdition(EditionParser):
 
     @staticmethod
     def _get_template(name: str) -> Template:
-        MATTERS_TO_TEMPLATES_NAMES_MAPPING: dict[str, str] = ast.literal_eval(
-            os.getenv("MATTERS_TO_TEMPLATES_NAMES_MAPPING")  # type: ignore
+        LATEX_TEMPLATES_NAMES_MAPPING: dict[str, str] = ast.literal_eval(
+            os.getenv("LATEX_TEMPLATES_NAMES_MAPPING")  # type: ignore
         )
-        if not MATTERS_TO_TEMPLATES_NAMES_MAPPING:
+        if not LATEX_TEMPLATES_NAMES_MAPPING:
             raise EnvironmentError(
-                "Missing .env_public file or the file lacks required variable MATTERS_TO_TEMPLATES_NAMES_MAPPING."
+                "Missing .env_public file or the file lacks required variable LATEX_TEMPLATES_NAMES_MAPPING."
             )
         else:
             try:
-                _template_name: str = MATTERS_TO_TEMPLATES_NAMES_MAPPING[name].replace(".html", ".tex")
+                _template_name: str = LATEX_TEMPLATES_NAMES_MAPPING[name]
                 _template_loader: FileSystemLoader = FileSystemLoader(searchpath=TEX_TEMPLATES_DIR)
-                _template_env: jinja2_Environment = jinja2_Environment(loader=_template_loader, autoescape=True)
+                _template_env: jinja2_Environment = jinja2_Environment(
+                    block_start_string="\BLOCK{",
+                    block_end_string="}",
+                    variable_start_string="\VAR{",
+                    variable_end_string="}",
+                    comment_start_string="\#{",
+                    comment_end_string="}",
+                    line_statement_prefix="%%",
+                    line_comment_prefix="%#",
+                    trim_blocks=True,
+                    autoescape=True,
+                    loader=_template_loader,
+                )
                 template: Template = _template_env.get_template(name=_template_name)
                 return template
 
@@ -262,21 +274,9 @@ class PdfEdition(EditionParser):
         else:
             return ""
 
-    @staticmethod
-    def _append_new_commands(doc: Document) -> None:
-        _doc: str = doc.dumps()
-        for _name, _command in NEW_COMMANDS.items():
-            if f"\\{_name}" in _doc:
-                doc.preamble.append(_command)
-
-    @staticmethod
-    def _append_packages(doc: Document) -> None:
-        doc.packages.append(Package("extramarks"))
-        doc.packages.append(Package("epigraph"))
-        doc.packages.append(Package("fancyhdr"))
-        doc.packages.append(Package("marginnote"))
-        doc.packages.append(Package("setspace"))
-        doc.packages.append(Package("soul"))
+    def _append_preamble(self, doc: Document) -> None:
+        _template: Template = self._get_template(name="preamble")
+        doc.preamble.append(NoEscape(_template.render()))
 
     def _generate_latex(self, volume: Volume) -> Document:
         # setup
@@ -284,8 +284,8 @@ class PdfEdition(EditionParser):
 
         doc = Document(documentclass="book")
 
-        # set packages
-        self._append_packages(doc)
+        # set preamble
+        self._append_preamble(doc)
 
         # set frontmatter
         doc.append(Command("frontmatter"))
@@ -295,18 +295,7 @@ class PdfEdition(EditionParser):
 
         # set mainmatter
         doc.append(Command("mainmatter"))
-        doc.append(NoEscape("""\\setlength{\\headheight}{19pt}
-\\pagestyle{fancy}
-\\fancyhf{}
-\\fancyfoot[RE,LO]{\\thepage}
-\\fancyfoot[LE,RO]{\\footnotesize\\lastleftxmark}
-\\fancyhead[CE]{\\setstretch{.85}\\MakeLowercase{\\textsc{\\firstrightmark}}}
-\\fancyhead[CO]{\\setstretch{.85}\\MakeLowercase{\\textsc{\\firstleftmark}}}
-\\renewcommand{\\headrulewidth}{0pt}
-\\fancypagestyle{plain}{ %
-\\fancyhf{} % remove everything
-\\renewcommand{\\headrulewidth}{0pt}
-\\renewcommand{\\footrulewidth}{0pt}}"""))
+        doc.append(Command("pagestyle", "fancy"))
         _mainmatter: list[PageElement] = BeautifulSoup(volume.mainmatter, "lxml").find("body").contents
         for _mainmatter_element in _mainmatter:
             doc.append(self._process_html_element(volume=volume, doc=doc, element=_mainmatter_element))
@@ -317,9 +306,6 @@ class PdfEdition(EditionParser):
             _backmatter_element: PageElement = BeautifulSoup(_page, "lxml").find("body").next_element
             doc.append(self._process_html_element(volume=volume, doc=doc, element=_backmatter_element))
 
-        # set new commands
-        self._append_new_commands(doc)
-
         return doc
 
     def _generate_pdf(self, volume: Volume) -> None:
@@ -327,7 +313,6 @@ class PdfEdition(EditionParser):
 
         _path: str = os.path.join(tempfile.gettempdir(), volume.filename[:-4])
         doc = self._generate_latex(volume=volume)
-        # doc.generate_tex(filepath=_path)
         doc.generate_pdf(filepath=_path, clean_tex=False, compiler="latexmk")
 
     def collect_all(self):  # type: ignore

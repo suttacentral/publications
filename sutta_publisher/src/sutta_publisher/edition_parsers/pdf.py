@@ -154,6 +154,11 @@ class PdfEdition(EditionParser):
 
         match tag.name:
 
+            case section if tag.has_attr("class") and any(
+                _class in tag["class"] for _class in ["sutta-title", "range-title"]
+            ):
+                return self._append_section(tag)
+
             case "a" if tag.has_attr("role") and "doc-noteref" in tag["role"]:
                 return self._append_footnote(doc, tag)
 
@@ -183,9 +188,6 @@ class PdfEdition(EditionParser):
 
             case "h1":
                 return self._append_chapter(tag)
-
-            case "h2" if tag.has_attr("class") and "sutta-title" in tag["class"]:
-                return self._append_section(tag)
 
             case "i" if tag.has_attr("lang") and any(_lang in tag["lang"] for _lang in ["pi", "san"]):
                 return self._append_italic(doc, tag)

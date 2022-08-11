@@ -107,10 +107,9 @@ class PdfEdition(EditionParser):
         _template: Template = self._get_template("heading")
         return _template.render(acronym=_acronym, name=_name, root_name=_root_name)
 
-    @staticmethod
-    def _append_chapter(tag: Tag) -> str:
+    def _append_chapter(self, doc: Document, tag: Tag) -> str:
         tex: str = ""
-        _title: str = tag.string
+        _title: str = self._process_contents(doc=doc, contents=tag.contents)
         tex += Command("chapter*", _title).dumps() + NoEscape("\n")
         tex += Command("addcontentsline", arguments=["toc", "chapter", _title]).dumps() + NoEscape("\n")
         tex += Command("markboth", arguments=[_title, _title]).dumps() + NoEscape("\n")
@@ -121,14 +120,23 @@ class PdfEdition(EditionParser):
         return cast(str, Command("tableofcontents").dumps())
 
     def _append_epigraph(self, doc: Document, tag: Tag) -> str:
-        _text_tag: Tag = tag.find(class_="epigraph-text").p
-        _source_tag: Tag = tag.find(class_="epigraph-attribution")
-        self._strip_tag_string(_text_tag)
-        self._strip_tag_string(_source_tag)
-        _epigraph_text: str = self._process_contents(doc=doc, contents=_text_tag.contents)
-        _epigraph_source: str = self._process_contents(doc=doc, contents=_source_tag.contents)
+        _data: dict[str, str] = {}
+        _epigraph_classes: dict[str, str] = {
+            "text": "epigraph-text",
+            "translated_title": "epigraph-translated-title",
+            "root_title": "epigraph-root-title",
+            "reference": "epigraph-reference",
+        }
+
+        for _var, _class in _epigraph_classes.items():
+            _tag: Tag = tag.find(class_=_class)
+            if _class == "epigraph-text":
+                _tag = _tag.p
+            self._strip_tag_string(_tag)
+            _data[_var] = self._process_contents(doc=doc, contents=_tag.contents)
+
         _template: Template = self._get_template(name="epigraph")
-        return _template.render(epigraph_text=_epigraph_text, epigraph_source=_epigraph_source)
+        return _template.render(_data)
 
     def _append_list(self, doc: Document, tag: Tag) -> str:
         _command: str = Command("item").dumps()
@@ -187,9 +195,9 @@ class PdfEdition(EditionParser):
                 return self._append_emphasis(doc, tag)
 
             case "h1":
-                return self._append_chapter(tag)
+                return self._append_chapter(doc, tag)
 
-            case "i" if tag.has_attr("lang") and any(_lang in tag["lang"] for _lang in ["pi", "san"]):
+            case "i" if tag.has_attr("lang") and any(_lang in tag["lang"] for _lang in ["pi", "sa"]):
                 return self._append_italic(doc, tag)
 
             case "i":

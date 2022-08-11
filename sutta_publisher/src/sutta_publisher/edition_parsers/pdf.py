@@ -198,7 +198,7 @@ class PdfEdition(EditionParser):
             case "h1":
                 return self._append_chapter(tag)
 
-            case "i" if tag.has_attr("lang") and any(_lang in tag["lang"] for _lang in ["pi", "san"]):
+            case "i" if tag.has_attr("lang") and any(_lang in tag["lang"] for _lang in ["pi", "sa"]):
                 return self._append_italic(doc, tag)
 
             case "i":

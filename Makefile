@@ -1,6 +1,10 @@
 PROJ_ROOT=$(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 PYTHON_EXEC?=python
 COMPOSE_EXEC?=docker-compose
+GIT_EXEC?=git
+
+FONT_REPO?=git@github.com:octaviopardo/EBGaramond12.git
+TMP_DIR?=sutta_publisher/.EBGaramond12
 
 APP_PATH = sutta_publisher/src
 TESTS_PATH = sutta_publisher/tests
@@ -27,8 +31,10 @@ run-command:
 	$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) -f $(DEV_DOCKER_COMPOSE) run publisher $(filter-out $@,$(MAKECMDGOALS))
 
 build:
+	rm -Rf $(TMP_DIR)
+	$(GIT_EXEC) clone $(FONT_REPO) $(TMP_DIR)
 	$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) build publisher
-
+	rm -Rf $(TMP_DIR)
 
 clean:
 	$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) rm -fsv

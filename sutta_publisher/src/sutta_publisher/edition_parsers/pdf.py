@@ -107,10 +107,9 @@ class PdfEdition(EditionParser):
         _template: Template = self._get_template("heading")
         return _template.render(acronym=_acronym, name=_name, root_name=_root_name)
 
-    @staticmethod
-    def _append_chapter(tag: Tag) -> str:
+    def _append_chapter(self, doc: Document, tag: Tag) -> str:
         tex: str = ""
-        _title: str = tag.string
+        _title: str = self._process_contents(doc=doc, contents=tag.contents)
         tex += Command("chapter*", _title).dumps() + NoEscape("\n")
         tex += Command("addcontentsline", arguments=["toc", "chapter", _title]).dumps() + NoEscape("\n")
         tex += Command("markboth", arguments=[_title, _title]).dumps() + NoEscape("\n")
@@ -124,9 +123,9 @@ class PdfEdition(EditionParser):
         _data: dict[str, str] = {}
         _epigraph_classes: dict[str, str] = {
             "text": "epigraph-text",
-            "name": "epigraph-translated-title",
-            "root_name": "epigraph-root-title",
-            "acronym": "epigraph-reference",
+            "translated_title": "epigraph-translated-title",
+            "root_title": "epigraph-root-title",
+            "reference": "epigraph-reference",
         }
 
         for _var, _class in _epigraph_classes.items():
@@ -196,7 +195,7 @@ class PdfEdition(EditionParser):
                 return self._append_emphasis(doc, tag)
 
             case "h1":
-                return self._append_chapter(tag)
+                return self._append_chapter(doc, tag)
 
             case "i" if tag.has_attr("lang") and any(_lang in tag["lang"] for _lang in ["pi", "sa"]):
                 return self._append_italic(doc, tag)

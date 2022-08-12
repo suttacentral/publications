@@ -9,7 +9,7 @@ mypy >= 0.940
 pip-tools
 pycodestyle
 pydantic
-pytest
+pytest <= 6.1
 pytest-cov
 pytest-pythonpath
 pytest-vcr

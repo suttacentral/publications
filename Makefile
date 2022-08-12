@@ -1,18 +1,23 @@
 PROJ_ROOT=$(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 PYTHON_EXEC?=python
 COMPOSE_EXEC?=docker-compose
+DOCKER_EXEC?=docker
 GIT_EXEC?=git
+
+IMAGE_NAME?=marekbryling/suttapublisher
+IMAGE_VERSION?=prev
+IMAGE_TARGET?=production
 
 FONT_REPO?=git@github.com:octaviopardo/EBGaramond12.git
 TMP_DIR?=sutta_publisher/.EBGaramond12
 
-APP_PATH = sutta_publisher/src
-TESTS_PATH = sutta_publisher/tests
+APP_PATH?=sutta_publisher/src
+TESTS_PATH?=sutta_publisher/tests
 
-PROD_DOCKER_COMPOSE=./docker-compose.yml
-DEV_DOCKER_COMPOSE=./docker-compose.dev.yml
+PROD_DOCKER_COMPOSE?=./docker-compose.yml
+DEV_DOCKER_COMPOSE?=./docker-compose.dev.yml
 
-LINT_PATHS = $(APP_PATH) $(TESTS_PATH)
+LINT_PATHS?=$(APP_PATH) $(TESTS_PATH)
 
 
 ##############################################################################
@@ -33,7 +38,7 @@ run-command:
 build:
 	rm -Rf $(TMP_DIR)
 	$(GIT_EXEC) clone $(FONT_REPO) $(TMP_DIR)
-	$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) build publisher
+	cd $(APP_PATH)/.. ; $(DOCKER_EXEC) build -t=$(IMAGE_NAME):$(IMAGE_VERSION) --target=$(IMAGE_TARGET) -f=Dockerfile ./
 	rm -Rf $(TMP_DIR)
 
 clean:
@@ -45,11 +50,17 @@ clean:
 ### Testing
 ###########
 build-dev:
+	rm -Rf $(TMP_DIR)
+	$(GIT_EXEC) clone $(FONT_REPO) $(TMP_DIR)
 	$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) -f $(DEV_DOCKER_COMPOSE) build publisher
+	rm -Rf $(TMP_DIR)
 
 
 test: build-dev
+	rm -Rf $(TMP_DIR)
+	$(GIT_EXEC) clone $(FONT_REPO) $(TMP_DIR)
 	$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) -f $(DEV_DOCKER_COMPOSE) run publisher pytest /tests
+	rm -Rf $(TMP_DIR)
 
 # TODO: [67] Reimplement using already defined `make lint` job and **in container**
 test-ci: test

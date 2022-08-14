@@ -1,9 +1,77 @@
-\usepackage{epigraph}
-\usepackage{extramarks}
+\documentclass[12pt]{book}
+\usepackage[inner=1in, outer=1in, top=.8in, bottom=1.1in, papersize={6in,9in}]{geometry}
+\usepackage[12pt]{moresize}
+\usepackage[utf8]{inputenc}
+\usepackage{lastpage}%
+\usepackage{soul}%
+\usepackage{microtype} 
+\usepackage[]{tocbasic}
+\usepackage{realscripts}
+\usepackage{epigraph}%
+\usepackage{setspace}%
+\usepackage{sectsty}
+\usepackage{fontspec}
+\usepackage[noadjust]{marginnote}
+\usepackage[bottom]{footmisc}
+\usepackage{enumitem}
 \usepackage{fancyhdr}
-\usepackage{marginnote}
-\usepackage{setspace}
-\usepackage{soul}
+\usepackage{extramarks}
+
+% define fonts
+% \setmainfont[Numbers=OldStyle]{Arno Pro}
+% \renewcommand*{\marginfont}{\MarginalFont}
+% \newfontfamily\MarginalFont[RawFeature=+subs]{Arno Pro}
+
+% use compact lists
+\setitemize{noitemsep,topsep=0pt,parsep=0pt,partopsep=0pt}
+\setenumerate{noitemsep,topsep=0pt,parsep=0pt,partopsep=0pt}
+\setdescription{noitemsep}
+
+% style ToC
+\DeclareTOCStyleEntries[
+  raggedentrytext,
+  linefill=\hfill,
+  numwidth=1em,
+  numsep=1ex,
+  dynnumwidth
+]{tocline}{chapter,section,subsection,subsubsection,paragraph,subparagraph}
+\DeclareTOCStyleEntries[
+  indent=0pt,
+  dynindent
+]{tocline}{section,subsection,subsubsection,paragraph,subparagraph}
+
+\let\oldcontentsline\contentsline
+\newcommand{\nopagecontentsline}[3]{\oldcontentsline{#1}{#2}{}}
+
+    \makeatletter
+\renewcommand*\l@part[2]{%
+  \ifnum \c@tocdepth >-2\relax
+    \addpenalty{-\@highpenalty}%
+    \addvspace{2.25em \@plus\p@}%
+    \setlength\@tempdima{3em}%
+    \begingroup
+      \parindent \z@ \rightskip \@pnumwidth
+      \parfillskip -\@pnumwidth
+      {\leavevmode
+       \hspace*{\fill}\centering\large\scshape #1\hspace*{\fill}\llap{#2}}\par
+       \nobreak
+         \global\@nobreaktrue
+         \everypar{\global\@nobreakfalse\everypar{}}%
+    \endgroup
+  \fi}
+\makeatother
+
+\makeatletter
+\def\@pnumwidth{2em}
+\makeatother
+
+% global line height
+\setstretch{1.05}
+
+% style headings with secsty
+\allsectionsfont{\normalfont}
+\chapterfont{\normalfont\centering}
+\partfont{\normalfont\centering\caps}
 
 % titlepage
 \newcommand*{\titlepageTranslationTitle}[1]{{\begin{center}\begin{large}{#1}\end{large}\end{center}}}
@@ -22,6 +90,7 @@
 \newcommand*{\halftitlepagePublisher}[1]{{\begin{center}\begin{LARGE}{\ArnoProNoLigatures\caps{#1}}\end{LARGE}\end{center}}}
 
 % epigraph
+\renewcommand{\epigraphflush}{center}
 \newcommand*{\epigraphTranslatedTitle}[1]{\textsc{#1}}%
 \newcommand*{\epigraphRootTitle}[1]{\textit{#1}}%
 \newcommand*{\epigraphReference}[1]{\footnotesize{#1}}%
@@ -40,7 +109,7 @@
 \newcommand*{\scevam}[1]{\caps{#1}}
 \newcommand*{\scspeaker}[1]{\hspace{2em}\textit{#1}}
 
-% fancyhdr
+% manage and style page header and footer
 \setlength{\headheight}{19pt}
 \pagestyle{fancy}
 \fancyhf{}
@@ -53,3 +122,14 @@
 \fancyhf{} % remove everything
 \renewcommand{\headrulewidth}{0pt}
 \renewcommand{\footrulewidth}{0pt}}
+
+% style footnotes
+\setlength{\skip\footins}{1em}
+
+\makeatletter
+\newcommand{\@makefntextcustom}[1]{%
+    \parindent 0em%
+    \thefootnote.\enskip #1%
+}
+\renewcommand{\@makefntext}[1]{\@makefntextcustom{#1}}
+\makeatother

@@ -131,6 +131,11 @@ class PaperbackEdition(EditionParser):
         tex += Command("markboth", arguments=[_title, _title]).dumps() + NoEscape("\n")
         return tex
 
+    def _append_part(self, tag: Tag) -> str:
+        _name = tag.string
+        _template: Template = self._get_template("part")
+        return _template.render(name=_name)
+
     @staticmethod
     def _append_tableofcontents() -> str:
         return cast(str, Command("tableofcontents").dumps())
@@ -177,6 +182,12 @@ class PaperbackEdition(EditionParser):
     def _process_tag(self, doc: Document, tag: Tag) -> str:  # type: ignore
 
         match tag.name:
+
+            case part if tag.name == "h1" and tag.has_attr("class") and "section-title" in tag["class"]:
+                return self._append_part(tag)
+
+            case chapter if tag.name == "h2" and tag.has_attr("class") and "section-title" in tag["class"]:
+                return self._append_chapter(doc, tag)
 
             case section if tag.has_attr("class") and any(
                 _class in tag["class"] for _class in ["sutta-title", "range-title"]

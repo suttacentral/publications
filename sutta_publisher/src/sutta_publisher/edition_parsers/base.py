@@ -5,7 +5,7 @@ import logging
 import os
 from abc import ABC
 from pathlib import Path
-from typing import Any, Callable, Type, cast
+from typing import Any, Callable, cast
 
 import jinja2
 import requests
@@ -808,6 +808,10 @@ class EditionParser(ABC):
         # return result
 
     @classmethod
-    def get_edition_mapping(cls) -> dict[EditionType, Type[EditionParser]]:
+    def get_edition_mapping(cls, mapping: dict) -> None:
         """Match edition types with their respective parsers"""
-        return {klass.edition_type: klass for klass in cls.__subclasses__()}
+        for _class in cls.__subclasses__():
+            if _class.edition_type == "latex_parser":
+                _class.get_edition_mapping(mapping)
+            else:
+                mapping[_class.edition_type] = _class

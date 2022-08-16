@@ -59,6 +59,14 @@ def pdf(config, data):
             "<dl><dt>Topic 1</dt><dd>Item 1</dd></dl>",
             "\\begin{description}%\n\\item[Topic 1] Item 1%\n\\end{description}\n",
         ),
+        (
+            "<h1 class='section-title'>Test</h1>",
+            "\\addtocontents{toc}{\\let\\protect\\contentsline\\protect\\nopagecontentsline}\n\\part*{Test}\n\\addcontentsline{toc}{part}{Test}\n\\markboth{}{}\n\\addtocontents{toc}{\\let\\protect\\contentsline\\protect\\oldcontentsline}",
+        ),
+        (
+            "<h2 class='section-title'>Test</h1>",
+            "\\chapter*{Test}\n\\addcontentsline{toc}{chapter}{Test}\n\\markboth{Test}{Test}\n",
+        ),
     ],
 )
 def test_process_tag(doc, pdf, html, expected):

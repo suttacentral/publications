@@ -148,11 +148,11 @@ class LatexEdition(EditionParser):
         }
 
         for _var, _class in _epigraph_classes.items():
-            _tag: Tag = tag.find(class_=_class)
-            if _class == "epigraph-text":
-                _tag = _tag.p
-            self._strip_tag_string(_tag)
-            _data[_var] = self._process_contents(doc=doc, contents=_tag.contents)
+            if _tag := tag.find(class_=_class):
+                if _class == "epigraph-text":
+                    _tag = _tag.p
+                self._strip_tag_string(_tag)
+                _data[_var] = self._process_contents(doc=doc, contents=_tag.contents)
 
         _template: Template = self._get_template(name="epigraph")
         return _template.render(_data)
@@ -181,16 +181,14 @@ class LatexEdition(EditionParser):
 
         match tag.name:
 
+            case section if tag.has_attr("class") and any(_class in tag["class"] for _class in ["sutta-title", "range-title"]):
+                return self._append_section(tag)
+
             case part if tag.name == "h1" and tag.has_attr("class") and "section-title" in tag["class"]:
                 return self._append_part(tag)
 
             case chapter if tag.name == "h2" and tag.has_attr("class") and "section-title" in tag["class"]:
                 return self._append_chapter(doc, tag)
-
-            case section if tag.has_attr("class") and any(
-                _class in tag["class"] for _class in ["sutta-title", "range-title"]
-            ):
-                return self._append_section(tag)
 
             case "a" if tag.has_attr("role") and "doc-noteref" in tag["role"]:
                 return self._append_footnote(doc, tag)
@@ -225,8 +223,11 @@ class LatexEdition(EditionParser):
             case "i" if tag.has_attr("lang") and any(_lang in tag["lang"] for _lang in ["pi", "sa"]):
                 return self._append_italic(doc, tag)
 
-            case "i":
+            case "i" if tag.has_attr("lang"):
                 return self._append_foreign_script_macro(doc, tag)
+
+            case "i":
+                return self._append_italic(doc, tag)
 
             case "ol" | "ul":
                 return self._append_list(doc, tag)

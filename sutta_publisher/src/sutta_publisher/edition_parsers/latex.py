@@ -320,7 +320,7 @@ class LatexEdition(EditionParser):
         # setup
         self.endnotes: list[str] | None = volume.endnotes if volume.endnotes else None
 
-        doc = Document(documentclass="book")
+        doc = Document(documentclass="book", document_options="12pt")
 
         # set preamble
         self._append_preamble(doc)

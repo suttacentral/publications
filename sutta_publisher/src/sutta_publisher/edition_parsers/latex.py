@@ -181,7 +181,9 @@ class LatexEdition(EditionParser):
 
         match tag.name:
 
-            case section if tag.has_attr("class") and any(_class in tag["class"] for _class in ["sutta-title", "range-title"]):
+            case section if tag.has_attr("class") and any(
+                _class in tag["class"] for _class in ["sutta-title", "range-title"]
+            ):
                 return self._append_section(tag)
 
             case part if tag.name == "h1" and tag.has_attr("class") and "section-title" in tag["class"]:

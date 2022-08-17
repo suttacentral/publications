@@ -96,7 +96,7 @@ make build IMAGE_TARGET=production
 
 # Push docker image to github
 make push-docker-image IMAGE_TARGET=production
-
+```
 
 #### Development
 ```bash

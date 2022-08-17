@@ -11,10 +11,11 @@ ENV PYTHONPATH=/app/
 
 RUN apt-get update -y \
     && apt-get upgrade --no-install-recommends -y \
-    && apt-get install pandoc --no-install-recommends -y\
-    && apt-get install texlive-full -y\
+    && apt-get install texlive-extra-utils texlive-base texlive-latex-base texlive-xetex latexmk -y\
     && apt-get clean -y
 
+COPY .EBGaramond12/fonts /usr/local/share/fonts/
+RUN fc-cache
 
 ### PRODUCTION
 FROM base as production

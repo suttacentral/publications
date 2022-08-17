@@ -38,16 +38,22 @@ e.g.
 
 It will mount the project root to the container:
 ```bash
-# Build dev image
-make build-dev
+# Build dev docker image 
+make build IMAGE_TARGET=development
 
 # Run dev console to fiddle
 make run-dev bash
 
 # Tests
+# if needed:
+make build IMAGE_TARGET=development
+# and
 make test or make test-ci
 
 # Lint code
+# if needed:
+make build IMAGE_TARGET=development
+# and
 make lint
 ```
 
@@ -55,9 +61,6 @@ make lint
 ```bash
 # Go to project root
 cd publications
-
-# Build image
-make build
 
 # Run the script with given args
 make run -- <script_args>
@@ -85,7 +88,27 @@ make compile-deps
 make recompile-deps
 ```
 
-### how to sync requirements with your virtual environment
+### How to sync requirements with your virtual environment
 ```bash
 make sync-deps
+```
+
+### How to build and publish new docker image
+
+#### Production
+```bash
+# Build docker image to github
+make build IMAGE_TARGET=production
+
+# Push docker image to github
+make push-docker-image IMAGE_TARGET=production
+```
+
+#### Development
+```bash
+# Build docker image to github
+make build IMAGE_TARGET=development
+
+# Push docker image to github
+make push-docker-image IMAGE_TARGET=development
 ```

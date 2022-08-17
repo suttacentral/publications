@@ -48,15 +48,15 @@ def get_mainmatter_data(edition_id: str, uids: list[str]) -> MainMatter:
     return MainMatter.parse_obj(_all_parts)
 
 
-def get_text_type(uid: str, super_tree: list[dict]) -> str | NoReturn:
+def get_text_type(text_uid: str, super_tree: list[dict]) -> str | NoReturn:
     """Get type of given text"""
     for item in super_tree:
-        if f"'{uid}'" in str(item):
+        if f"'{text_uid}'" in str(item):
             text_type: str = list(item.keys())[0]
             return text_type
 
     # If uid not found, we stop the app as we cannot get the structure tree
-    raise SystemExit(f"Publication '{uid}' type not found in super_tree.json")
+    raise SystemExit(f"Publication '{text_uid}' type not found in super_tree.json")
 
 
 def get_depths(tree: list[dict] | list[str], depths: dict[str, int], initial_depth: int = 1) -> None:
@@ -70,27 +70,49 @@ def get_depths(tree: list[dict] | list[str], depths: dict[str, int], initial_dep
             depths[item] = initial_depth
 
 
-def get_depth_tree(uids: list[str]) -> tuple[list[dict | str], dict[str, int]]:
+def _get_volume_tree(tree: list[dict], uid: str) -> list[dict] | None:
+    for item in tree:
+        if uid in item:
+            return [item]
+        elif isinstance(item, dict):
+            _tree = _get_volume_tree(tree=list(item.values())[0], uid=uid)
+            if _tree:
+                return _tree
+    return None
+
+
+def get_depth_tree(text_uid: str, uids: list[str], multiple_volumes: bool) -> tuple[list[dict | str], dict[str, int]]:
     """Get edition tree json and convert it into dict of all heading uids and their depth"""
     depths: dict[str, int] = {}
     tree: list[dict | str] = []
     _multiple_mainmatter: bool = len(uids) > 1
 
-    for _uid in uids:
-        _super_tree_response = requests.get(SUPER_TREE_URL)
-        _super_tree_response.raise_for_status()
-        _text_type = get_text_type(uid=_uid, super_tree=_super_tree_response.json())
+    _super_tree_response = requests.get(SUPER_TREE_URL)
+    _super_tree_response.raise_for_status()
+    _text_type = get_text_type(text_uid=text_uid, super_tree=_super_tree_response.json())
 
-        _tree_response = requests.get(TREE_URL.format(text_type=_text_type, uid=_uid))
+    for _uid in uids:
+        _tree_uid = _uid if _multiple_mainmatter else text_uid
+        _tree_url = TREE_URL.format(text_type=_text_type, tree_uid=_tree_uid)
+        _tree_response = requests.get(_tree_url)
         _tree_response.raise_for_status()
-        _tree: list[dict] = _tree_response.json()[_uid] if not _multiple_mainmatter else [_tree_response.json()]
-        tree.extend(_tree)
-        get_depths(_tree, depths, initial_depth=1)
+
+        _tree: list[dict] | None = _get_volume_tree(tree=[_tree_response.json()], uid=_uid)
+        if not _tree:
+            raise SystemExit(f"Could not find mainmatter uid '{_uid}' in the structure tree: {_tree_url}")
+
+        if _multiple_mainmatter or multiple_volumes:
+            tree.extend(_tree)
+        else:
+            tree.extend(_tree[0][_uid])
+
+        _initial_depth = 1 if _multiple_mainmatter or multiple_volumes else 0
+        get_depths(tree=_tree, depths=depths, initial_depth=_initial_depth)
 
     return tree, depths
 
 
-def get_mainmatter_preheadings(edition_id: str, uids: list[str]) -> VolumePreheadings:
+def get_mainmatter_preheadings(edition_id: str, uids: list[str], multiple_volumes: bool) -> VolumePreheadings:
     all_matters_preheadings = VolumePreheadings()
     multiple_mainmatter: bool = len(uids) > 1
 
@@ -104,7 +126,7 @@ def get_mainmatter_preheadings(edition_id: str, uids: list[str]) -> VolumePrehea
         )  # a collection of headings for a whole mainmatter (single uid)
         single_leaf_preheadings = PreheadingsGroup()  # a collection of headings to put before each "leaf"
 
-        if not multiple_mainmatter:
+        if not (multiple_mainmatter or multiple_volumes):
             nodes = nodes[1:]
 
         for node in nodes:  # we want to skip the uid's preheading (e.g. mn)
@@ -159,13 +181,19 @@ def get_extras_data(edition_id: str) -> dict:
 
 def get_edition_data(edition_config: EditionConfig) -> EditionData:
     edition_data = EditionData()
+    _multiple_volumes = len(edition_config.edition.volumes) > 1
+
     for _volume_details in edition_config.edition.volumes:
+
         _tree, _depths = get_depth_tree(
+            text_uid=edition_config.edition.text_uid,
             uids=_volume_details.mainmatter,
+            multiple_volumes=_multiple_volumes,
         )
         _preheadings = get_mainmatter_preheadings(
             edition_id=edition_config.edition.edition_id,
             uids=_volume_details.mainmatter,
+            multiple_volumes=_multiple_volumes,
         )
         _headings_ids = get_mainmatters_headings_ids(
             edition_id=edition_config.edition.edition_id,

@@ -9,6 +9,8 @@ from shared.data import get_edition_data
 from shared.publisher import publish
 from shared.value_objects.edition_config import EditionsConfigs
 
+from sutta_publisher.shared.value_objects.edition import EditionType
+
 logging.basicConfig(encoding="utf-8", level=logging.getLevelName(os.environ.get("PYTHONLOGLEVEL", "INFO")))
 log = logging.getLogger(__name__)
 
@@ -16,7 +18,8 @@ log = logging.getLogger(__name__)
 def run(editions: EditionsConfigs) -> None:
     """Run the script engine. Configuration should be already done via the setup functions."""
     edition_list = []
-    edition_class_mapping = EditionParser.get_edition_mapping()
+    edition_class_mapping: dict[EditionType, Type[EditionParser]] = {}
+    EditionParser.get_edition_mapping(edition_class_mapping)
     for edition_config in editions:
         try:
             edition_klass: Type[EditionParser] = edition_class_mapping[edition_config.edition.publication_type]
@@ -28,7 +31,7 @@ def run(editions: EditionsConfigs) -> None:
             log.exception("Can't parse publication_type='%s'. Error: %s", edition_config.edition.publication_type, e)
 
     for edition in edition_list:  # type: EditionParser
-        if edition.edition_type in ("html", "epub", "pdf"):
+        if edition.edition_type in ("html", "epub", "paperback"):
             log.debug(edition)
 
             try:

@@ -53,7 +53,7 @@ clean:
 ### Testing
 ###########
 
-test: build-dev
+test: 
 	$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) -f $(DEV_DOCKER_COMPOSE) run publisher pytest /tests
 
 # TODO: [67] Reimplement using already defined `make lint` job and **in container**

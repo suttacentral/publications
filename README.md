@@ -45,9 +45,15 @@ make build IMAGE_TARGET=development
 make run-dev bash
 
 # Tests
+# if needed:
+make build IMAGE_TARGET=development
+# and
 make test or make test-ci
 
 # Lint code
+# if needed:
+make build IMAGE_TARGET=development
+# and
 make lint
 ```
 

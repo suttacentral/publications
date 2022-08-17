@@ -5,8 +5,8 @@ DOCKER_EXEC?=docker
 GIT_EXEC?=git
 
 IMAGE_NAME?=marekbryling/suttapublisher
-IMAGE_VERSION?=prev
 IMAGE_TARGET?=production
+IMAGE_VERSION?=prev_$(IMAGE_TARGET)
 
 FONT_REPO?=git@github.com:octaviopardo/EBGaramond12.git
 TMP_DIR?=sutta_publisher/.EBGaramond12
@@ -41,6 +41,9 @@ build:
 	cd $(APP_PATH)/.. ; $(DOCKER_EXEC) build -t=$(IMAGE_NAME):$(IMAGE_VERSION) --target=$(IMAGE_TARGET) -f=Dockerfile ./
 	rm -Rf $(TMP_DIR)
 
+push-docker-image:
+	$(DOCKER_EXEC)  push $(IMAGE_NAME):$(IMAGE_VERSION)
+
 clean:
 	$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) rm -fsv
 	$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) -f $(DEV_DOCKER_COMPOSE) rm -fsv
@@ -49,18 +52,9 @@ clean:
 ##############################################################################
 ### Testing
 ###########
-build-dev:
-	rm -Rf $(TMP_DIR)
-	$(GIT_EXEC) clone $(FONT_REPO) $(TMP_DIR)
-	$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) -f $(DEV_DOCKER_COMPOSE) build publisher
-	rm -Rf $(TMP_DIR)
-
 
 test: build-dev
-	rm -Rf $(TMP_DIR)
-	$(GIT_EXEC) clone $(FONT_REPO) $(TMP_DIR)
 	$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) -f $(DEV_DOCKER_COMPOSE) run publisher pytest /tests
-	rm -Rf $(TMP_DIR)
 
 # TODO: [67] Reimplement using already defined `make lint` job and **in container**
 test-ci: test

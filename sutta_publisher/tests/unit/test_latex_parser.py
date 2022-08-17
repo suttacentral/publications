@@ -51,13 +51,21 @@ def pdf(config, data):
         ("<section id='main-toc'>Test</section>", "\\tableofcontents"),
         (
             "<article class='epigraph'><blockquote class='epigraph-text'><p>Test</p></blockquote><p class='epigraph-attribution'><span class='epigraph-translated-title'>Name<span><span class='epigraph-root-title'>Root</span><span class='epigraph-reference'>Acronym</span></p></article>",
-            "\\newpage\n\n\\vspace*{\\fill}\n\n\\begin{center}\n\\epigraph{Test{\\vspace*{.5em}\\epigraphTranslatedTitle{NameRootAcronym} \\epigraphRootTitle{Root}\\\\\\epigraphReference{Acronym}}}\n\\end{center}\n\n\\vspace*{2in}\n\n\\vspace*{\\fill}",
+            "\\newpage\n\n\\vspace*{\\fill}\n\n\\begin{center}\n\\epigraph{Test}{\\vspace*{.5em}\\epigraphTranslatedTitle{NameRootAcronym} \\epigraphRootTitle{Root}\\\\\\epigraphReference{Acronym}}\n\\end{center}\n\n\\vspace*{2in}\n\n\\vspace*{\\fill}",
         ),
         ("<ul><li>Test 1</li></ul>", "\\begin{itemize}%\n\\item Test 1%\n\\end{itemize}\n"),
         ("<ol><li>Test 1</li></ol>", "\\begin{enumerate}%\n\\item Test 1%\n\\end{enumerate}\n"),
         (
             "<dl><dt>Topic 1</dt><dd>Item 1</dd></dl>",
             "\\begin{description}%\n\\item[Topic 1] Item 1%\n\\end{description}\n",
+        ),
+        (
+            "<h1 class='section-title'>Test</h1>",
+            "\\addtocontents{toc}{\\let\\protect\\contentsline\\protect\\nopagecontentsline}\n\\part*{Test}\n\\addcontentsline{toc}{part}{Test}\n\\markboth{}{}\n\\addtocontents{toc}{\\let\\protect\\contentsline\\protect\\oldcontentsline}",
+        ),
+        (
+            "<h2 class='section-title'>Test</h1>",
+            "\\chapter*{Test}\n\\addcontentsline{toc}{chapter}{Test}\n\\markboth{Test}{Test}\n",
         ),
     ],
 )

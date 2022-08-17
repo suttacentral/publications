@@ -2,6 +2,6 @@ version: "3.9"
 
 services:
   publisher:
-    image: marekbryling/suttapublisher:prev
+    image: marekbryling/suttapublisher:prev_production
     env_file:
       - ./.env_public

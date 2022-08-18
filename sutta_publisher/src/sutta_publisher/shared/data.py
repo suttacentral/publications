@@ -92,6 +92,7 @@ def get_depth_tree(text_uid: str, uids: list[str], multiple_volumes: bool) -> tu
     _text_type = get_text_type(text_uid=text_uid, super_tree=_super_tree_response.json())
 
     for _uid in uids:
+        # TODO: FIX GETTING TREE URL FOR COMPLEX MULTI VOLUME EDITIONS
         _tree_uid = _uid if _multiple_mainmatter else text_uid
         _tree_url = TREE_URL.format(text_type=_text_type, tree_uid=_tree_uid)
         _tree_response = requests.get(_tree_url)

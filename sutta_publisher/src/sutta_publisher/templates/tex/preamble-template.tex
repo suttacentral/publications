@@ -10,6 +10,7 @@
 \usepackage{setspace}%
 \usepackage{sectsty}
 \usepackage{fontspec}
+\usepackage{luatexja-fontspec}
 \usepackage[noadjust]{marginnote}
 \usepackage[bottom]{footmisc}
 \usepackage{enumitem}
@@ -98,17 +99,24 @@
 
 % custom commands for html styling classes
 \newcommand*{\scnamo}[1]{\begin{center}\textit{#1}\end{center}}
-\newcommand{\scendsection}[1]{\begin{center}\textit{#1}\end{center}}
-\newcommand{\scendsutta}[1]{\begin{center}\textit{#1}\end{center}}
-\newcommand{\scendbook}[1]{\begin{center}\uppercase{#1}\end{center}}
-\newcommand{\scendkanda}[1]{\begin{center}\textbf{#1}\end{center}}
-\newcommand{\scend}[1]{\begin{center}\textit{#1}\end{center}}
-\newcommand{\scuddanaintro}[1]{\textit{#1}}
-\newcommand{\scendvagga}[1]{\begin{center}\textbf{#1}\end{center}}
-\newcommand{\scrule}[1]{\textbf{#1}}
-\newcommand{\scadd}[1]{\textit{#1}}
+\newcommand*{\scendsection}[1]{\begin{center}\textit{#1}\end{center}}
+\newcommand*{\scendsutta}[1]{\begin{center}\textit{#1}\end{center}}
+\newcommand*{\scendbook}[1]{\begin{center}\uppercase{#1}\end{center}}
+\newcommand*{\scendkanda}[1]{\begin{center}\textbf{#1}\end{center}}
+\newcommand*{\scend}[1]{\begin{center}\textit{#1}\end{center}}
+\newcommand*{\scuddanaintro}[1]{\textit{#1}}
+\newcommand*{\scendvagga}[1]{\begin{center}\textbf{#1}\end{center}}
+\newcommand*{\scrule}[1]{\textbf{#1}}
+\newcommand*{\scadd}[1]{\textit{#1}}
 \newcommand*{\scevam}[1]{\caps{#1}}
 \newcommand*{\scspeaker}[1]{\hspace{2em}\textit{#1}}
+
+% language support
+\newjfontfamily\cjk{Noto Serif TC}
+\newcommand*{\langlzh}[1]{\cjk{#1}}%
+
+\newcommand*{\langpli}[1]{\textit{#1}}
+\newcommand*{\langsan}[1]{\textit{#1}}
 
 % manage and style page header and footer
 \setlength{\headheight}{19pt}
@@ -134,3 +142,6 @@
 }
 \renewcommand{\@makefntext}[1]{\@makefntextcustom{#1}}
 \makeatother
+
+% make latex use document em for parindent, not CMR
+\AtBeginDocument{\setlength{\parindent}{1em}}

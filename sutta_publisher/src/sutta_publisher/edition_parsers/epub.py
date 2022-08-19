@@ -181,7 +181,7 @@ class EpubEdition(EditionParser):
         book.add_item(EpubNav())
 
         # create epub file
-        _path: str = os.path.join(tempfile.gettempdir(), volume.filename)
+        _path: str = os.path.join(tempfile.gettempdir(), f"{volume.filename}.epub")
         write_epub(name=_path, book=book, options={})
 
     def collect_all(self) -> EditionResult:

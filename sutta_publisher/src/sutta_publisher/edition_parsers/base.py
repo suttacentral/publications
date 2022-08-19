@@ -164,7 +164,7 @@ class EditionParser(ABC):
         _volume_number: str = f"-{volume.volume_number}" if volume.volume_number else ""
         _file_extension: str = self.edition_type.name
 
-        volume.filename = f"{_translation_title}-{volume.creator_uid}-{_date}{_volume_number}.{_file_extension}"
+        volume.filename = f"{_translation_title}-{volume.creator_uid}-{_date}{_volume_number}"
 
     # --- operations on mainmatter
     def _generate_mainmatter(self, volume: Volume) -> str:

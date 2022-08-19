@@ -71,7 +71,7 @@ class LatexEdition(EditionParser):
             if tag["class"] == ["blurb-item", "acronym"]:
                 tex = f"{tex}: "
             elif tag["class"] == ["blurb-item", "root-title"]:
-                tex = f"—{tex}"
+                tex = f"— {tex}"
 
             for _class in tag["class"]:
                 if _class in STYLING_CLASSES:

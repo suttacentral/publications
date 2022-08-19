@@ -68,6 +68,10 @@
 % global line height
 \setstretch{1.05}
 
+% allow linebreak after em-dash
+\catcode`\—=13
+\protected\def—{\unskip\textemdash\allowbreak}
+
 % style headings with secsty
 \allsectionsfont{\normalfont}
 \chapterfont{\normalfont\centering}
@@ -109,6 +113,7 @@
 \newcommand*{\scadd}[1]{\textit{#1}}
 \newcommand*{\scevam}[1]{\caps{#1}}
 \newcommand*{\scspeaker}[1]{\hspace{2em}\textit{#1}}
+\newcommand*{\scbyline}[1]{\hspace{2em}\textit{#1}}
 
 % language support
 \newjfontfamily\cjk{Noto Serif TC}

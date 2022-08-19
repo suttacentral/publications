@@ -18,9 +18,17 @@
 \usepackage{extramarks}
 
 % define fonts
-% \setmainfont[Numbers=OldStyle]{Arno Pro}
-% \renewcommand*{\marginfont}{\MarginalFont}
+% use until arno is available
+%\setmainfont[Numbers=OldStyle]{EB Garamond}
+%\newfontfamily\Semiboldsubheadfont[]{EB Garamond}
+%\newfontfamily\Semiboldnormalfont[]{EB Garamond}
+
+% when arno is available, uncomment these
+%\setmainfont[Numbers=OldStyle]{Arno Pro}
+%\newfontfamily\Semiboldsubheadfont[BoldFont = ArnoPro-SmbdSubhead,BoldItalicFont = ArnoPro-SmbdItalicSubhead]{Arno Pro Smbd}
+%\newfontfamily\Semiboldnormalfont[BoldFont = ArnoPro-Smbd,BoldItalicFont = ArnoPro-SmbdItalic]{Arno Pro Smbd}
 % \newfontfamily\MarginalFont[RawFeature=+subs]{Arno Pro}
+% \renewcommand*{\marginfont}{\MarginalFont}
 
 % use compact lists
 \setitemize{noitemsep,topsep=0pt,parsep=0pt,partopsep=0pt}
@@ -73,9 +81,11 @@
 \protected\def—{\unskip\textemdash\allowbreak}
 
 % style headings with secsty
-\allsectionsfont{\normalfont}
 \chapterfont{\normalfont\centering}
 \partfont{\normalfont\centering\caps}
+\sectionfont{\normalfont}
+\subsectionfont{\Semiboldsubheadfont}
+\subsubsectionfont{\Semiboldsubheadfont}
 
 % redefine paragraph and subparagraph headings to not be inline
 \makeatletter
@@ -83,12 +93,12 @@
 \renewcommand\paragraph{\@startsection{paragraph}{4}{\z@}%
             {-2.5ex\@plus -1ex \@minus -.25ex}%
             {1.25ex \@plus .25ex}%
-            {\noindent\normalfont\normalsize\textit}}
+            {\noindent\Semiboldnormalfont\normalsize}}
 %%%%% Change the style of subparagraph headings %%%%%
 \renewcommand\subparagraph{\@startsection{subparagraph}{5}{\z@}%
             {-2.5ex\@plus -1ex \@minus -.25ex}%
             {1.25ex \@plus .25ex}% 
-            {\noindent\normalfont\small\textit}}
+            {\noindent\Semiboldnormalfont\small}}
 \makeatother
 
 % titlepage

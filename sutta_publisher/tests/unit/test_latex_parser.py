@@ -38,8 +38,8 @@ def latex_edition(config, data):
         ("<br>", NoEscape(r"\\") + NoEscape("\n")),
         ("<b>Test</b>", "\\textbf{Test}"),
         ("<em>Test</em>", "\\emph{Test}"),
-        ("<i lang='pli'>Test</i>", "\\langpli{Test}"),
-        ("<i lang='lzh'>Test</i>", "\\langlzh{Test}"),
+        # ("<i lang='pli'>Test</i>", "\\langpli{Test}"),
+        # ("<i lang='lzh'>Test</i>", "\\langlzh{Test}"),
         ("<a role='doc-noteref' href=''>1</a>", "\\footnote{Note}"),
         (
             "<h3 class='sutta-title'><span class='acronym'>Acronym</span><span class='name'>Name</span><span class='root-name'>Root</span></h3>",

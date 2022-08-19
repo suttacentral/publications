@@ -47,11 +47,16 @@ class LatexEdition(EditionParser):
     endnotes: list[str] | None
     sutta_depth: int
 
-    def _append_paragraph(self, doc: Document, tag: Tag) -> str:
+    def _append_html_paragraph(self, doc: Document, tag: Tag) -> str:
         tex: str = ""
 
         if tag.has_attr("id"):
-            tex += Command("marginnote", tag["id"].split(":")[1], tag["id"].split(":")[1]).dumps()
+            if self.config.edition.text_uid == "dhp":
+                _uid: str = tag["id"].split(":")[0][3:]
+            else:
+                _uid = tag["id"].split(":")[1]
+
+            tex += Command("marginnote", _uid, _uid).dumps()
 
         tex += self._process_contents(doc=doc, contents=tag.contents)
 
@@ -145,20 +150,49 @@ class LatexEdition(EditionParser):
         _template: Template = self._get_template("part")
         return _template.render(name=_name)
 
-    def _append_part_or_chapter(self, doc: Document, tag: Tag) -> str:
-        actions: list[Callable] = [self._append_part, self._append_chapter]
-        _heading_depth: int = get_heading_depth(tag)
-        if self.sutta_depth == 2:
-            return cast(str, actions[_heading_depth](doc=doc, tag=tag))
-        elif _heading_depth in (1, 2):
-            return cast(str, actions[_heading_depth - 1](doc=doc, tag=tag))
-        else:
-            return cast(str, actions[-1](doc=doc, tag=tag))
-
     def _append_subsection(self, doc: Document, tag: Tag) -> str:
         _title: str = self._process_contents(doc=doc, contents=tag.contents)
         tex: str = Command("subsection*", _title).dumps() + NoEscape("\n")
         return tex
+
+    def _append_subsubsection(self, doc: Document, tag: Tag) -> str:
+        _title: str = self._process_contents(doc=doc, contents=tag.contents)
+        tex: str = Command("subsubsection*", _title).dumps() + NoEscape("\n")
+        return tex
+
+    def _append_paragraph(self, doc: Document, tag: Tag) -> str:
+        _title: str = self._process_contents(doc=doc, contents=tag.contents)
+        tex: str = Command("paragraph*", _title).dumps() + NoEscape("\n")
+        return tex
+
+    def _append_subparagraph(self, doc: Document, tag: Tag) -> str:
+        _title: str = self._process_contents(doc=doc, contents=tag.contents)
+        tex: str = Command("subparagraph*", _title).dumps() + NoEscape("\n")
+        return tex
+
+    def _append_section_title(self, doc: Document, tag: Tag) -> str:
+        actions: list[Callable] = [
+            self._append_part,
+            self._append_chapter,
+        ]
+        _heading_depth: int = get_heading_depth(tag)
+        if self.sutta_depth == 2:
+            index = _heading_depth
+        elif _heading_depth in (1, 2):
+            index = _heading_depth - 1
+        else:
+            index = -1
+        return cast(str, actions[index](doc=doc, tag=tag))
+
+    def _append_subheading(self, doc: Document, tag: Tag) -> str:
+        actions: list[Callable] = [
+            self._append_subsection,
+            self._append_subsubsection,
+            self._append_paragraph,
+            self._append_subparagraph,
+        ]
+        index = int(tag.name[1]) - self.sutta_depth - 1
+        return cast(str, actions[index](doc=doc, tag=tag))
 
     @staticmethod
     def _append_tableofcontents() -> str:
@@ -210,61 +244,61 @@ class LatexEdition(EditionParser):
             case sutta_title if tag.has_attr("class") and any(
                 _class in tag["class"] for _class in ["sutta-title", "range-title"]
             ):
-                return self._append_section(tag)
+                return self._append_section(tag=tag)
 
             case section_title if tag.has_attr("class") and "section-title" in tag["class"]:
-                return self._append_part_or_chapter(doc, tag)
+                return self._append_section_title(doc=doc, tag=tag)
 
             case subheading if tag.has_attr("class") and "subheading" in tag["class"]:
-                return self._append_subsection(doc, tag)
+                return self._append_subheading(doc=doc, tag=tag)
 
             case "a" if tag.has_attr("role") and "doc-noteref" in tag["role"]:
-                return self._append_footnote(doc, tag)
+                return self._append_footnote(doc=doc, tag=tag)
 
             case "article" if tag.has_attr("class") and "epigraph" in tag["class"]:
-                return self._append_epigraph(doc, tag)
+                return self._append_epigraph(doc=doc, tag=tag)
 
             case "b":
-                return self._append_bold(doc, tag)
+                return self._append_bold(doc=doc, tag=tag)
 
             case "blockquote" if tag.has_attr("class") and "gatha" in tag["class"]:
-                return self._append_verse(doc, tag)
+                return self._append_verse(doc=doc, tag=tag)
 
             case "blockquote":
-                return self._append_quotation(doc, tag)
+                return self._append_quotation(doc=doc, tag=tag)
 
             case "br":
                 return self._append_breakline()
 
             case "cite":
-                return self._append_italic(doc, tag)
+                return self._append_italic(doc=doc, tag=tag)
 
             case "dl":
-                return self._append_definition_list(doc, tag)
+                return self._append_definition_list(doc=doc, tag=tag)
 
             case "em":
-                return self._append_emphasis(doc, tag)
+                return self._append_emphasis(doc=doc, tag=tag)
 
             case "h1":
-                return self._append_chapter(doc, tag)
+                return self._append_chapter(doc=doc, tag=tag)
 
             case "h2":
-                return self._append_simple_section(doc, tag)
+                return self._append_simple_section(doc=doc, tag=tag)
 
-            case "i" if tag.has_attr("lang") and any(_lang in tag["lang"] for _lang in ["pli", "san", "lzh"]):
-                return self._append_foreign_script_macro(doc, tag)
+            # case "i" if tag.has_attr("lang") and any(_lang in tag["lang"] for _lang in ["pli", "san", "lzh"]):
+            #     return self._append_foreign_script_macro(doc=doc, tag=tag)
 
             case "i" if tag.has_attr("lang"):
-                return self._append_italic(doc, tag)
+                return self._append_italic(doc=doc, tag=tag)
 
             case "i":
-                return self._append_italic(doc, tag)
+                return self._append_italic(doc=doc, tag=tag)
 
             case "ol" | "ul":
-                return self._append_list(doc, tag)
+                return self._append_list(doc=doc, tag=tag)
 
             case "p":
-                return self._append_paragraph(doc, tag)
+                return self._append_html_paragraph(doc=doc, tag=tag)
 
             case "section" if tag.has_attr("id") and tag["id"] == "main-toc":
                 return self._append_tableofcontents()
@@ -273,7 +307,7 @@ class LatexEdition(EditionParser):
                 pass
 
             case "span":
-                return self._append_span(doc, tag)
+                return self._append_span(doc=doc, tag=tag)
 
             case _:
                 return self._process_contents(doc=doc, contents=tag.contents)

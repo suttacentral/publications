@@ -77,6 +77,20 @@
 \chapterfont{\normalfont\centering}
 \partfont{\normalfont\centering\caps}
 
+% redefine paragraph and subparagraph headings to not be inline
+\makeatletter
+%%%%% Change the style of paragraph headings %%%%%
+\renewcommand\paragraph{\@startsection{paragraph}{4}{\z@}%
+            {-2.5ex\@plus -1ex \@minus -.25ex}%
+            {1.25ex \@plus .25ex}%
+            {\noindent\normalfont\normalsize\textit}}
+%%%%% Change the style of subparagraph headings %%%%%
+\renewcommand\subparagraph{\@startsection{subparagraph}{5}{\z@}%
+            {-2.5ex\@plus -1ex \@minus -.25ex}%
+            {1.25ex \@plus .25ex}% 
+            {\noindent\normalfont\small\textit}}
+\makeatother
+
 % titlepage
 \newcommand*{\titlepageTranslationTitle}[1]{{\begin{center}\begin{large}{#1}\end{large}\end{center}}}
 \newcommand*{\titlepageCreatorName}[1]{{\begin{center}\begin{normalsize}{#1}\end{normalsize}\end{center}}}

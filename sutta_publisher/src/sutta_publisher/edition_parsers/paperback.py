@@ -18,7 +18,7 @@ class PaperbackEdition(LatexEdition):
     def _generate_paperback(self, volume: Volume) -> None:
         log.debug("Generating paperback...")
 
-        _path: str = os.path.join(tempfile.gettempdir(), volume.filename[:-4])
+        _path: str = os.path.join(tempfile.gettempdir(), volume.filename)
         doc = self._generate_latex(volume=volume)
         doc.generate_pdf(filepath=_path, clean_tex=False, compiler="latexmk")
 

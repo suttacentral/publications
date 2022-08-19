@@ -111,7 +111,7 @@ class LatexEdition(EditionParser):
 
     def _append_foreign_script_macro(self, doc: Document, tag: Tag) -> str:
         _tex: str = self._process_contents(doc=doc, contents=tag.contents)
-        return cast(str, Command(f'text{tag["lang"]}', _tex).dumps())
+        return cast(str, Command(f'lang{tag["lang"]}', _tex).dumps())
 
     def _append_footnote(self, doc: Document, tag: Tag) -> str:
         if self.endnotes:
@@ -251,12 +251,10 @@ class LatexEdition(EditionParser):
             case "h2":
                 return self._append_simple_section(doc, tag)
 
-            # TODO: UNCOMMENT WHEN READY WITH LANGUAGE COMMANDS
-            # case "i" if tag.has_attr("lang") and any(_lang in tag["lang"] for _lang in ["pi", "sa"]):
-            #     return self._append_italic(doc, tag)
+            case "i" if tag.has_attr("lang") and any(_lang in tag["lang"] for _lang in ["pli", "san", "lzh"]):
+                return self._append_foreign_script_macro(doc, tag)
 
             case "i" if tag.has_attr("lang"):
-                # return self._append_foreign_script_macro(doc, tag)
                 return self._append_italic(doc, tag)
 
             case "i":

@@ -38,23 +38,23 @@ def latex_edition(config, data):
         ("<br>", NoEscape(r"\\") + NoEscape("\n")),
         ("<b>Test</b>", "\\textbf{Test}"),
         ("<em>Test</em>", "\\emph{Test}"),
-        ("<i lang='pi'>Test</i>", "\\textit{Test}"),
-        # ("<i lang='zh'>Test</i>", "\\textzh{Test}"),  # TODO: UNCOMMENT WHEN READY WITH LANGUAGE COMMANDS
+        ("<i lang='pli'>Test</i>", "\\langpli{Test}"),
+        ("<i lang='lzh'>Test</i>", "\\langlzh{Test}"),
         ("<a role='doc-noteref' href=''>1</a>", "\\footnote{Note}"),
         (
             "<h3 class='sutta-title'><span class='acronym'>Acronym</span><span class='name'>Name</span><span class='root-name'>Root</span></h3>",
-            "\\section*{\\setstretch{.85}\\centering{\\normalsize Acronym}\\\\Name\\\\{\\vspace*{-.1em}\itshape\\normalsize Root}}\n\\addcontentsline{toc}{section}{Acronym: Name — {\itshape Root}}\n\\markboth{Name}{Root}\n\\extramarks{Acronym}{Acronym}",
+            "\\section*{\\setstretch{.85}\\centering{\\normalsize Acronym}\\\\*Name\\\\*{\\vspace*{-.1em}\itshape\\normalsize Root}}\n\\addcontentsline{toc}{section}{Acronym: Name — {\itshape Root}}\n\\markboth{Name}{Root}\n\\extramarks{Acronym}{Acronym}",
         ),
         (
             "<h1 class='range-title'><span class='acronym'>Acronym</span><span class='name'>Name</span><span class='root-name'>Root</span></h1>",
-            "\\section*{\\setstretch{.85}\\centering{\\normalsize Acronym}\\\\Name\\\\{\\vspace*{-.1em}\itshape\\normalsize Root}}\n\\addcontentsline{toc}{section}{Acronym: Name — {\itshape Root}}\n\\markboth{Name}{Root}\n\\extramarks{Acronym}{Acronym}",
+            "\\section*{\\setstretch{.85}\\centering{\\normalsize Acronym}\\\\*Name\\\\*{\\vspace*{-.1em}\itshape\\normalsize Root}}\n\\addcontentsline{toc}{section}{Acronym: Name — {\itshape Root}}\n\\markboth{Name}{Root}\n\\extramarks{Acronym}{Acronym}",
         ),
         ("<h1>Test</h1>", "\\chapter*{Test}\n\\addcontentsline{toc}{chapter}{Test}\n\\markboth{Test}{Test}\n"),
         ("<h2>Test</h2>", "\\section*{Test}\n"),
         ("<section id='main-toc'>Test</section>", "\\tableofcontents"),
         (
             "<article class='epigraph'><blockquote class='epigraph-text'><p>Test</p></blockquote><p class='epigraph-attribution'><span class='epigraph-translated-title'>Name<span><span class='epigraph-root-title'>Root</span><span class='epigraph-reference'>Acronym</span></p></article>",
-            "\\newpage\n\n\\vspace*{\\fill}\n\n\\begin{center}\n\\epigraph{Test}{\\vspace*{.5em}\\epigraphTranslatedTitle{NameRootAcronym} \\epigraphRootTitle{Root}\\\\\\epigraphReference{Acronym}}\n\\end{center}\n\n\\vspace*{2in}\n\n\\vspace*{\\fill}",
+            "\\newpage\n\n\\vspace*{\\fill}\n\n\\begin{center}\n\\epigraph{Test}{\\vspace*{.5em}\\epigraphTranslatedTitle{NameRootAcronym} \\epigraphRootTitle{Root}\\\\\\epigraphReference{Acronym}}\n\\end{center}\n\n\\vspace*{2in}\n\n\\vspace*{\\fill}\n\n\\setlength{\\parindent}{1em}",
         ),
         ("<ul><li>Test 1</li></ul>", "\\begin{itemize}%\n\\item Test 1%\n\\end{itemize}\n"),
         ("<ol><li>Test 1</li></ol>", "\\begin{enumerate}%\n\\item Test 1%\n\\end{enumerate}\n"),

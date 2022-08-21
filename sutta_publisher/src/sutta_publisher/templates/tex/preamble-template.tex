@@ -21,6 +21,9 @@
 \setdefaultlanguage[]{english}
 \setotherlanguage[script=Latin]{sanskrit}
 
+% this fixes a quirk of luatexja, where the ’ is identified as a Japanese character and is set with a big space.
+\ltjsetparameter{jacharrange={-9}}
+
 % define fonts
 % use until arno is available
 %\setmainfont[Numbers=OldStyle]{EB Garamond}

@@ -146,7 +146,7 @@
 \newcommand*{\langpli}[1]{\textit{#1}}
 \newcommand*{\langsan}[1]{\textit{#1}}
 
-% manage and style page header and footer
+% manage and style page header and footer. "fancy" has header and footer, "plain" has footer only
 \setlength{\headheight}{19pt}
 \pagestyle{fancy}
 \fancyhf{}
@@ -157,6 +157,8 @@
 \renewcommand{\headrulewidth}{0pt}
 \fancypagestyle{plain}{ %
 \fancyhf{} % remove everything
+\fancyfoot[RE,LO]{\thepage}
+\fancyfoot[LE,RO]{\footnotesize\lastleftxmark}
 \renewcommand{\headrulewidth}{0pt}
 \renewcommand{\footrulewidth}{0pt}}
 

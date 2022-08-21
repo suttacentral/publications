@@ -25,12 +25,12 @@
 \ltjsetparameter{jacharrange={-9}}
 
 % define fonts
-% use until arno is available
-%\setmainfont[Numbers=OldStyle]{EB Garamond}
-%\newfontfamily\Semiboldsubheadfont[]{EB Garamond}
-%\newfontfamily\Semiboldnormalfont[]{EB Garamond}
+% use if arno sanskrit is unavailable
+%\setmainfont[Numbers=OldStyle]{Gentium Plus}
+%\newfontfamily\Semiboldsubheadfont[]{Gentium Plus}
+%\newfontfamily\Semiboldnormalfont[]{Gentium Plus}
 
-% when arno is available, uncomment these
+% use if arno sanskrit is available
 %\setmainfont[Numbers=OldStyle]{Arno Pro}
 %\newfontfamily\Semiboldsubheadfont[BoldFont = ArnoPro-SmbdSubhead,BoldItalicFont = ArnoPro-SmbdItalicSubhead]{Arno Pro Smbd}
 %\newfontfamily\Semiboldnormalfont[BoldFont = ArnoPro-Smbd,BoldItalicFont = ArnoPro-SmbdItalic]{Arno Pro Smbd}
@@ -107,6 +107,11 @@
             {1.25ex \@plus .25ex}% 
             {\noindent\Semiboldnormalfont\small}}
 \makeatother
+
+% remove page number from \part
+\usepackage{etoolbox}
+\patchcmd{\part}{\thispagestyle{plain}}{\thispagestyle{empty}}
+  {}{\errmessage{Cannot patch \string\part}}
 
 % titlepage
 \newcommand*{\titlepageTranslationTitle}[1]{{\begin{center}\begin{large}{#1}\end{large}\end{center}}}

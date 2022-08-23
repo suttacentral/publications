@@ -46,7 +46,7 @@ def latex_edition(config, data):
             "\\section*{\\setstretch{.85}\\centering{\\normalsize Acronym}\\\\*Name\\\\*{\\vspace*{-.1em}\itshape\\normalsize Root}}\n\\addcontentsline{toc}{section}{Acronym: Name — {\itshape Root}}\n\\markboth{Name}{Root}\n\\extramarks{Acronym}{Acronym}",
         ),
         (
-            "<h1 class='range-title'><span class='acronym'>Acronym</span><span class='name'>Name</span><span class='root-name'>Root</span></h1>",
+            "<h3 class='range-title'><span class='acronym'>Acronym</span><span class='name'>Name</span><span class='root-name'>Root</span></h1>",
             "\\section*{\\setstretch{.85}\\centering{\\normalsize Acronym}\\\\*Name\\\\*{\\vspace*{-.1em}\itshape\\normalsize Root}}\n\\addcontentsline{toc}{section}{Acronym: Name — {\itshape Root}}\n\\markboth{Name}{Root}\n\\extramarks{Acronym}{Acronym}",
         ),
         ("<h1>Test</h1>", "\\chapter*{Test}\n\\addcontentsline{toc}{chapter}{Test}\n\\markboth{Test}{Test}\n"),

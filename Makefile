@@ -35,6 +35,9 @@ run-debug:
 run-command:
 	$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) -f $(DEV_DOCKER_COMPOSE) run publisher $(filter-out $@,$(MAKECMDGOALS))
 
+run-bash:
+	$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) -f $(DEV_DOCKER_COMPOSE) run publisher bash
+
 build:
 	rm -Rf $(TMP_DIR)
 	$(GIT_EXEC) clone $(FONT_REPO) $(TMP_DIR)

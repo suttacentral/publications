@@ -1,0 +1,84 @@
+@font-face {
+    font-family: '';
+    src: url('NotoSerifTC-Black-Alphabetic.eot');
+    src: local(''), local('NotoSerifTC-Black-Alphabetic'),
+        url('NotoSerifTC-Black-Alphabetic.eot?#iefix') format('embedded-opentype'),
+        url('NotoSerifTC-Black-Alphabetic.woff2') format('woff2'),
+        url('NotoSerifTC-Black-Alphabetic.woff') format('woff'),
+        url('NotoSerifTC-Black-Alphabetic.ttf') format('truetype');
+    font-weight: 900;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: '';
+    src: url('NotoSerifTC-Light-Alphabetic.eot');
+    src: local(''), local('NotoSerifTC-Light-Alphabetic'),
+        url('NotoSerifTC-Light-Alphabetic.eot?#iefix') format('embedded-opentype'),
+        url('NotoSerifTC-Light-Alphabetic.woff2') format('woff2'),
+        url('NotoSerifTC-Light-Alphabetic.woff') format('woff'),
+        url('NotoSerifTC-Light-Alphabetic.ttf') format('truetype');
+    font-weight: 300;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: '';
+    src: url('NotoSerifTC-Regular-Alphabetic.eot');
+    src: local(''), local('NotoSerifTC-Regular-Alphabetic'),
+        url('NotoSerifTC-Regular-Alphabetic.eot?#iefix') format('embedded-opentype'),
+        url('NotoSerifTC-Regular-Alphabetic.woff2') format('woff2'),
+        url('NotoSerifTC-Regular-Alphabetic.woff') format('woff'),
+        url('NotoSerifTC-Regular-Alphabetic.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: '';
+    src: url('NotoSerifTC-Bold-Alphabetic.eot');
+    src: local(''), local('NotoSerifTC-Bold-Alphabetic'),
+        url('NotoSerifTC-Bold-Alphabetic.eot?#iefix') format('embedded-opentype'),
+        url('NotoSerifTC-Bold-Alphabetic.woff2') format('woff2'),
+        url('NotoSerifTC-Bold-Alphabetic.woff') format('woff'),
+        url('NotoSerifTC-Bold-Alphabetic.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: '';
+    src: url('NotoSerifTC-Medium-Alphabetic.eot');
+    src: local(''), local('NotoSerifTC-Medium-Alphabetic'),
+        url('NotoSerifTC-Medium-Alphabetic.eot?#iefix') format('embedded-opentype'),
+        url('NotoSerifTC-Medium-Alphabetic.woff2') format('woff2'),
+        url('NotoSerifTC-Medium-Alphabetic.woff') format('woff'),
+        url('NotoSerifTC-Medium-Alphabetic.ttf') format('truetype');
+    font-weight: 500;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: '';
+    src: url('NotoSerifTC-ExtraLight-Alphabetic.eot');
+    src: local(''), local('NotoSerifTC-ExtraLight-Alphabetic'),
+        url('NotoSerifTC-ExtraLight-Alphabetic.eot?#iefix') format('embedded-opentype'),
+        url('NotoSerifTC-ExtraLight-Alphabetic.woff2') format('woff2'),
+        url('NotoSerifTC-ExtraLight-Alphabetic.woff') format('woff'),
+        url('NotoSerifTC-ExtraLight-Alphabetic.ttf') format('truetype');
+    font-weight: 200;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: '';
+    src: url('NotoSerifTC-SemiBold-Alphabetic.eot');
+    src: local(''), local('NotoSerifTC-SemiBold-Alphabetic'),
+        url('NotoSerifTC-SemiBold-Alphabetic.eot?#iefix') format('embedded-opentype'),
+        url('NotoSerifTC-SemiBold-Alphabetic.woff2') format('woff2'),
+        url('NotoSerifTC-SemiBold-Alphabetic.woff') format('woff'),
+        url('NotoSerifTC-SemiBold-Alphabetic.ttf') format('truetype');
+    font-weight: 600;
+    font-style: normal;
+}
+

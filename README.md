@@ -38,11 +38,11 @@ e.g.
 
 It will mount the project root to the container:
 ```bash
-# Build dev docker image 
+# Build dev docker image
 make build IMAGE_TARGET=development
 
 # Run dev console to fiddle
-make run-dev bash
+make run-bash
 
 # Tests
 # if needed:

@@ -1,4 +1,5 @@
 \usepackage[inner=1in, outer=1in, top=.8in, bottom=1.1in, papersize={6in,9in}]{geometry}
+\usepackage{polyglossia}
 \usepackage[12pt]{moresize}
 \usepackage[utf8]{inputenc}
 \usepackage{lastpage}%
@@ -10,18 +11,31 @@
 \usepackage{setspace}%
 \usepackage{sectsty}
 \usepackage{fontspec}
-%\usepackage{luatexja-fontspec}
+\usepackage{luatexja-fontspec}
 \usepackage[noadjust]{marginnote}
 \usepackage[bottom]{footmisc}
 \usepackage{enumitem}
 \usepackage{fancyhdr}
 \usepackage{extramarks}
 
+\setdefaultlanguage[]{english}
+\setotherlanguage[script=Latin]{sanskrit}
+
+% this fixes a quirk of luatexja, where the ’ is identified as a Japanese character and is set with a big space.
+\ltjsetparameter{jacharrange={-9}}
+
 % define fonts
-% \setmainfont[Numbers=OldStyle]{Arno Pro}
-% \renewcommand*{\marginfont}{\MarginalFont}
-% \newfontfamily\MarginalFont[RawFeature=+subs]{Arno Pro}
-\setmainfont[Numbers=OldStyle]{EB Garamond}
+% use if arno sanskrit is unavailable
+%\setmainfont[Numbers=OldStyle]{Gentium Plus}
+%\newfontfamily\Semiboldsubheadfont[]{Gentium Plus}
+%\newfontfamily\Semiboldnormalfont[]{Gentium Plus}
+
+% use if arno sanskrit is available
+%\setmainfont[Numbers=OldStyle]{Arno Pro}
+%\newfontfamily\Semiboldsubheadfont[BoldFont = ArnoPro-SmbdSubhead,BoldItalicFont = ArnoPro-SmbdItalicSubhead]{Arno Pro Smbd}
+%\newfontfamily\Semiboldnormalfont[BoldFont = ArnoPro-Smbd,BoldItalicFont = ArnoPro-SmbdItalic]{Arno Pro Smbd}
+%\newfontfamily\MarginalFont[RawFeature=+subs]{Arno Pro}
+%\renewcommand*{\marginfont}{\MarginalFont}
 
 % use compact lists
 \setitemize{noitemsep,topsep=0pt,parsep=0pt,partopsep=0pt}
@@ -69,10 +83,35 @@
 % global line height
 \setstretch{1.05}
 
+% allow linebreak after em-dash
+\catcode`\—=13
+\protected\def—{\unskip\textemdash\allowbreak}
+
 % style headings with secsty
-\allsectionsfont{\normalfont}
 \chapterfont{\normalfont\centering}
 \partfont{\normalfont\centering\caps}
+\sectionfont{\normalfont}
+\subsectionfont{\Semiboldsubheadfont}
+\subsubsectionfont{\Semiboldsubheadfont}
+
+% redefine paragraph and subparagraph headings to not be inline
+\makeatletter
+%%%%% Change the style of paragraph headings %%%%%
+\renewcommand\paragraph{\@startsection{paragraph}{4}{\z@}%
+            {-2.5ex\@plus -1ex \@minus -.25ex}%
+            {1.25ex \@plus .25ex}%
+            {\noindent\Semiboldnormalfont\normalsize}}
+%%%%% Change the style of subparagraph headings %%%%%
+\renewcommand\subparagraph{\@startsection{subparagraph}{5}{\z@}%
+            {-2.5ex\@plus -1ex \@minus -.25ex}%
+            {1.25ex \@plus .25ex}%
+            {\noindent\Semiboldnormalfont\small}}
+\makeatother
+
+% remove page number from \part
+\usepackage{etoolbox}
+\patchcmd{\part}{\thispagestyle{plain}}{\thispagestyle{empty}}
+  {}{\errmessage{Cannot patch \string\part}}
 
 % titlepage
 \newcommand*{\titlepageTranslationTitle}[1]{{\begin{center}\begin{large}{#1}\end{large}\end{center}}}
@@ -110,15 +149,13 @@
 \newcommand*{\scadd}[1]{\textit{#1}}
 \newcommand*{\scevam}[1]{\caps{#1}}
 \newcommand*{\scspeaker}[1]{\hspace{2em}\textit{#1}}
+\newcommand*{\scbyline}[1]{\hspace{2em}\textit{#1}}
 
 % language support
-%\newjfontfamily\cjk{Noto Serif TC}
-%\newcommand*{\langlzh}[1]{\cjk{#1}}%
-%
-%\newcommand*{\langpli}[1]{\textit{#1}}
-%\newcommand*{\langsan}[1]{\textit{#1}}
+\newjfontfamily\cjk{Noto Serif TC}
+\newcommand*{\langlzh}[1]{\cjk{#1}}%
 
-% manage and style page header and footer
+% manage and style page header and footer. "fancy" has header and footer, "plain" has footer only
 \setlength{\headheight}{19pt}
 \pagestyle{fancy}
 \fancyhf{}
@@ -129,6 +166,8 @@
 \renewcommand{\headrulewidth}{0pt}
 \fancypagestyle{plain}{ %
 \fancyhf{} % remove everything
+\fancyfoot[RE,LO]{\thepage}
+\fancyfoot[LE,RO]{\footnotesize\lastleftxmark}
 \renewcommand{\headrulewidth}{0pt}
 \renewcommand{\footrulewidth}{0pt}}
 

@@ -14,9 +14,20 @@ RUN apt-get update -y \
     && apt-get install texlive-extra-utils texlive-base texlive-latex-base texlive-xetex latexmk texlive-lang-japanese -y\
     && apt-get clean -y
 
-COPY .EBGaramond12/fonts /usr/local/share/fonts/
-COPY ./assets/fonts /usr/local/share/fonts/
-RUN fc-cache
+COPY ./assets/fonts/ /tmp/fonts
+RUN cp -Rf /tmp/fonts/EBGaramond12/fonts/otf /usr/local/share/fonts/ && \
+    cp -Rf /tmp/fonts/Noto_Sans_TC/fonts/otf /usr/local/share/fonts/ && \
+    cp -Rf /tmp/fonts/Noto_Serif_TC/fonts/otf /usr/local/share/fonts/ && \
+    chmod 755 /usr/local/share/fonts/* -R && \
+    fc-cache -fv && \
+    rm -Rf /tmp/fonts
+
+
+
+# COPY assets/fonts/Noto_Sans_TC/fonts /usr/local/share/fonts/
+# COPY assets/fonts/Noto_Serif_TC/fonts /usr/local/share/fonts/
+# RUN chmod 755 /usr/local/share/fonts/* -R
+# RUN fc-cache -fv
 
 ### PRODUCTION
 FROM base as production

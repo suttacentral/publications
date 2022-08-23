@@ -118,10 +118,9 @@ class LatexEdition(EditionParser):
         _tex: str = self._process_contents(doc=doc, contents=tag.contents)
         return cast(str, Command(f'lang{tag["lang"]}', _tex).dumps())
 
-    def _append_footnote(self, doc: Document, tag: Tag) -> str:
+    def _append_footnote(self, doc: Document) -> str:
         if self.endnotes:
-            _index: int = int(tag.string)
-            _note_contents: list[PageElement] = BeautifulSoup(self.endnotes[_index - 1], "lxml").body.contents
+            _note_contents: list[PageElement] = BeautifulSoup(self.endnotes.pop(0), "lxml").body.contents
             _data: str = self._process_contents(doc=doc, contents=_note_contents)
             return cast(str, Command("footnote", _data).dumps())
         else:
@@ -237,13 +236,13 @@ class LatexEdition(EditionParser):
             list_env.append(NoEscape(f"{_command} {_tex_value}"))
         return cast(str, list_env.dumps() + NoEscape("\n"))
 
-    def _process_tag(self, doc: Document, tag: Tag) -> str:  # type: ignore
+    def _process_tag(self, doc: Document, tag: Tag) -> str:
 
         match tag.name:
 
             case sutta_title if tag.has_attr("class") and any(
                 _class in tag["class"] for _class in ["sutta-title", "range-title"]
-            ):
+            ) and int(sutta_title[1:]) == self.sutta_depth:
                 return self._append_section(tag=tag)
 
             case section_title if tag.has_attr("class") and "section-title" in tag["class"]:
@@ -253,7 +252,7 @@ class LatexEdition(EditionParser):
                 return self._append_subheading(doc=doc, tag=tag)
 
             case "a" if tag.has_attr("role") and "doc-noteref" in tag["role"]:
-                return self._append_footnote(doc=doc, tag=tag)
+                return self._append_footnote(doc=doc)
 
             case "article" if tag.has_attr("class") and "epigraph" in tag["class"]:
                 return self._append_epigraph(doc=doc, tag=tag)
@@ -304,13 +303,12 @@ class LatexEdition(EditionParser):
                 return self._append_tableofcontents()
 
             case "section" if tag.has_attr("class") and "secondary-toc" in tag["class"]:
-                pass
+                return ""
 
             case "span":
                 return self._append_span(doc=doc, tag=tag)
 
-            case _:
-                return self._process_contents(doc=doc, contents=tag.contents)
+        return self._process_contents(doc=doc, contents=tag.contents)
 
     def _process_contents(self, doc: Document, contents: list[PageElement]) -> str:
         tex: str = ""

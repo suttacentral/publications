@@ -21,13 +21,6 @@ RUN cp -Rf /tmp/fonts/EBGaramond12/fonts/otf /usr/local/share/fonts/ && \
     fc-cache -fv && \
     rm -Rf /tmp/fonts
 
-
-
-# COPY assets/fonts/Noto_Sans_TC/fonts /usr/local/share/fonts/
-# COPY assets/fonts/Noto_Serif_TC/fonts /usr/local/share/fonts/
-# RUN chmod 755 /usr/local/share/fonts/* -R
-# RUN fc-cache -fv
-
 ### PRODUCTION
 FROM base as production
 ENV RUN_ENV=production

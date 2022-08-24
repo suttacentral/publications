@@ -18,8 +18,10 @@ class PaperbackEdition(LatexEdition):
     def _generate_paperback(self, volume: Volume) -> None:
         log.debug("Generating paperback...")
 
-        _path: str = os.path.join(tempfile.gettempdir(), volume.filename[:-4])
+        _path: str = os.path.join(tempfile.gettempdir(), volume.filename)
+        log.debug("Generating tex...")
         doc = self._generate_latex(volume=volume)
+        log.debug("Generating pdf...")
         doc.generate_pdf(filepath=_path, clean_tex=False, compiler="latexmk")
 
     def collect_all(self):  # type: ignore

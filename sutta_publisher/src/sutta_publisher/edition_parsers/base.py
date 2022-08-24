@@ -117,8 +117,8 @@ class EditionParser(ABC):
             "updated": self.config.edition.updated,
             "volume_acronym": self.config.edition.volumes[_index].volume_acronym,
             "volume_isbn": self.config.edition.volumes[_index].volume_isbn,
-            "volume_root_title": "",  # TODO[61]: implement - where do I get it from?
-            "volume_translation_title": "",  # TODO[61]: implement - where do I get it from?
+            "volume_root_title": self.config.edition.volumes[_index].volume_root_title,
+            "volume_translation_title": self.config.edition.volumes[_index].volume_translation_title,
         }
 
     def _collect_blurbs(self, volume: Volume) -> list[Blurb]:
@@ -164,7 +164,7 @@ class EditionParser(ABC):
         _volume_number: str = f"-{volume.volume_number}" if volume.volume_number else ""
         _file_extension: str = self.edition_type.name
 
-        volume.filename = f"{_translation_title}-{volume.creator_uid}-{_date}{_volume_number}.{_file_extension}"
+        volume.filename = f"{_translation_title}-{volume.creator_uid}-{_date}{_volume_number}"
 
     # --- operations on mainmatter
     def _generate_mainmatter(self, volume: Volume) -> str:

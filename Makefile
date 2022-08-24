@@ -35,11 +35,11 @@ run-debug:
 run-command:
 	$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) -f $(DEV_DOCKER_COMPOSE) run publisher $(filter-out $@,$(MAKECMDGOALS))
 
+run-bash:
+	$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) -f $(DEV_DOCKER_COMPOSE) run publisher bash
+
 build:
-	rm -Rf $(TMP_DIR)
-	$(GIT_EXEC) clone $(FONT_REPO) $(TMP_DIR)
 	cd $(APP_PATH)/.. ; $(DOCKER_EXEC) build -t=$(IMAGE_NAME):$(IMAGE_VERSION) --target=$(IMAGE_TARGET) -f=Dockerfile ./
-	rm -Rf $(TMP_DIR)
 
 push-docker-image:
 	$(DOCKER_EXEC)  push $(IMAGE_NAME):$(IMAGE_VERSION)
@@ -53,7 +53,7 @@ clean:
 ### Testing
 ###########
 
-test: 
+test:
 	$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) -f $(DEV_DOCKER_COMPOSE) run publisher pytest /tests
 
 # TODO: [67] Reimplement using already defined `make lint` job and **in container**

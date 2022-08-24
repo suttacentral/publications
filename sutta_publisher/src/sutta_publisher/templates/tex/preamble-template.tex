@@ -91,22 +91,26 @@
 \chapterfont{\normalfont\centering}
 \partfont{\normalfont\centering\caps}
 \sectionfont{\normalfont}
-\subsectionfont{\Semiboldsubheadfont}
-\subsubsectionfont{\Semiboldsubheadfont}
+% TODO: UNCOMMENT WHEN READY WITH ARNO
+% \subsectionfont{\Semiboldsubheadfont}
+% \subsubsectionfont{\Semiboldsubheadfont}
 
 % redefine paragraph and subparagraph headings to not be inline
 \makeatletter
-%%%%% Change the style of paragraph headings %%%%%
+% Change the style of paragraph headings %
 \renewcommand\paragraph{\@startsection{paragraph}{4}{\z@}%
             {-2.5ex\@plus -1ex \@minus -.25ex}%
             {1.25ex \@plus .25ex}%
-            {\noindent\Semiboldnormalfont\normalsize}}
-%%%%% Change the style of subparagraph headings %%%%%
+            {\noindent\normalsize}}
+%           {\noindent\Semiboldnormalfont\normalsize}} TODO: replace at line 103 when Arno is ready
+
+% Change the style of subparagraph headings %
 \renewcommand\subparagraph{\@startsection{subparagraph}{5}{\z@}%
             {-2.5ex\@plus -1ex \@minus -.25ex}%
-            {1.25ex \@plus .25ex}% 
-            {\noindent\Semiboldnormalfont\small}}
+            {1.25ex \@plus .25ex}%
+            {\noindent\small}}
 \makeatother
+%           {\noindent\Semiboldnormalfont\small}} TODO: replace at line 109 when Arno is ready
 
 % remove page number from \part
 \usepackage{etoolbox}

@@ -12,6 +12,8 @@ class VolumeDetail(BaseModel):
     volume_number: str | None
     volume_isbn: str | None
     volume_acronym: str | None
+    volume_translation_title: str | None
+    volume_root_title: str | None
     backmatter: list[str]
     frontmatter: list[str]
     mainmatter: list[str]

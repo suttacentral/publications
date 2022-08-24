@@ -4,7 +4,7 @@ import pytest
 from bs4 import BeautifulSoup
 from pylatex import Document, NoEscape
 
-from sutta_publisher.edition_parsers.pdf import LatexEdition
+from sutta_publisher.edition_parsers.latex import LatexEdition
 
 
 @pytest.fixture()

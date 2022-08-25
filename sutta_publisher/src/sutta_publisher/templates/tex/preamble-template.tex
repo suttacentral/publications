@@ -23,17 +23,22 @@
 \usepackage{extramarks}
 \usepackage{graphicx}
 
+% define languages
 \setdefaultlanguage[]{english}
 \setotherlanguage[script=Latin]{sanskrit}
 
-% this fixes a quirk of luatexja, where the ’ is identified as a Japanese character and is set with a big space.
+% this fixes a quirk of luatexja, where ’ is identified as a Japanese character and is set with a big space.
 \ltjsetparameter{jacharrange={-9}}
 
 % define fonts
 % use if arno sanskrit is unavailable
-%\setmainfont[Numbers=OldStyle]{Gentium Plus}
-%\newfontfamily\Semiboldsubheadfont[]{Gentium Plus}
-%\newfontfamily\Semiboldnormalfont[]{Gentium Plus}
+\setmainfont{Gentium Plus}
+\newfontfamily\Semiboldsubheadfont[]{Gentium Plus}
+\newfontfamily\Semiboldnormalfont[]{Gentium Plus}
+\newfontfamily\Marginalfont[]{Gentium Plus}
+\newfontfamily\Allsmallcapsfont[RawFeature=+c2sc]{Gentium Plus}
+\newfontfamily\Noligaturefont[Renderer=Basic]{Gentium Plus}
+\newfontfamily\Fleuronfont[Ornament=1]{Gentium Plus}
 
 % use if arno sanskrit is available
 %\setmainfont[Numbers=OldStyle]{Arno Pro}
@@ -41,12 +46,19 @@
 %\newfontfamily\Semiboldnormalfont[BoldFont = ArnoPro-Smbd,BoldItalicFont = ArnoPro-SmbdItalic]{Arno Pro Smbd}
 %\newfontfamily\Marginalfont[RawFeature=+subs]{Arno Pro Regular}
 %\newfontfamily\Allsmallcapsfont[RawFeature=+c2sc]{Arno Pro}
-%\newfontfamily\ArnoProNoLigatures[Renderer=Basic]{ArnoPro-Caption}
+%\newfontfamily\Noligaturefont[Renderer=Basic]{ArnoPro-Caption}
 %\newfontfamily\Fleuronfont[Ornament=1]{Arno Pro}
 
-%\renewcommand*{\marginfont}{\Marginalfont}
-%\renewcommand*{\marginnotevadjust}{-.17em}
+% chinese fonts
+\newjfontfamily\cjk{Noto Serif TC}
+\newcommand*{\langlzh}[1]{\cjk{#1}}%
+
+% use subscript numerals for margin notes
+\renewcommand*{\marginfont}{\Marginalfont}
+
+% ensure margin notes have consistent vertical alignment
 \newcommand*{\mnum}[1]{\phantom{}\marginnote{#1}}
+\renewcommand*{\marginnotevadjust}{-.17em}
 
 % use compact lists
 \setitemize{noitemsep,topsep=0pt,parsep=0pt,partopsep=0pt}
@@ -102,9 +114,8 @@
 \chapterfont{\normalfont\centering}
 \partfont{\normalfont\centering\caps}
 \sectionfont{\normalfont}
-% TODO: UNCOMMENT WHEN READY WITH ARNO
-%\subsectionfont{\Semiboldsubheadfont}
-%\subsubsectionfont{\Semiboldsubheadfont}
+\subsectionfont{\Semiboldsubheadfont}
+\subsubsectionfont{\Semiboldsubheadfont}
 
 % redefine paragraph and subparagraph headings to not be inline
 \makeatletter
@@ -135,7 +146,7 @@
 % halftitlepage
 \newcommand*{\halftitlepageTranslationTitle}[1]{\setstretch{2.5}{\begin{Huge}\uppercase{\so{#1}}\end{Huge}}}
 \newcommand*{\halftitlepageTranslationSubtitle}[1]{\setstretch{1.2}{\begin{large}{#1}\end{large}}}
-%\newcommand*{\halftitlepageFleuron}[1]{{\begin{large}\Fleuronfont{{#1}}\end{large}}}
+\newcommand*{\halftitlepageFleuron}[1]{{\begin{large}\Fleuronfont{{#1}}\end{large}}}
 \newcommand*{\halftitlepageByline}[1]{{\begin{normalsize}\textit{{#1}}\end{normalsize}}}
 \newcommand*{\halftitlepageCreatorName}[1]{{\begin{LARGE}{\caps{#1}}\end{LARGE}}}
 \newcommand*{\halftitlepageVolumeNumber}[1]{{\begin{normalsize}{\Allsmallcapsfont{\caps{#1}}}\end{normalsize}}}
@@ -165,10 +176,6 @@
 \newcommand*{\scevam}[1]{\caps{#1}}
 \newcommand*{\scspeaker}[1]{\hspace{2em}\textit{#1}}
 \newcommand*{\scbyline}[1]{\hspace{2em}\textit{#1}}
-
-% language support
-\newjfontfamily\cjk{Noto Serif TC}
-\newcommand*{\langlzh}[1]{\cjk{#1}}%
 
 % manage and style page header and footer. "fancy" has header and footer, "plain" has footer only
 \setlength{\headheight}{19pt}

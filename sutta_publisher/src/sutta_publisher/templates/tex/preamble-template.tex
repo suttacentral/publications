@@ -58,6 +58,10 @@
 \let\oldcontentsline\contentsline
 \newcommand{\nopagecontentsline}[3]{\oldcontentsline{#1}{#2}{}}
 
+% ensure margin notes have consistent vertical alignment
+\newcommand*{\mnum}[1]{\phantom{}\marginnote{#1}}
+\renewcommand*{\marginnotevadjust}{-.17em}
+
     \makeatletter
 \renewcommand*\l@part[2]{%
   \ifnum \c@tocdepth >-2\relax

@@ -5,7 +5,6 @@
 \usepackage[inner=1in, outer=1in, top=.8in, bottom=1.1in, papersize={6in,9in}]{geometry}
 \usepackage{polyglossia}
 \usepackage[12pt]{moresize}
-\usepackage[utf8]{inputenc}
 \usepackage{lastpage}%
 \usepackage{soul}%
 \usepackage{microtype}
@@ -183,8 +182,8 @@
 \fancyhf{}
 \fancyfoot[RE,LO]{\thepage}
 \fancyfoot[LE,RO]{\footnotesize\lastleftxmark}
-\fancyhead[CE]{\setstretch{.85}\MakeLowercase{\textsc{\firstrightmark}}}
-\fancyhead[CO]{\setstretch{.85}\MakeLowercase{\textsc{\firstleftmark}}}
+\fancyhead[CE]{\setstretch{.85}\MakeLowercase{\caps{\firstrightmark}}}
+\fancyhead[CO]{\setstretch{.85}\MakeLowercase{\caps{\firstleftmark}}}
 \renewcommand{\headrulewidth}{0pt}
 \fancypagestyle{plain}{ %
 \fancyhf{} % remove everything
@@ -204,6 +203,12 @@
 \renewcommand{\@makefntext}[1]{\@makefntextcustom{#1}}
 \makeatother
 
-% make latex use document em for parindent, not CMR
+% hang quotes (requires microtype)
+\SetProtrusion 
+{encoding= *,}
+{\textquotedblleft = {1000, },
+\textquoteleft = {1000, }}
+
+% make latex use actual font em for parindent, not Computer Modern Roman
 \AtBeginDocument{\setlength{\parindent}{1em}}%
 %

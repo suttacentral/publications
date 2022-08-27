@@ -37,6 +37,7 @@
 \newfontfamily\Marginalfont[]{Gentium Plus}
 \newfontfamily\Allsmallcapsfont[RawFeature=+c2sc]{Gentium Plus}
 \newfontfamily\Noligaturefont[Renderer=Basic]{Gentium Plus}
+\newfontfamily\Noligaturecaptionfont[Renderer=Basic]{Gentium Plus}
 \newfontfamily\Fleuronfont[Ornament=1]{Gentium Plus}
 
 % use if arno sanskrit is available
@@ -45,7 +46,8 @@
 %\newfontfamily\Semiboldnormalfont[BoldFont = ArnoPro-Smbd,BoldItalicFont = ArnoPro-SmbdItalic]{Arno Pro Smbd}
 %\newfontfamily\Marginalfont[RawFeature=+subs]{Arno Pro Regular}
 %\newfontfamily\Allsmallcapsfont[RawFeature=+c2sc]{Arno Pro}
-%\newfontfamily\Noligaturefont[Renderer=Basic]{ArnoPro-Caption}
+%\newfontfamily\Noligaturefont[Renderer=Basic]{ArnoPro}
+%\newfontfamily\Noligaturecaptionfont[Renderer=Basic]{ArnoPro-Caption}
 %\newfontfamily\Fleuronfont[Ornament=1]{Arno Pro}
 
 % chinese fonts
@@ -182,8 +184,8 @@
 \fancyhf{}
 \fancyfoot[RE,LO]{\thepage}
 \fancyfoot[LE,RO]{\footnotesize\lastleftxmark}
-\fancyhead[CE]{\setstretch{.85}\MakeLowercase{\caps{\firstrightmark}}}
-\fancyhead[CO]{\setstretch{.85}\MakeLowercase{\caps{\firstleftmark}}}
+\fancyhead[CE]{\setstretch{.85}\Noligaturefont\MakeLowercase{\caps{\firstrightmark}}}
+\fancyhead[CO]{\setstretch{.85}\Noligaturefont\MakeLowercase{\caps{\firstleftmark}}}
 \renewcommand{\headrulewidth}{0pt}
 \fancypagestyle{plain}{ %
 \fancyhf{} % remove everything

@@ -1,40 +1,49 @@
+\begin{center}
+
 \vspace*{-2em}
 
 \halftitlepageTranslationTitle{\VAR{translation_title | safe}}
 
-\vspace*{-1em}
+\vspace*{1em}
 
 \halftitlepageTranslationSubtitle{\VAR{translation_subtitle | safe}}
 
 \vspace*{1em}
 
-% TODO: Uncomment when ready to use Arno
-% \halftitlepageFleuron{•}
+\halftitlepageFleuron{•}
 
 \vspace*{1em}
 
 \halftitlepageByline{translated and introduced by}
 
-\vspace*{-1.5em}
+\vspace*{.2em}
 
 \halftitlepageCreatorName{\VAR{creator_name | safe}}
 
-\vspace*{1em}
+\vspace*{3em}
 
 \halftitlepageVolumeNumber{\BLOCK{if volume_number}Volume \VAR{volume_number | safe}\BLOCK{endif}}
 
+\smallskip
+
 \halftitlepageVolumeAcronym{\BLOCK{if volume_acronym}\VAR{volume_acronym | safe}\BLOCK{endif}}
 
+\smallskip
+
 \halftitlepageVolumeTranslationTitle{\BLOCK{if volume_translation_title}\VAR{volume_translation_title | safe}\BLOCK{endif}}
+
+\smallskip
 
 \halftitlepageVolumeRootTitle{\BLOCK{if volume_root_title}\VAR{volume_root_title | safe}\BLOCK{endif}}
 
 \vspace*{\fill}
 
-% TODO: Uncomment when ready to use Arno
-% \begin{center}
 % \raisebox{-4.8pt}{\includegraphics{sclogo.png}}
-% \halftitlepagePublisher{SuttaCentral}
-% \end{center}
+ \halftitlepagePublisher{SuttaCentral}
+
+\end{center}
 
 \newpage
+
+\setstretch{1.05}
+\setlength{\parindent}{1.5em}

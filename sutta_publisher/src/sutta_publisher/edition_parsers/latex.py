@@ -7,7 +7,7 @@ from typing import Callable, cast
 
 from bs4 import BeautifulSoup, NavigableString, PageElement, Tag
 from jinja2 import Environment as jinja2_Environment, FileSystemLoader, Template, TemplateNotFound
-from pylatex import Document, NoEscape, Itemize, Enumerate, Description
+from pylatex import Description, Document, Enumerate, Itemize, NewPage, NoEscape
 from pylatex.base_classes import Command, Environment
 from pylatex.utils import bold, italic
 
@@ -57,21 +57,42 @@ class LatexEdition(EditionParser):
     endnotes: list[str] | None
     sutta_depth: int
 
-    def _append_p(self, doc: Document, tag: Tag) -> str:
-        tex: str = ""
+    @staticmethod
+    def _is_styled(tag: Tag) -> bool:
+        if tag.has_attr("class"):
+            return any(_class in STYLING_CLASSES for _class in tag["class"])
+        else:
+            return False
 
-        if tag.has_attr("id"):
+    @staticmethod
+    def _apply_styling(tag: Tag, tex: str) -> str:
+        for _class in tag["class"]:
+            if _class in STYLING_CLASSES:
+                return cast(str, Command(f'sc{_class.replace("-", "")}', NoEscape(tex)).dumps())
+        return tex
+
+    @staticmethod
+    def _append_marginnote(tex: str, uid: str) -> str:
+        """Add marginnote before first space"""
+        marginnote = Command("marginnote", uid).dumps()
+        try:
+            tex_1, tex_2 = tex.split(" ", 1)
+        except ValueError:
+            return f"{tex}{marginnote} "
+        return f"{tex_1}{marginnote} {tex_2}"
+
+    def _append_p(self, doc: Document, tag: Tag) -> str:
+        tex: str = self._process_contents(doc=doc, contents=tag.contents)
+
+        if self._is_styled(tag=tag):
+            tex = self._apply_styling(tag=tag, tex=tex)
+        elif tag.has_attr("id"):
             if self.config.edition.text_uid == "dhp":
                 _uid: str = tag["id"].split(":")[0][3:]
             else:
                 _uid = tag["id"].split(":")[1]
 
-            tex += Command("mnum", _uid).dumps()
-
-        tex += self._process_contents(doc=doc, contents=tag.contents)
-
-        if tag.has_attr("class"):
-            tex = self._apply_styling(tag=tag, tex=tex)
+            tex = self._append_marginnote(tex=tex, uid=_uid)
 
         if tag.next_sibling:
             tex += "\n\n"
@@ -81,7 +102,7 @@ class LatexEdition(EditionParser):
     def _append_span(self, doc: Document, tag: Tag) -> str:
         if tag.has_attr("class"):
             if all(_class in tag["class"] for _class in ["blurb-item", "root-title"]):
-                return f"— {self._append_italic(doc=doc, tag=tag)}"
+                return f"({self._append_italic(doc=doc, tag=tag)})"
             else:
                 tex: str = self._process_contents(doc=doc, contents=tag.contents)
 
@@ -98,14 +119,14 @@ class LatexEdition(EditionParser):
         verse_env._latex_name = "verse"
         _data: str = self._process_contents(doc=doc, contents=tag.contents)
         verse_env.append(_data)
-        return cast(str, verse_env.dumps() + NoEscape("\n"))
+        return cast(str, verse_env.dumps() + NoEscape("\n\n"))
 
     def _append_quotation(self, doc: Document, tag: Tag) -> str:
         quotation_env: Environment = Environment()
         quotation_env._latex_name = "quotation"
         _data: str = self._process_contents(doc=doc, contents=tag.contents)
         quotation_env.append(_data)
-        return cast(str, quotation_env.dumps() + NoEscape("\n"))
+        return cast(str, quotation_env.dumps() + NoEscape("\n\n"))
 
     @staticmethod
     def _append_breakline() -> str:
@@ -151,11 +172,11 @@ class LatexEdition(EditionParser):
     def _append_section(self, doc: Document, tag: Tag) -> str:
         _acronym, _name, _root_name = [self._process_tag(doc=doc, tag=_span) for _span in tag.children]
         _template: Template = self._get_template("heading")
-        return _template.render(acronym=_acronym, name=_name, root_name=_root_name)
+        return cast(str, _template.render(acronym=_acronym, name=_name, root_name=_root_name) + NoEscape("\n\n"))
 
     def _append_simple_section(self, doc: Document, tag: Tag) -> str:
         _title: str = self._process_contents(doc=doc, contents=tag.contents)
-        tex: str = Command("section*", _title).dumps() + NoEscape("\n")
+        tex: str = Command("section*", _title).dumps() + NoEscape("\n\n")
         return tex
 
     def _append_chapter(self, doc: Document, tag: Tag) -> str:
@@ -163,32 +184,32 @@ class LatexEdition(EditionParser):
         _title: str = self._process_contents(doc=doc, contents=tag.contents)
         tex += Command("chapter*", _title).dumps() + NoEscape("\n")
         tex += Command("addcontentsline", arguments=["toc", "chapter", _title]).dumps() + NoEscape("\n")
-        tex += Command("markboth", arguments=[_title, _title]).dumps() + NoEscape("\n")
+        tex += Command("markboth", arguments=[_title, _title]).dumps() + NoEscape("\n\n")
         return tex
 
     def _append_part(self, doc: Document, tag: Tag) -> str:
         _name = tag.string
         _template: Template = self._get_template("part")
-        return _template.render(name=_name)
+        return cast(str, _template.render(name=_name) + NoEscape("\n\n"))
 
     def _append_subsection(self, doc: Document, tag: Tag) -> str:
         _title: str = self._process_contents(doc=doc, contents=tag.contents)
-        tex: str = Command("subsection*", _title).dumps() + NoEscape("\n")
+        tex: str = Command("subsection*", _title).dumps() + NoEscape("\n\n")
         return tex
 
     def _append_subsubsection(self, doc: Document, tag: Tag) -> str:
         _title: str = self._process_contents(doc=doc, contents=tag.contents)
-        tex: str = Command("subsubsection*", _title).dumps() + NoEscape("\n")
+        tex: str = Command("subsubsection*", _title).dumps() + NoEscape("\n\n")
         return tex
 
     def _append_paragraph(self, doc: Document, tag: Tag) -> str:
         _title: str = self._process_contents(doc=doc, contents=tag.contents)
-        tex: str = Command("paragraph*", _title).dumps() + NoEscape("\n")
+        tex: str = Command("paragraph*", _title).dumps() + NoEscape("\n\n")
         return tex
 
     def _append_subparagraph(self, doc: Document, tag: Tag) -> str:
         _title: str = self._process_contents(doc=doc, contents=tag.contents)
-        tex: str = Command("subparagraph*", _title).dumps() + NoEscape("\n")
+        tex: str = Command("subparagraph*", _title).dumps() + NoEscape("\n\n")
         return tex
 
     def _append_section_title(self, doc: Document, tag: Tag) -> str:
@@ -197,7 +218,14 @@ class LatexEdition(EditionParser):
             self._append_chapter,
         ]
         _heading_depth: int = get_heading_depth(tag)
-        if self.sutta_depth == 2:
+
+        # samyutta only - move all headings one level higher and remove the top heading
+        if self.config.edition.text_uid == "sn":
+            _heading_depth -= 1
+
+        if not _heading_depth:
+            return ""
+        elif self.sutta_depth == 2:
             index = _heading_depth
         elif _heading_depth in (1, 2):
             index = _heading_depth - 1
@@ -217,7 +245,10 @@ class LatexEdition(EditionParser):
 
     @staticmethod
     def _append_tableofcontents() -> str:
-        return cast(str, Command("tableofcontents").dumps())
+        tex = Command("tableofcontents").dumps() + NoEscape("\n")
+        tex += NewPage().dumps() + NoEscape("\n")
+        tex += Command("pagestyle", "fancy").dumps() + NoEscape("\n")
+        return cast(str, tex)
 
     def _append_epigraph(self, doc: Document, tag: Tag) -> str:
         _data: dict[str, str] = {}
@@ -236,21 +267,21 @@ class LatexEdition(EditionParser):
                 _data[_var] = self._process_contents(doc=doc, contents=_tag.contents)
 
         _template: Template = self._get_template(name="epigraph")
-        return _template.render(_data)
+        return cast(str, _template.render(_data) + NoEscape("\n"))
 
     def _append_enumerate(self, doc: Document, tag: Tag) -> str:
         enum = Enumerate()
         for _item in tag.contents:
             if isinstance(_item, Tag):
                 enum.add_item(s=self._process_tag(doc=doc, tag=_item))
-        return cast(str, enum.dumps().replace("\\item%\n", "\\item ") + NoEscape("\n"))
+        return cast(str, enum.dumps().replace("\\item%\n", "\\item ") + NoEscape("\n\n"))
 
     def _append_itemize(self, doc: Document, tag: Tag) -> str:
         itemize = Itemize()
         for _item in tag.contents:
             if isinstance(_item, Tag):
                 itemize.add_item(s=self._process_tag(doc=doc, tag=_item))
-        return cast(str, itemize.dumps().replace("\\item%\n", "\\item ") + NoEscape("\n"))
+        return cast(str, itemize.dumps().replace("\\item%\n", "\\item ") + NoEscape("\n\n"))
 
     def _append_description(self, doc: Document, tag: Tag) -> str:
         desc = Description()
@@ -258,7 +289,14 @@ class LatexEdition(EditionParser):
             _label = self._process_contents(doc=doc, contents=_key.contents)
             _item = self._process_contents(doc=doc, contents=_value.contents)
             desc.add_item(label=_label, s=_item)
-        return cast(str, desc.dumps().replace("]%\n", "] ") + NoEscape("\n"))
+        tex = desc.dumps().replace("]%\n", "] ")
+
+        if tag.has_attr("class") and "blurb-list" in tag["class"]:
+            blurbs_prefix = "\\setlist[description]{style=unboxed,leftmargin=0em}"
+            blurbs_suffix = "\\setlist[description]{style=standard}"
+            tex = f"{blurbs_prefix}\n{tex}\n{blurbs_suffix}"
+
+        return cast(str, tex + NoEscape("\n\n"))
 
     def _append_heading(self, doc: Document, tag: Tag) -> str:
         actions: list[Callable] = [
@@ -421,15 +459,6 @@ class LatexEdition(EditionParser):
             return ""
 
     @staticmethod
-    def _apply_styling(tag: Tag, tex: str) -> str:
-        for _class in tag["class"]:
-            if _class in STYLING_CLASSES:
-                tex = Command(f'sc{_class.replace("-", "")}', NoEscape(tex)).dumps()
-                break
-
-        return tex
-
-    @staticmethod
     def _remove_all_nav(html: PageElement) -> None:
         any(_tag.decompose() for _tag in html.find_all("nav"))
 
@@ -441,7 +470,7 @@ class LatexEdition(EditionParser):
         # setup
         self.endnotes: list[str] | None = volume.endnotes if volume.endnotes else None
 
-        doc = Document(documentclass="book", document_options="12pt")
+        doc = Document()
 
         # set preamble
         self._append_preamble(doc)

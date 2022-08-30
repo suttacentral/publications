@@ -50,12 +50,20 @@ STYLING_CLASSES: list[str] = [
     "byline",
 ]
 TEX_TEMPLATES_DIR = Path(__file__).parent.parent / "templates" / "tex"
+TEXTS_WITH_LONG_SUTTAS: list[str] = [
+    "mn",
+    "dn",
+    "pli-tv-vi",
+]
 
 
 class LatexEdition(EditionParser):
     edition_type = "latex_parser"
     endnotes: list[str] | None
     sutta_depth: int
+
+    # Variable used in texts with long suttas
+    is_not_first_long_sutta_in_chapter: bool = True
 
     @staticmethod
     def _is_styled(tag: Tag) -> bool:
@@ -88,8 +96,10 @@ class LatexEdition(EditionParser):
             tex = self._apply_styling(tag=tag, tex=tex)
         elif tag.has_attr("id"):
             if self.config.edition.text_uid == "dhp":
+                # Dhammapada only marginnote uid
                 _uid: str = tag["id"].split(":")[0][3:]
             else:
+                # default marginnote uid
                 _uid = tag["id"].split(":")[1]
 
             tex = self._append_marginnote(tex=tex, uid=_uid)
@@ -170,9 +180,23 @@ class LatexEdition(EditionParser):
             return ""
 
     def _append_section(self, doc: Document, tag: Tag) -> str:
+        tex: str = ""
+
+        if not self.is_not_first_long_sutta_in_chapter:
+            tex += Command("clearpage").dumps() + NoEscape("\n")
+            tex += Command("thispagestyle", "plain").dumps() + NoEscape("\n")
+            self.is_not_first_long_sutta_in_chapter = True
+
         _acronym, _name, _root_name = [self._process_tag(doc=doc, tag=_span) for _span in tag.children]
-        _template: Template = self._get_template("heading")
-        return cast(str, _template.render(acronym=_acronym, name=_name, root_name=_root_name) + NoEscape("\n\n"))
+        template: Template = self._get_template("heading")
+        data = {
+            "acronym": _acronym,
+            "name": _name,
+            "root_name": _root_name,
+            "has_long_suttas": self.config.edition.text_uid in TEXTS_WITH_LONG_SUTTAS,
+        }
+        tex += template.render(data) + NoEscape("\n\n")
+        return cast(str, tex)
 
     def _append_simple_section(self, doc: Document, tag: Tag) -> str:
         _title: str = self._process_contents(doc=doc, contents=tag.contents)
@@ -180,6 +204,9 @@ class LatexEdition(EditionParser):
         return tex
 
     def _append_chapter(self, doc: Document, tag: Tag) -> str:
+        if self.config.edition.text_uid in TEXTS_WITH_LONG_SUTTAS:
+            self.is_not_first_long_sutta_in_chapter = False
+
         tex: str = ""
         _title: str = self._process_contents(doc=doc, contents=tag.contents)
         tex += Command("chapter*", _title).dumps() + NoEscape("\n")
@@ -188,9 +215,8 @@ class LatexEdition(EditionParser):
         return tex
 
     def _append_part(self, doc: Document, tag: Tag) -> str:
-        _name = tag.string
         _template: Template = self._get_template("part")
-        return cast(str, _template.render(name=_name) + NoEscape("\n\n"))
+        return cast(str, _template.render(name=tag.string) + NoEscape("\n\n"))
 
     def _append_subsection(self, doc: Document, tag: Tag) -> str:
         _title: str = self._process_contents(doc=doc, contents=tag.contents)
@@ -219,7 +245,7 @@ class LatexEdition(EditionParser):
         ]
         _heading_depth: int = get_heading_depth(tag)
 
-        # samyutta only - move all headings one level higher and remove the top heading
+        # Samyutta only - move all headings one level up in order to remove the top level heading
         if self.config.edition.text_uid == "sn":
             _heading_depth -= 1
 
@@ -251,7 +277,7 @@ class LatexEdition(EditionParser):
         return cast(str, tex)
 
     def _append_epigraph(self, doc: Document, tag: Tag) -> str:
-        _data: dict[str, str] = {}
+        data: dict[str, str] = {}
         _epigraph_classes: dict[str, str] = {
             "text": "epigraph-text",
             "translated_title": "epigraph-translated-title",
@@ -264,10 +290,10 @@ class LatexEdition(EditionParser):
                 if _class == "epigraph-text":
                     _tag = _tag.p
                 self._strip_tag_string(_tag)
-                _data[_var] = self._process_contents(doc=doc, contents=_tag.contents)
+                data[_var] = self._process_contents(doc=doc, contents=_tag.contents)
 
-        _template: Template = self._get_template(name="epigraph")
-        return cast(str, _template.render(_data) + NoEscape("\n"))
+        template: Template = self._get_template(name="epigraph")
+        return cast(str, template.render(data) + NoEscape("\n"))
 
     def _append_enumerate(self, doc: Document, tag: Tag) -> str:
         enum = Enumerate()
@@ -291,10 +317,11 @@ class LatexEdition(EditionParser):
             desc.add_item(label=_label, s=_item)
         tex = desc.dumps().replace("]%\n", "] ")
 
-        if tag.has_attr("class") and "blurb-list" in tag["class"]:
-            blurbs_prefix = "\\setlist[description]{style=unboxed,leftmargin=0em}"
-            blurbs_suffix = "\\setlist[description]{style=standard}"
-            tex = f"{blurbs_prefix}\n{tex}\n{blurbs_suffix}"
+        # TODO: Investigate why additional commands for blurbs do not work
+        # if tag.has_attr("class") and "blurb-list" in tag["class"]:
+        #     blurbs_prefix = "\\setlist[description]{style=unboxed,leftmargin=0em}"
+        #     blurbs_suffix = "\\setlist[description]{style=standard}"
+        #     tex = f"{blurbs_prefix}\n{tex}\n{blurbs_suffix}"
 
         return cast(str, tex + NoEscape("\n\n"))
 
@@ -449,8 +476,8 @@ class LatexEdition(EditionParser):
     def _process_html_element(self, volume: Volume, doc: Document, element: PageElement) -> str:
         if isinstance(element, Tag) and not (element.has_attr("id") and element["id"] in MATTERS_TO_SKIP):
             if (name := self._get_matter_name(element)) in MATTERS_WITH_TEX_TEMPLATES:
-                _template: Template = self._get_template(name=name)
-                return cast(str, NoEscape(_template.render(**volume.dict())))
+                template: Template = self._get_template(name=name)
+                return cast(str, NoEscape(template.render(volume.dict())))
             else:
                 return cast(str, NoEscape(self._process_tag(doc=doc, tag=element)))
         elif isinstance(element, NavigableString) and element != "\n":
@@ -470,7 +497,7 @@ class LatexEdition(EditionParser):
         # setup
         self.endnotes: list[str] | None = volume.endnotes if volume.endnotes else None
 
-        doc = Document()
+        doc = Document(documentclass="book", document_options="12pt")
 
         # set preamble
         self._append_preamble(doc)
@@ -486,9 +513,9 @@ class LatexEdition(EditionParser):
         doc.append(Command("mainmatter"))
         doc.append(Command("pagestyle", "fancy"))
         _mainmatter = BeautifulSoup(volume.mainmatter, "lxml")
-        self.sutta_depth = find_sutta_title_depth(_mainmatter)
 
-        if self.sutta_depth <= 2:
+        self.sutta_depth = find_sutta_title_depth(_mainmatter)
+        if self.sutta_depth <= 2:  # append additional latex part
             _book_title = _mainmatter.new_tag("h1")
             _book_title.string = self.config.publication.translation_title
             doc.append(NoEscape(self._append_part(doc=doc, tag=_book_title)))

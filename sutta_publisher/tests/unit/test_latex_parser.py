@@ -54,15 +54,11 @@ def latex_edition(config, data):
         ("<a role='doc-noteref' href=''>1</a>", "\\footnote{Note}"),
         (
             "<h3 class='sutta-title heading'><span class='sutta-heading acronym'>Acronym</span><span class='sutta-heading translated-title'>Name</span><span class='sutta-heading root-title'>Mūlapariyāyasutta</span></h3>",
-            "\\section*{\\setstretch{.85}\\centering{\\normalsize Acronym}\\\\*Name\\\\*{\\vspace*{-.1em}\itshape\\normalsize Mūlapariyāyasutta}}\n\\addcontentsline{toc}{section}{Acronym: Name ({\itshape Mūlapariyāyasutta})}\n\\markboth{Name}{Mūlapariyāyasutta}\n\\extramarks{Acronym}{Acronym}\n\n",
+            "\\section*{\\setstretch{.85}\\centering{\\small Acronym}\\\\{\\large Name}\\\\{\\vspace*{-.1em}\itshape\\small Mūlapariyāyasutta}}\n\\addcontentsline{toc}{section}{Acronym: Name ({\itshape Mūlapariyāyasutta})}\n\\markboth{Name}{Mūlapariyāyasutta}\n\\extramarks{Acronym}{Acronym}\n\n",
         ),
         (
             "<h3 class='sutta-title heading'><span class='sutta-heading acronym'>Acronym</span><span class='sutta-heading translated-title'>Name</span><span class='sutta-heading root-title'>Not pali</span></h3>",
-            "\\section*{\\setstretch{.85}\\centering{\\normalsize Acronym}\\\\*Name\\\\*{\\vspace*{-.1em}\itshape\\normalsize Not pali}}\n\\addcontentsline{toc}{section}{Acronym: Name ({\itshape Not pali})}\n\\markboth{Name}{Not pali}\n\\extramarks{Acronym}{Acronym}\n\n",
-        ),
-        (
-            "<h3 class='range-title heading'><span class='sutta-heading acronym'>Acronym</span><span class='sutta-heading translated-title'>Name</span><span class='sutta-heading root-title'>Mūlapariyāyasutta</span></h1>",
-            "\\section*{\\setstretch{.85}\\centering{\\normalsize Acronym}\\\\*Name\\\\*{\\vspace*{-.1em}\itshape\\normalsize Mūlapariyāyasutta}}\n\\addcontentsline{toc}{section}{Acronym: Name ({\itshape Mūlapariyāyasutta})}\n\\markboth{Name}{Mūlapariyāyasutta}\n\\extramarks{Acronym}{Acronym}\n\n",
+            "\\section*{\\setstretch{.85}\\centering{\\small Acronym}\\\\{\\large Name}\\\\{\\vspace*{-.1em}\itshape\\small Not pali}}\n\\addcontentsline{toc}{section}{Acronym: Name ({\itshape Not pali})}\n\\markboth{Name}{Not pali}\n\\extramarks{Acronym}{Acronym}\n\n",
         ),
         (
             "<h1>Chapter</h1>",

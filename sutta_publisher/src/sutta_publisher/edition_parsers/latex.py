@@ -1,12 +1,13 @@
 import ast
 import logging
 import os.path
+import re
 from pathlib import Path
 from typing import Callable, cast
 
 from bs4 import BeautifulSoup, NavigableString, PageElement, Tag
 from jinja2 import Environment as jinja2_Environment, FileSystemLoader, Template, TemplateNotFound
-from pylatex import Document, NoEscape
+from pylatex import Description, Document, Enumerate, Itemize, NewPage, NoEscape
 from pylatex.base_classes import Command, Environment
 from pylatex.utils import bold, italic
 
@@ -17,6 +18,14 @@ from .helper_functions import find_sutta_title_depth, get_heading_depth
 
 log = logging.getLogger(__name__)
 
+SANSKRIT_LANGUAGES: list[str] = [
+    "pli",
+    "san",
+]
+SANSKRIT_PATTERN = re.compile(r"\b(?=\w*[āīūṭḍṁṅñṇḷśṣṛ])\w+\b")
+FOREIGN_LANGUAGES: list[str] = [
+    "lzh",
+]
 MATTERS_TO_SKIP: list[str] = [
     "endnotes",
 ]
@@ -38,8 +47,14 @@ STYLING_CLASSES: list[str] = [
     "add",
     "evam",
     "speaker",
+    "byline",
 ]
 TEX_TEMPLATES_DIR = Path(__file__).parent.parent / "templates" / "tex"
+TEXTS_WITH_LONG_SUTTAS: list[str] = [
+    "mn",
+    "dn",
+    "pli-tv-vi",
+]
 
 
 class LatexEdition(EditionParser):
@@ -47,23 +62,47 @@ class LatexEdition(EditionParser):
     endnotes: list[str] | None
     sutta_depth: int
 
-    def _append_html_paragraph(self, doc: Document, tag: Tag) -> str:
-        tex: str = ""
+    # Variable used in texts with long suttas
+    is_not_first_long_sutta_in_chapter: bool = True
 
-        if tag.has_attr("id"):
+    @staticmethod
+    def _is_styled(tag: Tag) -> bool:
+        if tag.has_attr("class"):
+            return any(_class in STYLING_CLASSES for _class in tag["class"])
+        else:
+            return False
+
+    @staticmethod
+    def _apply_styling(tag: Tag, tex: str) -> str:
+        for _class in tag["class"]:
+            if _class in STYLING_CLASSES:
+                return cast(str, Command(f'sc{_class.replace("-", "")}', NoEscape(tex)).dumps())
+        return tex
+
+    @staticmethod
+    def _append_marginnote(tex: str, uid: str) -> str:
+        """Add marginnote before first space"""
+        marginnote = Command("marginnote", uid).dumps()
+        try:
+            tex_1, tex_2 = tex.split(" ", 1)
+        except ValueError:
+            return f"{tex}{marginnote} "
+        return f"{tex_1}{marginnote} {tex_2}"
+
+    def _append_p(self, doc: Document, tag: Tag) -> str:
+        tex: str = self._process_contents(doc=doc, contents=tag.contents)
+
+        if self._is_styled(tag=tag):
+            tex = self._apply_styling(tag=tag, tex=tex)
+        elif tag.has_attr("id"):
             if self.config.edition.text_uid == "dhp":
+                # Dhammapada only marginnote uid
                 _uid: str = tag["id"].split(":")[0][3:]
             else:
+                # default marginnote uid
                 _uid = tag["id"].split(":")[1]
 
-            tex += Command("marginnote", _uid, _uid).dumps()
-
-        tex += self._process_contents(doc=doc, contents=tag.contents)
-
-        if tag.has_attr("class"):
-            for _class in tag["class"]:
-                if _class in STYLING_CLASSES:
-                    tex = Command(f'sc{_class.replace("-", "")}', NoEscape(tex)).dumps()
+            tex = self._append_marginnote(tex=tex, uid=_uid)
 
         if tag.next_sibling:
             tex += "\n\n"
@@ -71,32 +110,33 @@ class LatexEdition(EditionParser):
         return cast(str, tex)
 
     def _append_span(self, doc: Document, tag: Tag) -> str:
-        tex = self._process_contents(doc=doc, contents=tag.contents)
         if tag.has_attr("class"):
-            if tag["class"] == ["blurb-item", "acronym"]:
-                tex = f"{tex}: "
-            elif tag["class"] == ["blurb-item", "root-title"]:
-                tex = f"— {tex}"
+            if all(_class in tag["class"] for _class in ["blurb-item", "root-title"]):
+                return f"({self._append_italic(doc=doc, tag=tag)})"
+            else:
+                tex: str = self._process_contents(doc=doc, contents=tag.contents)
 
-            for _class in tag["class"]:
-                if _class in STYLING_CLASSES:
-                    tex = Command(f'sc{_class.replace("-", "")}', NoEscape(tex)).dumps()
+                if all(_class in tag["class"] for _class in ["blurb-item", "acronym"]):
+                    return f"{tex}: "
 
-        return cast(str, tex)
+                tex = self._apply_styling(tag=tag, tex=tex)
+                return tex
+        else:
+            return self._process_contents(doc=doc, contents=tag.contents)
 
     def _append_verse(self, doc: Document, tag: Tag) -> str:
         verse_env: Environment = Environment()
         verse_env._latex_name = "verse"
         _data: str = self._process_contents(doc=doc, contents=tag.contents)
         verse_env.append(_data)
-        return cast(str, verse_env.dumps() + NoEscape("\n"))
+        return cast(str, verse_env.dumps() + NoEscape("\n\n"))
 
     def _append_quotation(self, doc: Document, tag: Tag) -> str:
         quotation_env: Environment = Environment()
         quotation_env._latex_name = "quotation"
         _data: str = self._process_contents(doc=doc, contents=tag.contents)
         quotation_env.append(_data)
-        return cast(str, quotation_env.dumps() + NoEscape("\n"))
+        return cast(str, quotation_env.dumps() + NoEscape("\n\n"))
 
     @staticmethod
     def _append_breakline() -> str:
@@ -104,15 +144,28 @@ class LatexEdition(EditionParser):
 
     def _append_bold(self, doc: Document, tag: Tag) -> str:
         _tex: str = self._process_contents(doc=doc, contents=tag.contents)
-        return cast(str, bold(_tex))
+        return cast(str, bold(_tex, escape=False))
 
     def _append_emphasis(self, doc: Document, tag: Tag) -> str:
         _tex: str = self._process_contents(doc=doc, contents=tag.contents)
         return cast(str, Command("emph", _tex).dumps())
 
+    @staticmethod
+    def _append_sanskrit(tex: str) -> str:
+        return cast(str, Command("textsanskrit", tex).dumps())
+
     def _append_italic(self, doc: Document, tag: Tag) -> str:
         _tex: str = self._process_contents(doc=doc, contents=tag.contents)
-        return cast(str, italic(_tex))
+        if (
+            tag.has_attr("class")
+            and "\\textsanskrit" not in _tex
+            and (
+                any(_class in SANSKRIT_LANGUAGES for _class in tag["class"])
+                or all(_class in ["blurb-item", "root-title"] for _class in tag["class"])
+            )
+        ):
+            _tex = self._append_sanskrit(_tex)
+        return cast(str, italic(_tex, escape=False))
 
     def _append_foreign_script_macro(self, doc: Document, tag: Tag) -> str:
         _tex: str = self._process_contents(doc=doc, contents=tag.contents)
@@ -126,47 +179,63 @@ class LatexEdition(EditionParser):
         else:
             return ""
 
-    def _append_section(self, tag: Tag) -> str:
-        _acronym, _name, _root_name = tag.stripped_strings
-        _template: Template = self._get_template("heading")
-        return _template.render(acronym=_acronym, name=_name, root_name=_root_name)
+    def _append_section(self, doc: Document, tag: Tag) -> str:
+        tex: str = ""
+
+        if not self.is_not_first_long_sutta_in_chapter:
+            tex += Command("clearpage").dumps() + NoEscape("\n")
+            tex += Command("thispagestyle", "plain").dumps() + NoEscape("\n")
+            self.is_not_first_long_sutta_in_chapter = True
+
+        _acronym, _name, _root_name = [self._process_tag(doc=doc, tag=_span) for _span in tag.children]
+        template: Template = self._get_template("heading")
+        data = {
+            "acronym": _acronym,
+            "name": _name,
+            "root_name": _root_name,
+            "has_long_suttas": self.config.edition.text_uid in TEXTS_WITH_LONG_SUTTAS,
+        }
+        tex += template.render(data) + NoEscape("\n\n")
+        return cast(str, tex)
 
     def _append_simple_section(self, doc: Document, tag: Tag) -> str:
         _title: str = self._process_contents(doc=doc, contents=tag.contents)
-        tex: str = Command("section*", _title).dumps() + NoEscape("\n")
+        tex: str = Command("section*", _title).dumps() + NoEscape("\n\n")
         return tex
 
     def _append_chapter(self, doc: Document, tag: Tag) -> str:
+        if self.config.edition.text_uid in TEXTS_WITH_LONG_SUTTAS:
+            self.is_not_first_long_sutta_in_chapter = False
+
         tex: str = ""
         _title: str = self._process_contents(doc=doc, contents=tag.contents)
         tex += Command("chapter*", _title).dumps() + NoEscape("\n")
         tex += Command("addcontentsline", arguments=["toc", "chapter", _title]).dumps() + NoEscape("\n")
-        tex += Command("markboth", arguments=[_title, _title]).dumps() + NoEscape("\n")
+        tex += Command("markboth", arguments=[_title, _title]).dumps() + NoEscape("\n\n")
         return tex
 
     def _append_part(self, doc: Document, tag: Tag) -> str:
-        _name = tag.string
         _template: Template = self._get_template("part")
-        return _template.render(name=_name)
+        return cast(str, _template.render(name=tag.string) + NoEscape("\n\n"))
 
     def _append_subsection(self, doc: Document, tag: Tag) -> str:
         _title: str = self._process_contents(doc=doc, contents=tag.contents)
-        tex: str = Command("subsection*", _title).dumps() + NoEscape("\n")
+        tex: str = Command("subsection*", _title).dumps() + NoEscape("\n\n")
         return tex
 
     def _append_subsubsection(self, doc: Document, tag: Tag) -> str:
         _title: str = self._process_contents(doc=doc, contents=tag.contents)
-        tex: str = Command("subsubsection*", _title).dumps() + NoEscape("\n")
+        tex: str = Command("subsubsection*", _title).dumps() + NoEscape("\n\n")
         return tex
 
     def _append_paragraph(self, doc: Document, tag: Tag) -> str:
         _title: str = self._process_contents(doc=doc, contents=tag.contents)
-        tex: str = Command("paragraph*", _title).dumps() + NoEscape("\n")
+        tex: str = Command("paragraph*", _title).dumps() + NoEscape("\n\n")
         return tex
 
     def _append_subparagraph(self, doc: Document, tag: Tag) -> str:
         _title: str = self._process_contents(doc=doc, contents=tag.contents)
-        tex: str = Command("subparagraph*", _title).dumps() + NoEscape("\n")
+        tex: str = Command("subparagraph*", _title).dumps() + NoEscape("\n\n")
         return tex
 
     def _append_section_title(self, doc: Document, tag: Tag) -> str:
@@ -175,7 +244,14 @@ class LatexEdition(EditionParser):
             self._append_chapter,
         ]
         _heading_depth: int = get_heading_depth(tag)
-        if self.sutta_depth == 2:
+
+        # Samyutta only - move all headings one level up in order to remove the top level heading
+        if self.config.edition.text_uid == "sn":
+            _heading_depth -= 1
+
+        if not _heading_depth:
+            return ""
+        elif self.sutta_depth == 2:
             index = _heading_depth
         elif _heading_depth in (1, 2):
             index = _heading_depth - 1
@@ -195,10 +271,13 @@ class LatexEdition(EditionParser):
 
     @staticmethod
     def _append_tableofcontents() -> str:
-        return cast(str, Command("tableofcontents").dumps())
+        tex = Command("tableofcontents").dumps() + NoEscape("\n")
+        tex += NewPage().dumps() + NoEscape("\n")
+        tex += Command("pagestyle", "fancy").dumps() + NoEscape("\n")
+        return cast(str, tex)
 
     def _append_epigraph(self, doc: Document, tag: Tag) -> str:
-        _data: dict[str, str] = {}
+        data: dict[str, str] = {}
         _epigraph_classes: dict[str, str] = {
             "text": "epigraph-text",
             "translated_title": "epigraph-translated-title",
@@ -211,45 +290,76 @@ class LatexEdition(EditionParser):
                 if _class == "epigraph-text":
                     _tag = _tag.p
                 self._strip_tag_string(_tag)
-                _data[_var] = self._process_contents(doc=doc, contents=_tag.contents)
+                data[_var] = self._process_contents(doc=doc, contents=_tag.contents)
 
-        _template: Template = self._get_template(name="epigraph")
-        return _template.render(_data)
+        template: Template = self._get_template(name="epigraph")
+        return cast(str, template.render(data) + NoEscape("\n"))
 
-    def _append_list(self, doc: Document, tag: Tag) -> str:
-        _command: str = Command("item").dumps()
-        _types = {"ol": "enumerate", "ul": "itemize"}
-        list_env: Environment = Environment()
-        list_env._latex_name = _types[tag.name]
-        for _li in tag.find_all("li"):
-            _item: str = self._process_contents(doc=doc, contents=_li.contents)
-            list_env.append(NoEscape(f"{_command} {_item}"))
-        return cast(str, list_env.dumps() + NoEscape("\n"))
+    def _append_enumerate(self, doc: Document, tag: Tag) -> str:
+        enum = Enumerate()
+        for _item in tag.contents:
+            if isinstance(_item, Tag):
+                enum.add_item(s=self._process_tag(doc=doc, tag=_item))
+        return cast(str, enum.dumps().replace("\\item%\n", "\\item ") + NoEscape("\n\n"))
 
-    def _append_definition_list(self, doc: Document, tag: Tag) -> str:
-        list_env: Environment = Environment()
-        list_env._latex_name = "description"
+    def _append_itemize(self, doc: Document, tag: Tag) -> str:
+        itemize = Itemize()
+        for _item in tag.contents:
+            if isinstance(_item, Tag):
+                itemize.add_item(s=self._process_tag(doc=doc, tag=_item))
+        return cast(str, itemize.dumps().replace("\\item%\n", "\\item ") + NoEscape("\n\n"))
+
+    def _append_description(self, doc: Document, tag: Tag) -> str:
+        desc = Description()
         for _key, _value in zip(tag.find_all("dt"), tag.find_all("dd")):
-            _tex_key: str = self._process_contents(doc=doc, contents=_key.contents)
-            _command: str = Command("item", options=_tex_key).dumps()
-            _tex_value: str = self._process_contents(doc=doc, contents=_value.contents)
-            list_env.append(NoEscape(f"{_command} {_tex_value}"))
-        return cast(str, list_env.dumps() + NoEscape("\n"))
+            _label = self._process_contents(doc=doc, contents=_key.contents)
+            _item = self._process_contents(doc=doc, contents=_value.contents)
+            desc.add_item(label=_label, s=_item)
+        tex = desc.dumps().replace("]%\n", "] ")
+
+        # TODO: Investigate why additional commands for blurbs do not work
+        # if tag.has_attr("class") and "blurb-list" in tag["class"]:
+        #     blurbs_prefix = "\\setlist[description]{style=unboxed,leftmargin=0em}"
+        #     blurbs_suffix = "\\setlist[description]{style=standard}"
+        #     tex = f"{blurbs_prefix}\n{tex}\n{blurbs_suffix}"
+
+        return cast(str, tex + NoEscape("\n\n"))
+
+    def _append_heading(self, doc: Document, tag: Tag) -> str:
+        actions: list[Callable] = [
+            self._append_chapter,
+            self._append_simple_section,
+            self._append_subsection,
+            self._append_subsubsection,
+            self._append_paragraph,
+            self._append_subparagraph,
+        ]
+        _depth: int = get_heading_depth(tag)
+        return cast(str, actions[_depth - 1](doc=doc, tag=tag))
+
+    def _is_range_or_sutta_title(self, tag: Tag) -> bool:
+        return (
+            tag.has_attr("class")
+            and "heading" in tag["class"]
+            and any(_class in tag["class"] for _class in ["sutta-title", "range-title"])
+            and int(tag.name[1:]) == self.sutta_depth
+        )
 
     def _process_tag(self, doc: Document, tag: Tag) -> str:
 
         match tag.name:
 
-            case sutta_title if tag.has_attr("class") and any(
-                _class in tag["class"] for _class in ["sutta-title", "range-title"]
-            ) and int(sutta_title[1:]) == self.sutta_depth:
-                return self._append_section(tag=tag)
+            case range_or_sutta_title if self._is_range_or_sutta_title(tag=tag):
+                return self._append_section(doc=doc, tag=tag)
 
             case section_title if tag.has_attr("class") and "section-title" in tag["class"]:
                 return self._append_section_title(doc=doc, tag=tag)
 
             case subheading if tag.has_attr("class") and "subheading" in tag["class"]:
                 return self._append_subheading(doc=doc, tag=tag)
+
+            case heading if tag.name.startswith("h") and tag.name[1].isnumeric():
+                return self._append_heading(doc=doc, tag=tag)
 
             case "a" if tag.has_attr("role") and "doc-noteref" in tag["role"]:
                 return self._append_footnote(doc=doc)
@@ -273,19 +383,13 @@ class LatexEdition(EditionParser):
                 return self._append_italic(doc=doc, tag=tag)
 
             case "dl":
-                return self._append_definition_list(doc=doc, tag=tag)
+                return self._append_description(doc=doc, tag=tag)
 
             case "em":
                 return self._append_emphasis(doc=doc, tag=tag)
 
-            case "h1":
-                return self._append_chapter(doc=doc, tag=tag)
-
-            case "h2":
-                return self._append_simple_section(doc=doc, tag=tag)
-
-            # case "i" if tag.has_attr("lang") and any(_lang in tag["lang"] for _lang in ["pli", "san", "lzh"]):
-            #     return self._append_foreign_script_macro(doc=doc, tag=tag)
+            case "i" if tag.has_attr("lang") and tag["lang"] in FOREIGN_LANGUAGES:
+                return self._append_foreign_script_macro(doc=doc, tag=tag)
 
             case "i" if tag.has_attr("lang"):
                 return self._append_italic(doc=doc, tag=tag)
@@ -293,11 +397,11 @@ class LatexEdition(EditionParser):
             case "i":
                 return self._append_italic(doc=doc, tag=tag)
 
-            case "ol" | "ul":
-                return self._append_list(doc=doc, tag=tag)
+            case "ol":
+                return self._append_enumerate(doc=doc, tag=tag)
 
             case "p":
-                return self._append_html_paragraph(doc=doc, tag=tag)
+                return self._append_p(doc=doc, tag=tag)
 
             case "section" if tag.has_attr("id") and tag["id"] == "main-toc":
                 return self._append_tableofcontents()
@@ -308,6 +412,9 @@ class LatexEdition(EditionParser):
             case "span":
                 return self._append_span(doc=doc, tag=tag)
 
+            case "ul":
+                return self._append_itemize(doc=doc, tag=tag)
+
         return self._process_contents(doc=doc, contents=tag.contents)
 
     def _process_contents(self, doc: Document, contents: list[PageElement]) -> str:
@@ -317,7 +424,9 @@ class LatexEdition(EditionParser):
             if isinstance(_element, Tag):
                 tex += self._process_tag(doc=doc, tag=_element)
             elif isinstance(_element, NavigableString) and _element != "\n":
-                tex += _element.replace("&", "\&").replace("_", "\_")
+                if not (_element.parent.has_attr("class") and "sutta-heading" in _element.parent["class"]):
+                    _element = re.sub(SANSKRIT_PATTERN, r"\\textsanskrit{\g<0>}", _element)
+                tex += _element.replace("&", "\\&").replace("_", "\\_")
 
         return cast(str, NoEscape(tex))
 
@@ -367,14 +476,18 @@ class LatexEdition(EditionParser):
     def _process_html_element(self, volume: Volume, doc: Document, element: PageElement) -> str:
         if isinstance(element, Tag) and not (element.has_attr("id") and element["id"] in MATTERS_TO_SKIP):
             if (name := self._get_matter_name(element)) in MATTERS_WITH_TEX_TEMPLATES:
-                _template: Template = self._get_template(name=name)
-                return cast(str, NoEscape(_template.render(**volume.dict())))
+                template: Template = self._get_template(name=name)
+                return cast(str, NoEscape(template.render(volume.dict())))
             else:
                 return cast(str, NoEscape(self._process_tag(doc=doc, tag=element)))
         elif isinstance(element, NavigableString) and element != "\n":
             return cast(str, element)
         else:
             return ""
+
+    @staticmethod
+    def _remove_all_nav(html: PageElement) -> None:
+        any(_tag.decompose() for _tag in html.find_all("nav"))
 
     def _append_preamble(self, doc: Document) -> None:
         _template: Template = self._get_template(name="preamble")
@@ -393,15 +506,16 @@ class LatexEdition(EditionParser):
         doc.append(Command("frontmatter"))
         for _page in volume.frontmatter:
             _frontmatter_element: PageElement = BeautifulSoup(_page, "lxml").find("body").next_element
+            self._remove_all_nav(html=_frontmatter_element)
             doc.append(self._process_html_element(volume=volume, doc=doc, element=_frontmatter_element))
 
         # set mainmatter
         doc.append(Command("mainmatter"))
         doc.append(Command("pagestyle", "fancy"))
         _mainmatter = BeautifulSoup(volume.mainmatter, "lxml")
-        self.sutta_depth = find_sutta_title_depth(_mainmatter)
 
-        if self.sutta_depth <= 2:
+        self.sutta_depth = find_sutta_title_depth(_mainmatter)
+        if self.sutta_depth <= 2:  # append additional latex part
             _book_title = _mainmatter.new_tag("h1")
             _book_title.string = self.config.publication.translation_title
             doc.append(NoEscape(self._append_part(doc=doc, tag=_book_title)))

@@ -22,10 +22,10 @@ def latex_edition(config, data):
 @pytest.mark.parametrize(
     "html, expected",
     [
-        ("<p>Test</p>", "Test"),
-        ("<p id='ab1.2:3.4'>Test</p>", "Test\\marginnote{3.4} "),
-        ("<p id='ab1.2:3.4'>Test Testing</p>", "Test\\marginnote{3.4} Testing"),
-        ("<p class='uddana-intro' id='ab1.2:3.4'>Test</p>", "\\scuddanaintro{Test}"),
+        ("<p>Test</p>", "Test\n\n"),
+        ("<p id='ab1.2:3.4'>Test</p>", "Test\\marginnote{3.4} \n\n"),
+        ("<p id='ab1.2:3.4'>Test Testing</p>", "Test\\marginnote{3.4} Testing\n\n"),
+        ("<p class='uddana-intro' id='ab1.2:3.4'>Test</p>", "\\scuddanaintro{Test}\n\n"),
         (
             "<p class='uddana-intro' id='ab1.2:3.4'>Test</p><p>Sibling</p>",
             "\\scuddanaintro{Test}\n\n",
@@ -101,4 +101,5 @@ def test_process_tag(doc, latex_edition, html, expected):
     tag = BeautifulSoup(html, "lxml").find("body").next_element
     latex_edition.endnotes = ["Note"]
     latex_edition.sutta_depth = 3
+    latex_edition.section_type = "section"
     assert latex_edition._process_tag(doc=doc, tag=tag) == expected

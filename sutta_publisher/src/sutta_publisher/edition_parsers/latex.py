@@ -60,6 +60,7 @@ TEXTS_WITH_LONG_SUTTAS: list[str] = [
 class LatexEdition(EditionParser):
     edition_type = "latex_parser"
     endnotes: list[str] | None
+    section_type: str
     sutta_depth: int
 
     # Variable used in texts with long suttas
@@ -104,10 +105,7 @@ class LatexEdition(EditionParser):
 
             tex = self._append_marginnote(tex=tex, uid=_uid)
 
-        if tag.next_sibling:
-            tex += "\n\n"
-
-        return cast(str, tex)
+        return cast(str, tex + NoEscape("\n\n"))
 
     def _append_span(self, doc: Document, tag: Tag) -> str:
         if tag.has_attr("class"):
@@ -173,13 +171,13 @@ class LatexEdition(EditionParser):
 
     def _append_footnote(self, doc: Document) -> str:
         if self.endnotes:
-            _note_contents: list[PageElement] = BeautifulSoup(self.endnotes.pop(0), "lxml").body.contents
+            _note_contents: list[PageElement] = BeautifulSoup(self.endnotes.pop(0), "lxml").body.p.contents
             _data: str = self._process_contents(doc=doc, contents=_note_contents)
             return cast(str, Command("footnote", _data).dumps())
         else:
             return ""
 
-    def _append_section(self, doc: Document, tag: Tag) -> str:
+    def _append_sutta_title(self, doc: Document, tag: Tag) -> str:
         tex: str = ""
 
         if not self.is_not_first_long_sutta_in_chapter:
@@ -194,16 +192,12 @@ class LatexEdition(EditionParser):
             "name": _name,
             "root_name": _root_name,
             "has_long_suttas": self.config.edition.text_uid in TEXTS_WITH_LONG_SUTTAS,
+            "section_type": self.section_type,
         }
         tex += template.render(data) + NoEscape("\n\n")
         return cast(str, tex)
 
-    def _append_simple_section(self, doc: Document, tag: Tag) -> str:
-        _title: str = self._process_contents(doc=doc, contents=tag.contents)
-        tex: str = Command("section*", _title).dumps() + NoEscape("\n\n")
-        return tex
-
-    def _append_chapter(self, doc: Document, tag: Tag) -> str:
+    def _append_custom_chapter(self, doc: Document, tag: Tag) -> str:
         if self.config.edition.text_uid in TEXTS_WITH_LONG_SUTTAS:
             self.is_not_first_long_sutta_in_chapter = False
 
@@ -211,12 +205,35 @@ class LatexEdition(EditionParser):
         _title: str = self._process_contents(doc=doc, contents=tag.contents)
         tex += Command("chapter*", _title).dumps() + NoEscape("\n")
         tex += Command("addcontentsline", arguments=["toc", "chapter", _title]).dumps() + NoEscape("\n")
+        if tag.has_attr("class") and "section-title" in tag["class"] and self.sutta_depth > 3:
+            return tex
+        tex += Command("markboth", arguments=[_title, _title]).dumps() + NoEscape("\n\n")
+        return tex
+
+    def _append_custom_section(self, doc: Document, tag: Tag) -> str:
+        if self.config.edition.text_uid in TEXTS_WITH_LONG_SUTTAS:
+            self.is_not_first_long_sutta_in_chapter = False
+
+        tex: str = ""
+        _title: str = self._process_contents(doc=doc, contents=tag.contents)
+        tex += Command("section*", _title).dumps() + NoEscape("\n")
+        tex += Command("addcontentsline", arguments=["toc", "section", _title]).dumps() + NoEscape("\n")
         tex += Command("markboth", arguments=[_title, _title]).dumps() + NoEscape("\n\n")
         return tex
 
     def _append_part(self, doc: Document, tag: Tag) -> str:
         _template: Template = self._get_template("part")
         return cast(str, _template.render(name=tag.string) + NoEscape("\n\n"))
+
+    def _append_chapter(self, doc: Document, tag: Tag) -> str:
+        _title: str = self._process_contents(doc=doc, contents=tag.contents)
+        tex: str = Command("chapter*", _title).dumps() + NoEscape("\n\n")
+        return tex
+
+    def _append_section(self, doc: Document, tag: Tag) -> str:
+        _title: str = self._process_contents(doc=doc, contents=tag.contents)
+        tex: str = Command("section*", _title).dumps() + NoEscape("\n\n")
+        return tex
 
     def _append_subsection(self, doc: Document, tag: Tag) -> str:
         _title: str = self._process_contents(doc=doc, contents=tag.contents)
@@ -241,7 +258,8 @@ class LatexEdition(EditionParser):
     def _append_section_title(self, doc: Document, tag: Tag) -> str:
         actions: list[Callable] = [
             self._append_part,
-            self._append_chapter,
+            self._append_custom_chapter,
+            self._append_custom_section,
         ]
         _heading_depth: int = get_heading_depth(tag)
 
@@ -253,7 +271,7 @@ class LatexEdition(EditionParser):
             return ""
         elif self.sutta_depth == 2:
             index = _heading_depth
-        elif _heading_depth in (1, 2):
+        elif _heading_depth in (1, 2, 3):
             index = _heading_depth - 1
         else:
             index = -1
@@ -267,6 +285,8 @@ class LatexEdition(EditionParser):
             self._append_subparagraph,
         ]
         index = int(tag.name[1]) - self.sutta_depth - 1
+        if self.sutta_depth == 4:
+            index += 1
         return cast(str, actions[index](doc=doc, tag=tag))
 
     @staticmethod
@@ -327,8 +347,8 @@ class LatexEdition(EditionParser):
 
     def _append_heading(self, doc: Document, tag: Tag) -> str:
         actions: list[Callable] = [
-            self._append_chapter,
-            self._append_simple_section,
+            self._append_custom_chapter,
+            self._append_section,
             self._append_subsection,
             self._append_subsubsection,
             self._append_paragraph,
@@ -350,7 +370,7 @@ class LatexEdition(EditionParser):
         match tag.name:
 
             case range_or_sutta_title if self._is_range_or_sutta_title(tag=tag):
-                return self._append_section(doc=doc, tag=tag)
+                return self._append_sutta_title(doc=doc, tag=tag)
 
             case section_title if tag.has_attr("class") and "section-title" in tag["class"]:
                 return self._append_section_title(doc=doc, tag=tag)
@@ -489,6 +509,20 @@ class LatexEdition(EditionParser):
     def _remove_all_nav(html: PageElement) -> None:
         any(_tag.decompose() for _tag in html.find_all("nav"))
 
+    def _prepare_mainmatter(self, doc: Document, html: BeautifulSoup) -> None:
+        self.sutta_depth = find_sutta_title_depth(html)
+        self.section_type = (
+            "chapter"
+            if self.sutta_depth == 1
+            else "section"
+            if self.sutta_depth in (2, 3)
+            else "subsection"
+        )
+        if self.sutta_depth <= 2:  # append additional latex part
+            _book_title = html.new_tag("h1")
+            _book_title.string = self.config.publication.translation_title
+            doc.append(NoEscape(self._append_part(doc=doc, tag=_book_title)))
+
     def _append_preamble(self, doc: Document) -> None:
         _template: Template = self._get_template(name="preamble")
         doc.preamble.append(NoEscape(_template.render()))
@@ -513,12 +547,7 @@ class LatexEdition(EditionParser):
         doc.append(Command("mainmatter"))
         doc.append(Command("pagestyle", "fancy"))
         _mainmatter = BeautifulSoup(volume.mainmatter, "lxml")
-
-        self.sutta_depth = find_sutta_title_depth(_mainmatter)
-        if self.sutta_depth <= 2:  # append additional latex part
-            _book_title = _mainmatter.new_tag("h1")
-            _book_title.string = self.config.publication.translation_title
-            doc.append(NoEscape(self._append_part(doc=doc, tag=_book_title)))
+        self._prepare_mainmatter(doc=doc, html=_mainmatter)
 
         _mainmatter_elements = _mainmatter.find("body").contents
         for _element in _mainmatter_elements:

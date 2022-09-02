@@ -1,6 +1,6 @@
-\BLOCK{if has_long_suttas}\section*{\setstretch{.85}\centering{\normalsize \VAR{acronym | safe}}\\*\VAR{name | safe}\\*{\vspace*{-.1em}\itshape\normalsize \VAR{root_name | safe}}}
-\BLOCK{else}\section*{\setstretch{.85}\centering{\small \VAR{acronym | safe}}\\{\large \VAR{name | safe}}\\{\vspace*{-.1em}\itshape\small \VAR{root_name | safe}}}
+\BLOCK{if has_long_suttas}\\VAR{section_type}*{\setstretch{.85}\centering{\normalsize \VAR{acronym | safe}}\\*\VAR{name | safe}\\*{\vspace*{-.1em}\itshape\normalsize \VAR{root_name | safe}}}
+\BLOCK{else}\\VAR{section_type}*{\setstretch{.85}\centering{\small \VAR{acronym | safe}}\\{\large \VAR{name | safe}}\\{\vspace*{-.1em}\itshape\small \VAR{root_name | safe}}}
 \BLOCK{endif}
-\addcontentsline{toc}{section}{\VAR{acronym | safe}: \VAR{name | safe} ({\itshape \VAR{root_name | safe}})}
+\addcontentsline{toc}{\VAR{section_type}}{\VAR{acronym | safe}: \VAR{name | safe} ({\itshape \VAR{root_name | safe}})}
 \markboth{\VAR{name | safe}}{\VAR{root_name | safe}}
 \extramarks{\VAR{acronym | safe}}{\VAR{acronym | safe}}

@@ -171,8 +171,9 @@ class LatexEdition(EditionParser):
 
     def _append_footnote(self, doc: Document) -> str:
         if self.endnotes:
-            _note_contents: list[PageElement] = BeautifulSoup(self.endnotes.pop(0), "lxml").body.p.contents
-            _data: str = self._process_contents(doc=doc, contents=_note_contents)
+            _endnote = BeautifulSoup(self.endnotes.pop(0), "lxml")
+            _contents = _endnote.p.contents if _endnote.p else _endnote.body.contents
+            _data: str = self._process_contents(doc=doc, contents=_contents)
             return cast(str, Command("footnote", _data).dumps())
         else:
             return ""
@@ -512,11 +513,7 @@ class LatexEdition(EditionParser):
     def _prepare_mainmatter(self, doc: Document, html: BeautifulSoup) -> None:
         self.sutta_depth = find_sutta_title_depth(html)
         self.section_type = (
-            "chapter"
-            if self.sutta_depth == 1
-            else "section"
-            if self.sutta_depth in (2, 3)
-            else "subsection"
+            "chapter" if self.sutta_depth == 1 else "section" if self.sutta_depth in (2, 3) else "subsection"
         )
         if self.sutta_depth <= 2:  # append additional latex part
             _book_title = html.new_tag("h1")

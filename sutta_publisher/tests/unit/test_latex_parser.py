@@ -48,6 +48,7 @@ def latex_edition(config, data):
         ("<blockquote class='gatha'>Test</blockqoute>", "\\begin{verse}%\nTest%\n\\end{verse}\n\n"),
         ("<blockquote>Test</blockqoute>", "\\begin{quotation}%\nTest%\n\\end{quotation}\n\n"),
         ("<br>", NoEscape(r"\\") + NoEscape("\n")),
+        ("<test><j></j><br></test>", NoEscape(r"\\>") + NoEscape("\n")),
         ("<b>Test</b>", "\\textbf{Test}"),
         ("<em>Test</em>", "\\emph{Test}"),
         ("<i lang='lzh'>Test</i>", "\\langlzh{Test}"),

@@ -137,8 +137,9 @@ class LatexEdition(EditionParser):
         return cast(str, quotation_env.dumps() + NoEscape("\n\n"))
 
     @staticmethod
-    def _append_breakline() -> str:
-        return cast(str, NoEscape(r"\\") + NoEscape("\n"))
+    def _append_breakline(tag: Tag) -> str:
+        _macro = r"\\>" if tag.previous_sibling and tag.previous_sibling.name == "j" else r"\\"
+        return cast(str, NoEscape(_macro) + NoEscape("\n"))
 
     def _append_bold(self, doc: Document, tag: Tag) -> str:
         _tex: str = self._process_contents(doc=doc, contents=tag.contents)
@@ -398,7 +399,7 @@ class LatexEdition(EditionParser):
                 return self._append_quotation(doc=doc, tag=tag)
 
             case "br":
-                return self._append_breakline()
+                return self._append_breakline(tag=tag)
 
             case "cite":
                 return self._append_italic(doc=doc, tag=tag)

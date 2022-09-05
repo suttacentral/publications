@@ -48,18 +48,18 @@ def latex_edition(config, data):
         ("<blockquote class='gatha'>Test</blockqoute>", "\\begin{verse}%\nTest%\n\\end{verse}\n\n"),
         ("<blockquote>Test</blockqoute>", "\\begin{quotation}%\nTest%\n\\end{quotation}\n\n"),
         ("<br>", NoEscape(r"\\") + NoEscape("\n")),
-        ("<test><j></j><br></test>", NoEscape(r"\\>") + NoEscape("\n")),
+        ("<test>Some text <j>another text </j>more text <br></test>", "Some text \\\\>another text more text \\\\\n"),
         ("<b>Test</b>", "\\textbf{Test}"),
         ("<em>Test</em>", "\\emph{Test}"),
         ("<i lang='lzh'>Test</i>", "\\langlzh{Test}"),
         ("<a role='doc-noteref' href=''>1</a>", "\\footnote{Note}"),
         (
             "<h3 class='sutta-title heading'><span class='sutta-heading acronym'>Acronym</span><span class='sutta-heading translated-title'>Name</span><span class='sutta-heading root-title'>Mūlapariyāyasutta</span></h3>",
-            "\\section*{\\setstretch{.85}\\centering{\\small Acronym}\\\\{\\large Name}\\\\{\\vspace*{-.1em}\itshape\\small Mūlapariyāyasutta}}\n\\addcontentsline{toc}{section}{Acronym: Name ({\itshape Mūlapariyāyasutta})}\n\\markboth{Name}{Mūlapariyāyasutta}\n\\extramarks{Acronym}{Acronym}\n\n",
+            "\\section*{\\setstretch{.85}\\centering{\\small Acronym}\\\\*{\\large Name}\\\\*{\\vspace*{-.1em}\itshape\\small Mūlapariyāyasutta}}\n\\addcontentsline{toc}{section}{Acronym: Name ({\itshape Mūlapariyāyasutta})}\n\\markboth{Name}{Mūlapariyāyasutta}\n\\extramarks{Acronym}{Acronym}\n\n",
         ),
         (
             "<h3 class='sutta-title heading'><span class='sutta-heading acronym'>Acronym</span><span class='sutta-heading translated-title'>Name</span><span class='sutta-heading root-title'>Not pali</span></h3>",
-            "\\section*{\\setstretch{.85}\\centering{\\small Acronym}\\\\{\\large Name}\\\\{\\vspace*{-.1em}\itshape\\small Not pali}}\n\\addcontentsline{toc}{section}{Acronym: Name ({\itshape Not pali})}\n\\markboth{Name}{Not pali}\n\\extramarks{Acronym}{Acronym}\n\n",
+            "\\section*{\\setstretch{.85}\\centering{\\small Acronym}\\\\*{\\large Name}\\\\*{\\vspace*{-.1em}\itshape\\small Not pali}}\n\\addcontentsline{toc}{section}{Acronym: Name ({\itshape Not pali})}\n\\markboth{Name}{Not pali}\n\\extramarks{Acronym}{Acronym}\n\n",
         ),
         (
             "<h1>Chapter</h1>",

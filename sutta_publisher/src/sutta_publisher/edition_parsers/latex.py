@@ -55,6 +55,7 @@ TEXTS_WITH_LONG_SUTTAS: list[str] = [
     "dn",
     "pli-tv-vi",
 ]
+LATEX_DOCUMENT_CONFIG = ast.literal_eval(os.getenv("LATEX_DOCUMENT_CONFIG", ""))
 
 
 class LatexEdition(EditionParser):
@@ -137,9 +138,8 @@ class LatexEdition(EditionParser):
         return cast(str, quotation_env.dumps() + NoEscape("\n\n"))
 
     @staticmethod
-    def _append_breakline(tag: Tag) -> str:
-        _macro = r"\\>" if tag.previous_sibling and tag.previous_sibling.name == "j" else r"\\"
-        return cast(str, NoEscape(_macro) + NoEscape("\n"))
+    def _append_breakline() -> str:
+        return cast(str, NoEscape(r"\\") + NoEscape("\n"))
 
     def _append_bold(self, doc: Document, tag: Tag) -> str:
         _tex: str = self._process_contents(doc=doc, contents=tag.contents)
@@ -317,6 +317,9 @@ class LatexEdition(EditionParser):
         template: Template = self._get_template(name="epigraph")
         return cast(str, template.render(data) + NoEscape("\n"))
 
+    def _append_enjambment(self, doc: Document, tag: Tag) -> str:
+        return cast(str, f"\\\\>{self._process_contents(doc=doc, contents=tag.contents)}")
+
     def _append_enumerate(self, doc: Document, tag: Tag) -> str:
         enum = Enumerate()
         for _item in tag.contents:
@@ -341,7 +344,7 @@ class LatexEdition(EditionParser):
 
         # TODO: Investigate why additional commands for blurbs do not work
         # if tag.has_attr("class") and "blurb-list" in tag["class"]:
-        #     blurbs_prefix = "\\setlist[description]{style=unboxed,leftmargin=0em}"
+        #     blurbs_prefix = "\\setlist[description]{style=unboxed,leftmargin=0cm}"
         #     blurbs_suffix = "\\setlist[description]{style=standard}"
         #     tex = f"{blurbs_prefix}\n{tex}\n{blurbs_suffix}"
 
@@ -399,7 +402,7 @@ class LatexEdition(EditionParser):
                 return self._append_quotation(doc=doc, tag=tag)
 
             case "br":
-                return self._append_breakline(tag=tag)
+                return self._append_breakline()
 
             case "cite":
                 return self._append_italic(doc=doc, tag=tag)
@@ -418,6 +421,9 @@ class LatexEdition(EditionParser):
 
             case "i":
                 return self._append_italic(doc=doc, tag=tag)
+
+            case "j":
+                return self._append_enjambment(doc=doc, tag=tag)
 
             case "ol":
                 return self._append_enumerate(doc=doc, tag=tag)
@@ -529,7 +535,7 @@ class LatexEdition(EditionParser):
         # setup
         self.endnotes: list[str] | None = volume.endnotes if volume.endnotes else None
 
-        doc = Document(documentclass="book", document_options="12pt")
+        doc = Document(**LATEX_DOCUMENT_CONFIG)
 
         # set preamble
         self._append_preamble(doc)

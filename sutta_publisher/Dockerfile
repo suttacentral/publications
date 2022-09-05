@@ -11,7 +11,7 @@ ENV PYTHONPATH=/app/
 
 RUN apt-get update -y \
     && apt-get upgrade --no-install-recommends -y \
-    && apt-get install texlive-extra-utils texlive-base texlive-latex-base texlive-xetex latexmk texlive-lang-japanese -y\
+    && apt-get install texlive-extra-utils texlive-base texlive-latex-base texlive-xetex latexmk texlive-lang-japanese texlive-humanities -y\
     && apt-get clean -y
 
 COPY ./assets/fonts/ /tmp/fonts

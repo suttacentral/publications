@@ -345,7 +345,7 @@ class LatexEdition(EditionParser):
             _label = self._process_contents(doc=doc, contents=_key.contents)
             _item = self._process_contents(doc=doc, contents=_value.contents)
             desc.add_item(label=_label, s=_item)
-        tex = desc.dumps()
+        tex = desc.dumps().replace("]%\n", "] ")
 
         return cast(str, tex + NoEscape("\n\n"))
 

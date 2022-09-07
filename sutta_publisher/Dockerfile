@@ -16,7 +16,8 @@ RUN apt-get update -y \
 
 COPY ./assets/fonts/ /tmp/fonts
 RUN cp -Rf /tmp/fonts/Gentium/ /usr/local/share/fonts/truetype/ && \
-    cp -Rf /tmp/fonts/Noto_Serif_TC/fonts/otf /usr/local/share/fonts/ && \
+    cp -Rf /tmp/fonts/neranjara/ /usr/local/share/fonts/ && \
+    cp -Rf /tmp/fonts/Noto_Serif_TC/fonts/otf/ /usr/local/share/fonts/ && \
     fc-cache -fv && \
     rm -Rf /tmp/fonts
 

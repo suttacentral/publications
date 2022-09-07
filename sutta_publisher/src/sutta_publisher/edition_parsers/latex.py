@@ -535,12 +535,12 @@ class LatexEdition(EditionParser):
         try:
             _template: Template = self._get_template(name=_text_uid)
             doc.preamble.append(NoEscape(_template.render()))
-        except KeyError:
+        except TemplateNotFound:
+            log.warning(f"Template '{_text_uid}-template.tex' for edition specific configuration is missing.")
+        except EnvironmentError:
             log.warning(
                 f"'LATEX_TEMPLATES_NAMES_MAPPING' in .env_public file lacks key-value pair for edition specific configuration template."
             )
-        except TemplateNotFound:
-            log.warning(f"Template '{_text_uid}-template.tex' for edition specific configuration is missing.")
 
     def _append_preamble(self, doc: Document) -> None:
         _template: Template = self._get_template(name="preamble")

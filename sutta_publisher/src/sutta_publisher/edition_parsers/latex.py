@@ -492,6 +492,10 @@ class LatexEdition(EditionParser):
                 template: Template = _template_env.get_template(name=_template_name)
                 return template
 
+            except KeyError:
+                raise EnvironmentError(
+                    f"'LATEX_TEMPLATES_NAMES_MAPPING' in .env_public file lacks required key-value pair for {name} template."
+                )
             except TemplateNotFound:
                 raise TemplateNotFound(f"Template '{name}-template.tex' for Latex edition is missing.")
 
@@ -526,9 +530,22 @@ class LatexEdition(EditionParser):
             _book_title.string = self.config.publication.translation_title
             doc.append(NoEscape(self._append_part(doc=doc, tag=_book_title)))
 
+    def _append_edition_config(self, doc: Document) -> None:
+        _text_uid: str = self.config.edition.text_uid
+        try:
+            _template: Template = self._get_template(name=_text_uid)
+            doc.preamble.append(NoEscape(_template.render()))
+        except KeyError:
+            log.warning(
+                f"'LATEX_TEMPLATES_NAMES_MAPPING' in .env_public file lacks key-value pair for edition specific configuration template."
+            )
+        except TemplateNotFound:
+            log.warning(f"Template '{_text_uid}-template.tex' for edition specific configuration is missing.")
+
     def _append_preamble(self, doc: Document) -> None:
         _template: Template = self._get_template(name="preamble")
         doc.preamble.append(NoEscape(_template.render()))
+        self._append_edition_config(doc=doc)
 
     def _generate_latex(self, volume: Volume) -> Document:
         # setup

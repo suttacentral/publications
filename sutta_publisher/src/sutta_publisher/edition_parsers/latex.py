@@ -188,7 +188,7 @@ class LatexEdition(EditionParser):
             self.is_not_first_long_sutta_in_chapter = True
 
         _acronym, _name, _root_name = [self._process_tag(doc=doc, tag=_span) for _span in tag.children]
-        template: Template = self._get_template("heading")
+        template: Template = self._get_template(name="heading")
         data = {
             "acronym": _acronym,
             "name": _name,
@@ -224,7 +224,7 @@ class LatexEdition(EditionParser):
         return tex
 
     def _append_custom_part(self, doc: Document, tag: Tag) -> str:
-        _template: Template = self._get_template("part")
+        _template: Template = self._get_template(name="part")
         return cast(str, _template.render(name=tag.string) + NoEscape("\n\n"))
 
     def _append_chapter(self, doc: Document, tag: Tag) -> str:
@@ -464,40 +464,44 @@ class LatexEdition(EditionParser):
                 _element.string.replace_with(_element.string.strip())
 
     @staticmethod
-    def _get_template(name: str) -> Template:
-        LATEX_TEMPLATES_NAMES_MAPPING: dict[str, str] = ast.literal_eval(
-            os.getenv("LATEX_TEMPLATES_NAMES_MAPPING")  # type: ignore
-        )
-        if not LATEX_TEMPLATES_NAMES_MAPPING:
-            raise EnvironmentError(
-                "Missing .env_public file or the file lacks required variable LATEX_TEMPLATES_NAMES_MAPPING."
+    def _get_template(name: str = "", raw_name: str = "") -> Template:
+        if not raw_name:
+            LATEX_TEMPLATES_NAMES_MAPPING: dict[str, str] = ast.literal_eval(
+                os.getenv("LATEX_TEMPLATES_NAMES_MAPPING")  # type: ignore
             )
-        else:
+            if not LATEX_TEMPLATES_NAMES_MAPPING:
+                raise EnvironmentError(
+                    "Missing .env_public file or the file lacks required variable LATEX_TEMPLATES_NAMES_MAPPING."
+                )
             try:
                 _template_name: str = LATEX_TEMPLATES_NAMES_MAPPING[name]
-                _template_loader: FileSystemLoader = FileSystemLoader(searchpath=TEX_TEMPLATES_DIR)
-                _template_env: jinja2_Environment = jinja2_Environment(
-                    block_start_string="\BLOCK{",
-                    block_end_string="}",
-                    variable_start_string="\VAR{",
-                    variable_end_string="}",
-                    comment_start_string="\#{",
-                    comment_end_string="}",
-                    line_statement_prefix="%%",
-                    line_comment_prefix="%#",
-                    trim_blocks=True,
-                    autoescape=True,
-                    loader=_template_loader,
-                )
-                template: Template = _template_env.get_template(name=_template_name)
-                return template
-
             except KeyError:
                 raise EnvironmentError(
                     f"'LATEX_TEMPLATES_NAMES_MAPPING' in .env_public file lacks required key-value pair for {name} template."
                 )
-            except TemplateNotFound:
-                raise TemplateNotFound(f"Template '{name}-template.tex' for Latex edition is missing.")
+        else:
+            _template_name = raw_name
+
+        try:
+            _template_loader: FileSystemLoader = FileSystemLoader(searchpath=TEX_TEMPLATES_DIR)
+            _template_env: jinja2_Environment = jinja2_Environment(
+                block_start_string="\BLOCK{",
+                block_end_string="}",
+                variable_start_string="\VAR{",
+                variable_end_string="}",
+                comment_start_string="\#{",
+                comment_end_string="}",
+                line_statement_prefix="%%",
+                line_comment_prefix="%#",
+                trim_blocks=True,
+                autoescape=True,
+                loader=_template_loader,
+            )
+            template: Template = _template_env.get_template(name=_template_name)
+            return template
+
+        except TemplateNotFound:
+            raise TemplateNotFound(f"Template '{_template_name}' for Latex edition is missing.")
 
     @staticmethod
     def _get_matter_name(matter: Tag) -> str:
@@ -531,16 +535,12 @@ class LatexEdition(EditionParser):
             doc.append(NoEscape(self._append_custom_part(doc=doc, tag=_book_title)))
 
     def _append_edition_config(self, doc: Document) -> None:
-        _text_uid: str = self.config.edition.text_uid
+        _template_name: str = f"config-{self.config.edition.text_uid}.tex"
         try:
-            _template: Template = self._get_template(name=_text_uid)
+            _template: Template = self._get_template(raw_name=_template_name)
             doc.preamble.append(NoEscape(_template.render()))
         except TemplateNotFound:
-            log.warning(f"Template '{_text_uid}-template.tex' for edition specific configuration is missing.")
-        except EnvironmentError:
-            log.warning(
-                f"'LATEX_TEMPLATES_NAMES_MAPPING' in .env_public file lacks key-value pair for edition specific configuration template."
-            )
+            log.info(f"Template '{_template_name}' for edition specific configuration not found.")
 
     def _append_preamble(self, doc: Document) -> None:
         _template: Template = self._get_template(name="preamble")

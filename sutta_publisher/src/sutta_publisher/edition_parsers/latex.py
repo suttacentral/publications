@@ -223,7 +223,7 @@ class LatexEdition(EditionParser):
         tex += Command("markboth", arguments=[_title, _title]).dumps() + NoEscape("\n\n")
         return tex
 
-    def _append_part(self, doc: Document, tag: Tag) -> str:
+    def _append_custom_part(self, doc: Document, tag: Tag) -> str:
         _template: Template = self._get_template("part")
         return cast(str, _template.render(name=tag.string) + NoEscape("\n\n"))
 
@@ -259,7 +259,7 @@ class LatexEdition(EditionParser):
 
     def _append_section_title(self, doc: Document, tag: Tag) -> str:
         actions: list[Callable] = [
-            self._append_part,
+            self._append_custom_part,
             self._append_custom_chapter,
             self._append_custom_section,
         ]
@@ -528,7 +528,7 @@ class LatexEdition(EditionParser):
         if self.sutta_depth <= 2:  # append additional latex part
             _book_title = html.new_tag("h1")
             _book_title.string = self.config.publication.translation_title
-            doc.append(NoEscape(self._append_part(doc=doc, tag=_book_title)))
+            doc.append(NoEscape(self._append_custom_part(doc=doc, tag=_book_title)))
 
     def _append_edition_config(self, doc: Document) -> None:
         _text_uid: str = self.config.edition.text_uid

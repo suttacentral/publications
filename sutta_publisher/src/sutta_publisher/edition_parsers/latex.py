@@ -23,7 +23,7 @@ SANSKRIT_LANGUAGES: list[str] = [
     "san",
 ]
 SANSKRIT_PATTERN = re.compile(r"\b(?=\w*[āīūṭḍṁṅñṇḷśṣṛ])\w+\b")
-FOREIGN_LANGUAGES: list[str] = [
+FOREIGN_SCRIPT_MACRO_LANGUAGES: list[str] = [
     "lzh",
 ]
 MATTERS_TO_SKIP: list[str] = [
@@ -385,6 +385,9 @@ class LatexEdition(EditionParser):
             case heading if tag.name.startswith("h") and tag.name[1].isnumeric():
                 return self._append_heading(doc=doc, tag=tag)
 
+            case macro_lang if tag.has_attr("lang") and tag["lang"] in FOREIGN_SCRIPT_MACRO_LANGUAGES:
+                return self._append_foreign_script_macro(doc=doc, tag=tag)
+
             case "a" if tag.has_attr("role") and "doc-noteref" in tag["role"]:
                 return self._append_footnote(doc=doc)
 
@@ -411,9 +414,6 @@ class LatexEdition(EditionParser):
 
             case "em":
                 return self._append_emphasis(doc=doc, tag=tag)
-
-            case "i" if tag.has_attr("lang") and tag["lang"] in FOREIGN_LANGUAGES:
-                return self._append_foreign_script_macro(doc=doc, tag=tag)
 
             case "i" if tag.has_attr("lang"):
                 return self._append_italic(doc=doc, tag=tag)

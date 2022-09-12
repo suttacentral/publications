@@ -19,7 +19,7 @@ from .helper_functions import find_sutta_title_depth, get_heading_depth
 log = logging.getLogger(__name__)
 
 FOREIGN_SCRIPT_MACRO_LANGUAGES: list[str] = ast.literal_eval(os.getenv("FOREIGN_SCRIPT_MACRO_LANGUAGES", ""))
-LATEX_DOCUMENT_CONFIG: dict[str] = ast.literal_eval(os.getenv("LATEX_DOCUMENT_CONFIG", ""))
+LATEX_DOCUMENT_CONFIG: dict[str] = ast.literal_eval(os.getenv("LATEX_DOCUMENT_CONFIG", ""))  # type: ignore
 MATTERS_TO_SKIP: list[str] = ast.literal_eval(os.getenv("MATTERS_TO_SKIP", ""))
 MATTERS_WITH_TEX_TEMPLATES: list[str] = ast.literal_eval(os.getenv("MATTERS_WITH_TEX_TEMPLATES", ""))
 SANSKRIT_LANGUAGES: list[str] = ast.literal_eval(os.getenv("SANSKRIT_LANGUAGES", ""))
@@ -239,10 +239,10 @@ class LatexEdition(EditionParser):
         # Samyutta only - move all headings one level up in order to remove the top level heading
         if self.config.edition.text_uid == "sn":
             _heading_depth -= 1
+            if not _heading_depth:
+                return ""
 
-        if not _heading_depth:
-            return ""
-        elif self.sutta_depth == 2:
+        if self.sutta_depth == 2:
             index = _heading_depth
         elif _heading_depth in (1, 2, 3):
             index = _heading_depth - 1
@@ -306,12 +306,7 @@ class LatexEdition(EditionParser):
         return cast(str, itemize.dumps().replace("\\item%\n", "\\item ") + NoEscape("\n\n"))
 
     def _append_description(self, doc: Document, tag: Tag) -> str:
-        if tag.has_attr("class") and "blurb-list" in tag["class"]:
-            # TODO: Investigate why additional options for description list do not work
-            # desc = Description(options="style=unboxed,leftmargin=0em")
-            desc = Description()
-        else:
-            desc = Description()
+        desc = Description()
         for _key, _value in zip(tag.find_all("dt"), tag.find_all("dd")):
             _label = self._process_contents(doc=doc, contents=_key.contents)
             _item = self._process_contents(doc=doc, contents=_value.contents)
@@ -424,7 +419,7 @@ class LatexEdition(EditionParser):
             elif isinstance(_element, NavigableString) and _element != "\n":
                 if not (_element.parent.has_attr("class") and "sutta-heading" in _element.parent["class"]):
                     _element = re.sub(SANSKRIT_PATTERN, r"\\textsanskrit{\g<0>}", _element)
-                tex += _element.replace("&", "\\&").replace("_", "\\_")
+                tex += _element.replace("&", "\\&").replace("_", "\\_").replace("~", "\\textasciitilde")
 
         return cast(str, NoEscape(tex))
 

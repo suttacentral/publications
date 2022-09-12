@@ -18,44 +18,15 @@ from .helper_functions import find_sutta_title_depth, get_heading_depth
 
 log = logging.getLogger(__name__)
 
-SANSKRIT_LANGUAGES: list[str] = [
-    "pli",
-    "san",
-]
+FOREIGN_SCRIPT_MACRO_LANGUAGES: list[str] = ast.literal_eval(os.getenv("FOREIGN_SCRIPT_MACRO_LANGUAGES", ""))
+LATEX_DOCUMENT_CONFIG: dict[str] = ast.literal_eval(os.getenv("LATEX_DOCUMENT_CONFIG", ""))
+MATTERS_TO_SKIP: list[str] = ast.literal_eval(os.getenv("MATTERS_TO_SKIP", ""))
+MATTERS_WITH_TEX_TEMPLATES: list[str] = ast.literal_eval(os.getenv("MATTERS_WITH_TEX_TEMPLATES", ""))
+SANSKRIT_LANGUAGES: list[str] = ast.literal_eval(os.getenv("SANSKRIT_LANGUAGES", ""))
 SANSKRIT_PATTERN = re.compile(r"\b(?=\w*[āīūṭḍṁṅñṇḷśṣṛ])\w+\b")
-FOREIGN_SCRIPT_MACRO_LANGUAGES: list[str] = [
-    "lzh",
-]
-MATTERS_TO_SKIP: list[str] = [
-    "endnotes",
-]
-MATTERS_WITH_TEX_TEMPLATES: list[str] = [
-    "titlepage",
-    "imprint",
-    "halftitlepage",
-]
-STYLING_CLASSES: list[str] = [
-    "namo",
-    "endsection",
-    "endsutta",
-    "endbook",
-    "endkanda",
-    "end",
-    "uddana-intro",
-    "endvagga",
-    "rule",
-    "add",
-    "evam",
-    "speaker",
-    "byline",
-]
+STYLING_CLASSES: list[str] = ast.literal_eval(os.getenv("STYLING_CLASSES", ""))
 TEX_TEMPLATES_DIR = Path(__file__).parent.parent / "templates" / "tex"
-TEXTS_WITH_LONG_SUTTAS: list[str] = [
-    "mn",
-    "dn",
-    "pli-tv-vi",
-]
-LATEX_DOCUMENT_CONFIG = ast.literal_eval(os.getenv("LATEX_DOCUMENT_CONFIG", ""))
+TEXTS_WITH_LONG_SUTTAS: list[str] = ast.literal_eval(os.getenv("TEXTS_WITH_LONG_SUTTAS", ""))
 
 
 class LatexEdition(EditionParser):

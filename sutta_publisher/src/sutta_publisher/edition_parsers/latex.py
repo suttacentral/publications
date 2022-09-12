@@ -228,27 +228,36 @@ class LatexEdition(EditionParser):
         tex: str = Command("subparagraph*", _title).dumps() + NoEscape("\n\n")
         return tex
 
+    def _append_pannasa(self, tag: Tag) -> str:
+        _template: Template = self._get_template(name="pannasa")
+        return cast(str, _template.render(name=tag.string) + NoEscape("\n\n"))
+
     def _append_section_title(self, doc: Document, tag: Tag) -> str:
-        actions: list[Callable] = [
-            self._append_custom_part,
-            self._append_custom_chapter,
-            self._append_custom_section,
-        ]
-        _heading_depth: int = get_heading_depth(tag)
+        if tag.has_attr("id") and "pannasaka" in tag["id"]:
+            # The pannasa in AN and SN requires a special markup
+            return self._append_pannasa(tag=tag)
 
-        # Samyutta only - move all headings one level up in order to remove the top level heading
-        if self.config.edition.text_uid == "sn":
-            _heading_depth -= 1
-            if not _heading_depth:
-                return ""
-
-        if self.sutta_depth == 2:
-            index = _heading_depth
-        elif _heading_depth in (1, 2, 3):
-            index = _heading_depth - 1
         else:
-            index = -1
-        return cast(str, actions[index](doc=doc, tag=tag))
+            actions: list[Callable] = [
+                self._append_custom_part,
+                self._append_custom_chapter,
+                self._append_custom_section,
+            ]
+            _heading_depth: int = get_heading_depth(tag)
+
+            # Samyutta only - move all headings one level up in order to remove the top level heading
+            if self.config.edition.text_uid == "sn":
+                _heading_depth -= 1
+                if not _heading_depth:
+                    return ""
+
+            if self.sutta_depth == 2:
+                index = _heading_depth
+            elif _heading_depth in (1, 2, 3):
+                index = _heading_depth - 1
+            else:
+                index = -1
+            return cast(str, actions[index](doc=doc, tag=tag))
 
     def _append_subheading(self, doc: Document, tag: Tag) -> str:
         actions: list[Callable] = [
@@ -501,7 +510,7 @@ class LatexEdition(EditionParser):
             doc.append(NoEscape(self._append_custom_part(doc=doc, tag=_book_title)))
 
     def _append_edition_config(self, doc: Document) -> None:
-        _template_name: str = f"config-{self.config.edition.text_uid}.tex"
+        _template_name: str = f"individual/{self.config.edition.text_uid}.tex"
         try:
             _template: Template = self._get_template(raw_name=_template_name)
             doc.preamble.append(NoEscape(_template.render()))

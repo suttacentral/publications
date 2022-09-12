@@ -1,0 +1,22 @@
+% define a different fleuron for each edition
+\newfontfamily\Fleuronfont[Ornament=4]{Arno Pro}
+
+% Define heading styles per edition for chapter, section, and subsection. Suttatitle can be any one of these, depending on the volume. 
+
+\let\oldfrontmatter\frontmatter
+\renewcommand{\frontmatter}{%
+\chapterfont{\setstretch{.85}\normalfont\centering}%
+\sectionfont{\setstretch{.85}\Semiboldsubheadfont}%
+\oldfrontmatter}
+
+\let\oldmainmatter\mainmatter
+\renewcommand{\mainmatter}{%
+\chapterfont{\thispagestyle{empty}\vspace*{4em}\setstretch{.85}\LARGE\normalfont\itshape\scshape\centering\MakeLowercase}
+\sectionfont{\clearpage\thispagestyle{plain}\vspace*{2em}\setstretch{.85}\normalfont\centering}%
+\oldmainmatter}
+
+\let\oldbackmatter\backmatter
+\renewcommand{\backmatter}{%
+\chapterfont{\setstretch{.85}\normalfont\centering}%
+\sectionfont{\setstretch{.85}\Semiboldsubheadfont}%
+\oldbackmatter}

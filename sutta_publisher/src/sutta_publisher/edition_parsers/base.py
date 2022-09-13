@@ -348,6 +348,10 @@ class EditionParser(ABC):
         # Insert <br> after <span class="speaker">
         any(_span.insert_after(mainmatter.new_tag("br")) for _span in mainmatter.find_all("span", class_="speaker"))
 
+        # Find pannasa headings and add class "pannasaka-heading"
+        _pannasa = mainmatter.find_all(id=lambda x: x and "pannasaka" in x)
+        add_class(tags=_pannasa, class_="pannasaka-heading")
+
         return cast(str, extract_string(mainmatter))
 
     @staticmethod

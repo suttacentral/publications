@@ -32,6 +32,7 @@ def run(editions: EditionsConfigs) -> None:
 
     for edition in edition_list:  # type: EditionParser
         if edition.edition_type in ("html", "epub", "paperback"):
+            # if edition.edition_type in ("paperback"):  # dev
             log.debug(edition)
 
             try:

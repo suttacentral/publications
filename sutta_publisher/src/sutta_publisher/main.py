@@ -31,8 +31,8 @@ def run(editions: EditionsConfigs) -> None:
             log.exception("Can't parse publication_type='%s'. Error: %s", edition_config.edition.publication_type, e)
 
     for edition in edition_list:  # type: EditionParser
+        # if edition.edition_type in ("paperback"):  # dev
         if edition.edition_type in ("html", "epub", "paperback"):
-            # if edition.edition_type in ("paperback"):  # dev
             log.debug(edition)
 
             try:

@@ -19,14 +19,15 @@ from .helper_functions import find_sutta_title_depth, get_heading_depth
 log = logging.getLogger(__name__)
 
 FOREIGN_SCRIPT_MACRO_LANGUAGES: list[str] = ast.literal_eval(os.getenv("FOREIGN_SCRIPT_MACRO_LANGUAGES", ""))
-LATEX_DOCUMENT_CONFIG: dict[str] = ast.literal_eval(os.getenv("LATEX_DOCUMENT_CONFIG", ""))  # type: ignore
+LATEX_DOCUMENT_CONFIG: dict[str, str] = ast.literal_eval(os.getenv("LATEX_DOCUMENT_CONFIG", ""))
+INDIVIDUAL_TEMPLATES_MAPPING: dict[str, list] = ast.literal_eval(os.getenv("INDIVIDUAL_TEMPLATES_MAPPING", ""))
 MATTERS_TO_SKIP: list[str] = ast.literal_eval(os.getenv("MATTERS_TO_SKIP", ""))
 MATTERS_WITH_TEX_TEMPLATES: list[str] = ast.literal_eval(os.getenv("MATTERS_WITH_TEX_TEMPLATES", ""))
 SANSKRIT_LANGUAGES: list[str] = ast.literal_eval(os.getenv("SANSKRIT_LANGUAGES", ""))
 SANSKRIT_PATTERN = re.compile(r"\b(?=\w*[āīūṭḍṁṅñṇḷśṣṛ])\w+\b")
 STYLING_CLASSES: list[str] = ast.literal_eval(os.getenv("STYLING_CLASSES", ""))
 TEX_TEMPLATES_DIR = Path(__file__).parent.parent / "templates" / "tex"
-TEXTS_WITH_CHAPTER_SUTTA_TITLES: dict[str] = ast.literal_eval(os.getenv("TEXTS_WITH_CHAPTER_SUTTA_TITLES", ""))  # type: ignore
+TEXTS_WITH_CHAPTER_SUTTA_TITLES: dict[str] = ast.literal_eval(os.getenv("TEXTS_WITH_CHAPTER_SUTTA_TITLES", ""))
 
 
 class LatexEdition(EditionParser):
@@ -425,18 +426,18 @@ class LatexEdition(EditionParser):
     @staticmethod
     def _get_template(name: str = "", raw_name: str = "") -> Template:
         if not raw_name:
-            LATEX_TEMPLATES_NAMES_MAPPING: dict[str, str] = ast.literal_eval(
-                os.getenv("LATEX_TEMPLATES_NAMES_MAPPING")  # type: ignore
+            LATEX_TEMPLATES_MAPPING: dict[str, str] = ast.literal_eval(
+                os.getenv("LATEX_TEMPLATES_MAPPING")  # type: ignore
             )
-            if not LATEX_TEMPLATES_NAMES_MAPPING:
+            if not LATEX_TEMPLATES_MAPPING:
                 raise EnvironmentError(
-                    "Missing .env_public file or the file lacks required variable LATEX_TEMPLATES_NAMES_MAPPING."
+                    "Missing .env_public file or the file lacks required variable LATEX_TEMPLATES_MAPPING."
                 )
             try:
-                _template_name: str = LATEX_TEMPLATES_NAMES_MAPPING[name]
+                _template_name: str = LATEX_TEMPLATES_MAPPING[name]
             except KeyError:
                 raise EnvironmentError(
-                    f"'LATEX_TEMPLATES_NAMES_MAPPING' in .env_public file lacks required key-value pair for {name} template."
+                    f"'LATEX_TEMPLATES_MAPPING' in .env_public file lacks required key-value pair for {name} template."
                 )
         else:
             _template_name = raw_name
@@ -495,18 +496,23 @@ class LatexEdition(EditionParser):
             _book_title.string = self.config.publication.translation_title
             doc.append(NoEscape(self._append_custom_part(doc=doc, tag=_book_title)))
 
-    def _append_edition_config(self, doc: Document) -> None:
-        _template_name: str = f"individual/{self.config.edition.text_uid}.tex"
+    def _append_edition_config(self, doc: Document, volume: Volume) -> None:
+        try:
+            _edition_mapping = INDIVIDUAL_TEMPLATES_MAPPING.get(self.config.edition.text_uid)
+            _template_name = f"individual/{_edition_mapping[volume.volume_number - 1]}"
+        except (KeyError, IndexError):
+            log.info(f"Individual template mapping for {self.config.edition.text_uid} not found. Using default name.")
+            _template_name = f"individual/{self.config.edition.text_uid}.tex"
         try:
             _template: Template = self._get_template(raw_name=_template_name)
             doc.preamble.append(NoEscape(_template.render()))
         except TemplateNotFound:
             log.info(f"Template '{_template_name}' for edition specific configuration not found.")
 
-    def _append_preamble(self, doc: Document) -> None:
+    def _append_preamble(self, doc: Document, volume: Volume) -> None:
         _template: Template = self._get_template(name="preamble")
         doc.preamble.append(NoEscape(_template.render()))
-        self._append_edition_config(doc=doc)
+        self._append_edition_config(doc=doc, volume=volume)
 
     def _generate_latex(self, volume: Volume) -> Document:
         # setup
@@ -516,7 +522,7 @@ class LatexEdition(EditionParser):
         doc = Document(**LATEX_DOCUMENT_CONFIG)
 
         # set preamble
-        self._append_preamble(doc)
+        self._append_preamble(doc=doc, volume=volume)
 
         # set frontmatter
         doc.append(Command("frontmatter"))

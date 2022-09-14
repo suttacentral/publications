@@ -27,7 +27,9 @@ SANSKRIT_LANGUAGES: list[str] = ast.literal_eval(os.getenv("SANSKRIT_LANGUAGES",
 SANSKRIT_PATTERN = re.compile(r"\b(?=\w*[āīūṭḍṁṅñṇḷśṣṛ])\w+\b")
 STYLING_CLASSES: list[str] = ast.literal_eval(os.getenv("STYLING_CLASSES", ""))
 TEX_TEMPLATES_DIR = Path(__file__).parent.parent / "templates" / "tex"
-TEXTS_WITH_CHAPTER_SUTTA_TITLES: dict[str] = ast.literal_eval(os.getenv("TEXTS_WITH_CHAPTER_SUTTA_TITLES", ""))
+TEXTS_WITH_CHAPTER_SUTTA_TITLES: dict[str, str | tuple] = ast.literal_eval(
+    os.getenv("TEXTS_WITH_CHAPTER_SUTTA_TITLES", "")
+)
 
 
 class LatexEdition(EditionParser):
@@ -499,8 +501,8 @@ class LatexEdition(EditionParser):
     def _append_edition_config(self, doc: Document, volume: Volume) -> None:
         try:
             _edition_mapping = INDIVIDUAL_TEMPLATES_MAPPING.get(self.config.edition.text_uid)
-            _template_name = f"individual/{_edition_mapping[volume.volume_number - 1]}"
-        except (KeyError, IndexError):
+            _template_name = f"individual/{_edition_mapping[volume.volume_number - 1]}"  # type: ignore
+        except (AttributeError, KeyError, IndexError):
             log.info(f"Individual template mapping for {self.config.edition.text_uid} not found. Using default name.")
             _template_name = f"individual/{self.config.edition.text_uid}.tex"
         try:

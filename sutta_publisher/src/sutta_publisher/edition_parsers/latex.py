@@ -23,7 +23,7 @@ LATEX_DOCUMENT_CONFIG: dict[str, str] = ast.literal_eval(os.getenv("LATEX_DOCUME
 INDIVIDUAL_TEMPLATES_MAPPING: dict[str, list] = ast.literal_eval(os.getenv("INDIVIDUAL_TEMPLATES_MAPPING", ""))
 MATTERS_TO_SKIP: list[str] = ast.literal_eval(os.getenv("MATTERS_TO_SKIP", ""))
 MATTERS_WITH_TEX_TEMPLATES: list[str] = ast.literal_eval(os.getenv("MATTERS_WITH_TEX_TEMPLATES", ""))
-PANNASAKA_IDS: list[str] = ast.literal_eval(os.getenv("PANNASAKA_IDS", ""))
+ADDITIONAL_PANNASAKA_IDS: list[str] = ast.literal_eval(os.getenv("ADDITIONAL_PANNASAKA_IDS", ""))
 SANSKRIT_LANGUAGES: list[str] = ast.literal_eval(os.getenv("SANSKRIT_LANGUAGES", ""))
 SANSKRIT_PATTERN = re.compile(r"\b(?=\w*[āīūṭḍṁṅñṇḷśṣṛ])\w+\b")
 STYLING_CLASSES: list[str] = ast.literal_eval(os.getenv("STYLING_CLASSES", ""))
@@ -217,7 +217,7 @@ class LatexEdition(EditionParser):
         return cast(str, _template.render(name=tag.string) + NoEscape("\n\n"))
 
     def _append_section_title(self, doc: Document, tag: Tag) -> str:
-        if tag.has_attr("id") and ("pannasaka" in tag["id"] or tag["id"] in PANNASAKA_IDS):
+        if tag.has_attr("id") and ("pannasaka" in tag["id"] or tag["id"] in ADDITIONAL_PANNASAKA_IDS):
             # The pannasa in AN and SN requires a special markup
             return self._append_pannasa(tag=tag)
 

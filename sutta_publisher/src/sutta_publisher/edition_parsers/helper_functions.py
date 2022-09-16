@@ -292,35 +292,34 @@ def validate_node(node: Node) -> None:
     """Raises SystemExit if node is not valid"""
     _errors = []
 
-    # TODO: TO BE REFACTORED
     if node.type == "leaf":
-        try:
-            if not f"id='{node.uid}'" in next(iter(node.mainmatter.markup.values())):
+
+        if hasattr(node.mainmatter, "markup") and node.mainmatter.markup:
+
+            # Check if first node markup matches node uid
+            if f"id='{node.uid}'" not in next(iter(node.mainmatter.markup.values())):
                 _errors.append("mismatching tag id")
 
-            _h1_ids = [_id for _id, _markup in node.mainmatter.markup.items() if "<h1" in _markup]
-        except AttributeError:
-            _errors.append("markup is none")
-        else:
-            if not _h1_ids:
+            # Check <h1> tags
+            _heading_ids = [_id for _id, _markup in node.mainmatter.markup.items() if "<h1" in _markup]
+            if not _heading_ids:
                 _errors.append("missing <h1> tag")
-            elif len(_h1_ids) > 1:
+            elif len(_heading_ids) > 1:
                 _errors.append("too many <h1> tags")
-            elif not node.mainmatter.main_text.get(_h1_ids[0]):
+            elif not node.mainmatter.main_text.get(_heading_ids[0]):
                 _errors.append("empty <h1> tag")
-            elif node.mainmatter.notes and node.mainmatter.notes.get(_h1_ids[0]):
-                _errors.append("<h1> tag contains children tags")
+            elif node.mainmatter.notes and node.mainmatter.notes.get(_heading_ids[0]):
+                _errors.append("<h1> tag should not have any children tags")
 
-        # Required attrs for leaf
-        _attrs = ["acronym", "root_name"]
-    else:
-        # Required attrs for branch
-        _attrs = ["name", "root_name"]
+        else:
+            _errors.append("markup is missing")
 
+    # Check if node contains required attributes
+    _attrs = ["root_name"] + ["acronym" if node.type == "leaf" else "name"]
     _errors.extend([f"missing '{_attr}'" for _attr in _attrs if not getattr(node, _attr)])
 
     if _errors:
-        logging.error(f"Error while processing segment '{node.uid}'. Details: {', '.join(_errors)}.")
+        raise SystemExit(f"Error while processing segment '{node.uid}'. Details: {', '.join(_errors)}.")
 
 
 def find_mainmatter_part_uids(html: BeautifulSoup, depth: int) -> list[str]:

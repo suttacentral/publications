@@ -22,10 +22,10 @@ def latex_edition(config, data):
 @pytest.mark.parametrize(
     "html, expected",
     [
-        ("<p>Test</p>", "Test"),
-        ("<p id='ab1.2:3.4'>Test</p>", "Test\\marginnote{3.4} "),
-        ("<p id='ab1.2:3.4'>Test Testing</p>", "Test\\marginnote{3.4} Testing"),
-        ("<p class='uddana-intro' id='ab1.2:3.4'>Test</p>", "\\scuddanaintro{Test}"),
+        ("<p>Test</p>", "Test\n\n"),
+        ("<p id='ab1.2:3.4'>Test</p>", "Test\\marginnote{3.4} \n\n"),
+        ("<p id='ab1.2:3.4'>Test Testing</p>", "Test\\marginnote{3.4} Testing\n\n"),
+        ("<p class='uddana-intro' id='ab1.2:3.4'>Test</p>", "\\scuddanaintro{Test}\n\n"),
         (
             "<p class='uddana-intro' id='ab1.2:3.4'>Test</p><p>Sibling</p>",
             "\\scuddanaintro{Test}\n\n",
@@ -48,17 +48,18 @@ def latex_edition(config, data):
         ("<blockquote class='gatha'>Test</blockqoute>", "\\begin{verse}%\nTest%\n\\end{verse}\n\n"),
         ("<blockquote>Test</blockqoute>", "\\begin{quotation}%\nTest%\n\\end{quotation}\n\n"),
         ("<br>", NoEscape(r"\\") + NoEscape("\n")),
+        ("<test>Some text <j>another text </j>more text <br></test>", "Some text \\\\>another text more text \\\\\n"),
         ("<b>Test</b>", "\\textbf{Test}"),
         ("<em>Test</em>", "\\emph{Test}"),
         ("<i lang='lzh'>Test</i>", "\\langlzh{Test}"),
         ("<a role='doc-noteref' href=''>1</a>", "\\footnote{Note}"),
         (
             "<h3 class='sutta-title heading'><span class='sutta-heading acronym'>Acronym</span><span class='sutta-heading translated-title'>Name</span><span class='sutta-heading root-title'>Mūlapariyāyasutta</span></h3>",
-            "\\section*{\\setstretch{.85}\\centering{\\small Acronym}\\\\{\\large Name}\\\\{\\vspace*{-.1em}\itshape\\small Mūlapariyāyasutta}}\n\\addcontentsline{toc}{section}{Acronym: Name ({\itshape Mūlapariyāyasutta})}\n\\markboth{Name}{Mūlapariyāyasutta}\n\\extramarks{Acronym}{Acronym}\n\n",
+            "\\section*{{\\suttatitleacronym Acronym}{\\suttatitletranslation Name}{\\suttatitleroot Mūlapariyāyasutta}}\n\\addcontentsline{toc}{section}{Acronym: Name ({\itshape Mūlapariyāyasutta})}\n\\markboth{Name}{Mūlapariyāyasutta}\n\\extramarks{Acronym}{Acronym}\n\n",
         ),
         (
             "<h3 class='sutta-title heading'><span class='sutta-heading acronym'>Acronym</span><span class='sutta-heading translated-title'>Name</span><span class='sutta-heading root-title'>Not pali</span></h3>",
-            "\\section*{\\setstretch{.85}\\centering{\\small Acronym}\\\\{\\large Name}\\\\{\\vspace*{-.1em}\itshape\\small Not pali}}\n\\addcontentsline{toc}{section}{Acronym: Name ({\itshape Not pali})}\n\\markboth{Name}{Not pali}\n\\extramarks{Acronym}{Acronym}\n\n",
+            "\\section*{{\\suttatitleacronym Acronym}{\\suttatitletranslation Name}{\\suttatitleroot Not pali}}\n\\addcontentsline{toc}{section}{Acronym: Name ({\itshape Not pali})}\n\\markboth{Name}{Not pali}\n\\extramarks{Acronym}{Acronym}\n\n",
         ),
         (
             "<h1>Chapter</h1>",
@@ -73,7 +74,7 @@ def latex_edition(config, data):
         ("<section class='secondary-toc'>Test</section>", ""),
         (
             "<article class='epigraph'><blockquote class='epigraph-text'><p>Test</p></blockquote><p class='epigraph-attribution'><span class='epigraph-translated-title'>Name<span><span class='epigraph-root-title'>Mūlapariyāyasutta</span><span class='epigraph-reference'>Acronym</span></p></article>",
-            "\\newpage\n\n\\vspace*{\\fill}\n\n\\begin{center}\n\\epigraph{Test}{\\vspace*{.5em}\\epigraphTranslatedTitle{Name\\textsanskrit{Mūlapariyāyasutta}Acronym} \\epigraphRootTitle{\\textsanskrit{Mūlapariyāyasutta}}\\\\\\epigraphReference{Acronym}}\n\\end{center}\n\n\\vspace*{2in}\n\n\\vspace*{\\fill}\n\n\\setlength{\\parindent}{1em}\n",
+            "\\newpage\n\n\\vspace*{\\fill}\n\n\\begin{center}\n\\epigraph{Test}\n{\n\\epigraphTranslatedTitle{Name\\textsanskrit{Mūlapariyāyasutta}Acronym}\n\\epigraphRootTitle{\\textsanskrit{Mūlapariyāyasutta}}\n\\epigraphReference{Acronym}\n}\n\\end{center}\n\n\\vspace*{2in}\n\n\\vspace*{\\fill}\n\n\\setlength{\\parindent}{1em}\n",
         ),
         ("<ul><li>Test 1</li></ul>", "\\begin{itemize}%\n\\item Test 1%\n\\end{itemize}\n\n"),
         ("<ol><li>Test 1</li></ol>", "\\begin{enumerate}%\n\\item Test 1%\n\\end{enumerate}\n\n"),
@@ -91,14 +92,15 @@ def latex_edition(config, data):
         ),
         (
             "<h2 class='section-title'>Test</h1>",
-            "\\chapter*{Test}\n\\addcontentsline{toc}{chapter}{Test}\n\\markboth{Test}{Test}\n\n",
+            "\\addtocontents{toc}{\\let\\protect\\contentsline\\protect\\nopagecontentsline}\n\\chapter*{Test}\n\\addcontentsline{toc}{chapter}{Test}\n\\addtocontents{toc}{\\let\\protect\\contentsline\\protect\\oldcontentsline}\n\n",
         ),
         ("<i lang='pli'>Mūlapariyāyasutta</i>", "\\textit{\\textsanskrit{Mūlapariyāyasutta}}"),
-        ("<test>Test & test _ test</test>", "Test \\& test \\_ test"),
+        ("<test>Test & test _ test ~ test</test>", "Test \\& test \\_ test \\textasciitilde test"),
     ],
 )
 def test_process_tag(doc, latex_edition, html, expected):
     tag = BeautifulSoup(html, "lxml").find("body").next_element
     latex_edition.endnotes = ["Note"]
     latex_edition.sutta_depth = 3
+    latex_edition.section_type = "section"
     assert latex_edition._process_tag(doc=doc, tag=tag) == expected

@@ -11,28 +11,38 @@ ENV PYTHONPATH=/app/
 
 RUN apt-get update -y \
     && apt-get upgrade --no-install-recommends -y \
-    && apt-get install texlive-extra-utils texlive-base texlive-latex-base texlive-xetex latexmk texlive-lang-japanese -y\
-    && apt-get clean -y
+    && apt-get install perl wget fontconfig -y \
+    && apt-get clean -y \
+    && cd /tmp \
+    && wget -q https://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz \
+    && zcat install-tl-unx.tar.gz | tar xf - \
+    && cd install-tl-* \
+    && perl ./install-tl --no-interaction 
 
 COPY ./assets/fonts/ /tmp/fonts
-RUN cp -Rf /tmp/fonts/Gentium/ /usr/local/share/fonts/truetype/ && \
-    cp -Rf /tmp/fonts/Noto_Serif_TC/fonts/otf /usr/local/share/fonts/ && \
+RUN cp -Rf /tmp/fonts/Gentium/ /usr/local/share/fonts/ && \
+    cp -Rf /tmp/fonts/neranjara/ /usr/local/share/fonts/ && \
+    cp -Rf /tmp/fonts/Noto_Serif_TC/fonts/otf/ /usr/local/share/fonts/ && \
     fc-cache -fv && \
     rm -Rf /tmp/fonts
+
+ENV PATH=/usr/local/texlive/2022/bin/x86_64-linux:$PATH
+
+RUN tlmgr install luatextra fontspec
 
 ### PRODUCTION
 FROM base as production
 ENV RUN_ENV=production
+
 COPY ./src /app
 COPY ./prod.txt /tmp/
-RUN pip install -r /tmp/prod.txt
-
+RUN pip install --no-cache-dir -r /tmp/prod.txt
 WORKDIR /app
 
 ### DEVELOPMENT
 FROM production as development
 ENV RUN_ENV=development
 COPY ./dev.txt /tmp/
-RUN pip install -r /tmp/dev.txt
+RUN pip install --no-cache-dir -r /tmp/dev.txt
 
 COPY ./tests /app/tests

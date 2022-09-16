@@ -348,6 +348,10 @@ class EditionParser(ABC):
         # Insert <br> after <span class="speaker">
         any(_span.insert_after(mainmatter.new_tag("br")) for _span in mainmatter.find_all("span", class_="speaker"))
 
+        # Find pannasa headings and add class "pannasaka-heading"
+        _pannasa = mainmatter.find_all(id=lambda x: x and "pannasaka" in x)
+        add_class(tags=_pannasa, class_="pannasaka-heading")
+
         return cast(str, extract_string(mainmatter))
 
     @staticmethod
@@ -642,18 +646,18 @@ class EditionParser(ABC):
     @staticmethod
     def _process_raw_matter(matter: str, volume: Volume) -> str:
         # Match names of matters in API with the name of templates
-        MATTERS_TO_TEMPLATES_NAMES_MAPPING: dict[str, str] = ast.literal_eval(
-            os.getenv("MATTERS_TO_TEMPLATES_NAMES_MAPPING")  # type: ignore
+        MATTERS_TO_TEMPLATES_MAPPING: dict[str, str] = ast.literal_eval(
+            os.getenv("MATTERS_TO_TEMPLATES_MAPPING")  # type: ignore
         )
 
-        if not MATTERS_TO_TEMPLATES_NAMES_MAPPING:
+        if not MATTERS_TO_TEMPLATES_MAPPING:
             raise EnvironmentError(
-                "Missing .env_public file or the file lacks required variable MATTERS_TO_TEMPLATES_NAMES_MAPPING."
+                "Missing .env_public file or the file lacks required variable MATTERS_TO_TEMPLATES_MAPPING."
             )
         else:
             try:
                 # Get template filename associated with that matter
-                _template_name: str = MATTERS_TO_TEMPLATES_NAMES_MAPPING[matter]
+                _template_name: str = MATTERS_TO_TEMPLATES_MAPPING[matter]
 
                 # Fetch Jinja template from file
                 _template_loader: FileSystemLoader = jinja2.FileSystemLoader(
@@ -674,17 +678,17 @@ class EditionParser(ABC):
 
     @staticmethod
     def _process_main_toc_as_matter(matter: MainTableOfContents) -> str:
-        MATTERS_TO_TEMPLATES_NAMES_MAPPING: dict[str, str] = ast.literal_eval(
-            os.getenv("MATTERS_TO_TEMPLATES_NAMES_MAPPING")  # type: ignore
+        MATTERS_TO_TEMPLATES_MAPPING: dict[str, str] = ast.literal_eval(
+            os.getenv("MATTERS_TO_TEMPLATES_MAPPING")  # type: ignore
         )
 
-        if not MATTERS_TO_TEMPLATES_NAMES_MAPPING:
+        if not MATTERS_TO_TEMPLATES_MAPPING:
             raise EnvironmentError(
-                "Missing .env_public file or the file lacks required variable MATTERS_TO_TEMPLATES_NAMES_MAPPING."
+                "Missing .env_public file or the file lacks required variable MATTERS_TO_TEMPLATES_MAPPING."
             )
         else:
             try:
-                _template_name: str = MATTERS_TO_TEMPLATES_NAMES_MAPPING["main-toc"]
+                _template_name: str = MATTERS_TO_TEMPLATES_MAPPING["main-toc"]
                 _template_loader: FileSystemLoader = jinja2.FileSystemLoader(
                     searchpath=EditionParser.HTML_TEMPLATES_DIR
                 )
@@ -720,17 +724,17 @@ class EditionParser(ABC):
 
     @staticmethod
     def _process_secondary_toc(matter: SecondaryTablesOfContents) -> dict[Tag, str]:
-        MATTERS_TO_TEMPLATES_NAMES_MAPPING: dict[str, str] = ast.literal_eval(
-            os.getenv("MATTERS_TO_TEMPLATES_NAMES_MAPPING")  # type: ignore
+        MATTERS_TO_TEMPLATES_MAPPING: dict[str, str] = ast.literal_eval(
+            os.getenv("MATTERS_TO_TEMPLATES_MAPPING")  # type: ignore
         )
 
-        if not MATTERS_TO_TEMPLATES_NAMES_MAPPING:
+        if not MATTERS_TO_TEMPLATES_MAPPING:
             raise EnvironmentError(
-                "Missing .env_public file or the file lacks required variable MATTERS_TO_TEMPLATES_NAMES_MAPPING."
+                "Missing .env_public file or the file lacks required variable MATTERS_TO_TEMPLATES_MAPPING."
             )
         else:
             try:
-                _template_name: str = MATTERS_TO_TEMPLATES_NAMES_MAPPING["secondary-toc"]
+                _template_name: str = MATTERS_TO_TEMPLATES_MAPPING["secondary-toc"]
                 _template_loader: FileSystemLoader = jinja2.FileSystemLoader(
                     searchpath=EditionParser.HTML_TEMPLATES_DIR
                 )

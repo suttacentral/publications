@@ -1,4 +1,5 @@
 import ast
+import logging
 import os
 import re
 from typing import Any, cast, no_type_check
@@ -288,7 +289,7 @@ def remove_empty_tags(html: BeautifulSoup) -> None:
 
 
 def validate_node(node: Node) -> None:
-    """Raises SystemExit if node is not valid"""
+    """Node validator that collects error info"""
     _errors = []
 
     if node.type == "leaf":
@@ -318,7 +319,7 @@ def validate_node(node: Node) -> None:
     _errors.extend([f"missing '{_attr}'" for _attr in _attrs if not getattr(node, _attr)])
 
     if _errors:
-        raise SystemExit(f"Error while processing segment '{node.uid}'. Details: {', '.join(_errors)}.")
+        logging.error(f"Error while processing segment '{node.uid}'. Details: {', '.join(_errors)}.")
 
 
 def find_mainmatter_part_uids(html: BeautifulSoup, depth: int) -> list[str]:

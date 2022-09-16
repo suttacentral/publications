@@ -23,6 +23,7 @@ LATEX_DOCUMENT_CONFIG: dict[str, str] = ast.literal_eval(os.getenv("LATEX_DOCUME
 INDIVIDUAL_TEMPLATES_MAPPING: dict[str, list] = ast.literal_eval(os.getenv("INDIVIDUAL_TEMPLATES_MAPPING", ""))
 MATTERS_TO_SKIP: list[str] = ast.literal_eval(os.getenv("MATTERS_TO_SKIP", ""))
 MATTERS_WITH_TEX_TEMPLATES: list[str] = ast.literal_eval(os.getenv("MATTERS_WITH_TEX_TEMPLATES", ""))
+PANNASAKA_IDS: list[str] = ast.literal_eval(os.getenv("PANNASAKA_IDS", ""))
 SANSKRIT_LANGUAGES: list[str] = ast.literal_eval(os.getenv("SANSKRIT_LANGUAGES", ""))
 SANSKRIT_PATTERN = re.compile(r"\b(?=\w*[āīūṭḍṁṅñṇḷśṣṛ])\w+\b")
 STYLING_CLASSES: list[str] = ast.literal_eval(os.getenv("STYLING_CLASSES", ""))
@@ -164,14 +165,8 @@ class LatexEdition(EditionParser):
         return cast(str, tex)
 
     def _append_custom_chapter(self, doc: Document, tag: Tag) -> str:
-        tex: str = ""
-        _title: str = self._process_contents(doc=doc, contents=tag.contents)
-        tex += Command("chapter*", _title).dumps() + NoEscape("\n")
-        tex += Command("addcontentsline", arguments=["toc", "chapter", _title]).dumps() + NoEscape("\n")
-        if tag.has_attr("class") and "section-title" in tag["class"] and self.sutta_depth > 3:
-            return tex
-        tex += Command("markboth", arguments=[_title, _title]).dumps() + NoEscape("\n\n")
-        return tex
+        _template: Template = self._get_template(name="chapter")
+        return cast(str, _template.render(name=tag.string) + NoEscape("\n\n"))
 
     def _append_custom_section(self, doc: Document, tag: Tag) -> str:
         tex: str = ""
@@ -187,7 +182,9 @@ class LatexEdition(EditionParser):
 
     def _append_chapter(self, doc: Document, tag: Tag) -> str:
         _title: str = self._process_contents(doc=doc, contents=tag.contents)
-        tex: str = Command("chapter*", _title).dumps() + NoEscape("\n\n")
+        tex = Command("chapter*", _title).dumps() + NoEscape("\n")
+        tex += Command("addcontentsline", arguments=["toc", "chapter", _title]).dumps() + NoEscape("\n")
+        tex += Command("markboth", arguments=[_title, _title]).dumps() + NoEscape("\n\n")
         return tex
 
     def _append_section(self, doc: Document, tag: Tag) -> str:
@@ -220,7 +217,7 @@ class LatexEdition(EditionParser):
         return cast(str, _template.render(name=tag.string) + NoEscape("\n\n"))
 
     def _append_section_title(self, doc: Document, tag: Tag) -> str:
-        if tag.has_attr("id") and "pannasaka" in tag["id"]:
+        if tag.has_attr("id") and ("pannasaka" in tag["id"] or tag["id"] in PANNASAKA_IDS):
             # The pannasa in AN and SN requires a special markup
             return self._append_pannasa(tag=tag)
 
@@ -313,7 +310,7 @@ class LatexEdition(EditionParser):
 
     def _append_heading(self, doc: Document, tag: Tag) -> str:
         actions: list[Callable] = [
-            self._append_custom_chapter,
+            self._append_chapter,
             self._append_section,
             self._append_subsection,
             self._append_subsubsection,
@@ -501,10 +498,14 @@ class LatexEdition(EditionParser):
     def _append_edition_config(self, doc: Document, volume: Volume) -> None:
         try:
             _edition_mapping = INDIVIDUAL_TEMPLATES_MAPPING.get(self.config.edition.text_uid)
+        except KeyError:
+            raise EnvironmentError(f"Individual template mapping for {self.config.edition.text_uid} not found.")
+
+        if isinstance(_edition_mapping, list):
             _template_name = f"individual/{_edition_mapping[volume.volume_number - 1]}"  # type: ignore
-        except (AttributeError, KeyError, IndexError):
-            log.info(f"Individual template mapping for {self.config.edition.text_uid} not found. Using default name.")
-            _template_name = f"individual/{self.config.edition.text_uid}.tex"
+        else:
+            _template_name = f"individual/{_edition_mapping}"
+
         try:
             _template: Template = self._get_template(raw_name=_template_name)
             doc.preamble.append(NoEscape(_template.render()))

@@ -16,7 +16,7 @@ class PaperbackEdition(LatexEdition):
     edition_type = EditionType.paperback
 
     def _generate_paperback(self, volume: Volume) -> None:
-        log.debug("Generating paperback...")
+        log.debug(f"Generating paperback... (vol {volume.volume_number or 1} of {len(self.config.edition.volumes)})")
 
         _path: str = os.path.join(tempfile.gettempdir(), volume.filename)
         log.debug("Generating tex...")

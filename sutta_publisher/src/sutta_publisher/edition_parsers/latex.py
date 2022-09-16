@@ -182,7 +182,7 @@ class LatexEdition(EditionParser):
 
     def _append_chapter(self, doc: Document, tag: Tag) -> str:
         _title: str = self._process_contents(doc=doc, contents=tag.contents)
-        tex = Command("chapter*", _title).dumps() + NoEscape("\n")
+        tex: str = Command("chapter*", _title).dumps() + NoEscape("\n")
         tex += Command("addcontentsline", arguments=["toc", "chapter", _title]).dumps() + NoEscape("\n")
         tex += Command("markboth", arguments=[_title, _title]).dumps() + NoEscape("\n\n")
         return tex

@@ -23,7 +23,7 @@ LATEX_DOCUMENT_CONFIG: dict[str, str] = ast.literal_eval(os.getenv("LATEX_DOCUME
 INDIVIDUAL_TEMPLATES_MAPPING: dict[str, list] = ast.literal_eval(os.getenv("INDIVIDUAL_TEMPLATES_MAPPING", ""))
 MATTERS_TO_SKIP: list[str] = ast.literal_eval(os.getenv("MATTERS_TO_SKIP", ""))
 MATTERS_WITH_TEX_TEMPLATES: list[str] = ast.literal_eval(os.getenv("MATTERS_WITH_TEX_TEMPLATES", ""))
-PANNASAKA_IDS: list[str] = ast.literal_eval(os.getenv("PANNASAKA_IDS", ""))
+ADDITIONAL_PANNASAKA_IDS: list[str] = ast.literal_eval(os.getenv("ADDITIONAL_PANNASAKA_IDS", ""))
 SANSKRIT_LANGUAGES: list[str] = ast.literal_eval(os.getenv("SANSKRIT_LANGUAGES", ""))
 SANSKRIT_PATTERN = re.compile(r"\b(?=\w*[āīūṭḍṁṅñṇḷśṣṛ])\w+\b")
 STYLING_CLASSES: list[str] = ast.literal_eval(os.getenv("STYLING_CLASSES", ""))
@@ -217,7 +217,7 @@ class LatexEdition(EditionParser):
         return cast(str, _template.render(name=tag.string) + NoEscape("\n\n"))
 
     def _append_section_title(self, doc: Document, tag: Tag) -> str:
-        if tag.has_attr("id") and ("pannasaka" in tag["id"] or tag["id"] in PANNASAKA_IDS):
+        if tag.has_attr("id") and ("pannasaka" in tag["id"] or tag["id"] in ADDITIONAL_PANNASAKA_IDS):
             # The pannasa in AN and SN requires a special markup
             return self._append_pannasa(tag=tag)
 
@@ -488,12 +488,18 @@ class LatexEdition(EditionParser):
             return value == "all" or volume.volume_number in value
         return False
 
-    def _prepare_mainmatter(self, doc: Document, html: BeautifulSoup) -> None:
+    def _prepare_mainmatter(self, volume: Volume, doc: Document, html: BeautifulSoup) -> None:
         self.sutta_depth = find_sutta_title_depth(html)
-        if self.sutta_depth <= 2:  # append additional latex part
-            _book_title = html.new_tag("h1")
-            _book_title.string = self.config.publication.translation_title
-            doc.append(NoEscape(self._append_custom_part(doc=doc, tag=_book_title)))
+
+        if self.sutta_depth <= 2:  # append additional latex part heading
+            _tag = html.new_tag("h1")
+            _title = (
+                volume.volume_translation_title
+                if volume.volume_translation_title
+                else self.config.publication.translation_title
+            )
+            _tag.string = _title
+            doc.append(NoEscape(self._append_custom_part(doc=doc, tag=_tag)))
 
     def _append_edition_config(self, doc: Document, volume: Volume) -> None:
         try:
@@ -538,7 +544,7 @@ class LatexEdition(EditionParser):
         doc.append(Command("mainmatter"))
         doc.append(Command("pagestyle", "fancy"))
         _mainmatter = BeautifulSoup(volume.mainmatter, "lxml")
-        self._prepare_mainmatter(doc=doc, html=_mainmatter)
+        self._prepare_mainmatter(volume=volume, doc=doc, html=_mainmatter)
 
         _mainmatter_elements = _mainmatter.find("body").contents
         for _element in _mainmatter_elements:

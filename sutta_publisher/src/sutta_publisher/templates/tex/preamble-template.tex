@@ -1,9 +1,12 @@
-\usepackage[inner=1in, outer=1in, top=.5in, bottom=1in, papersize={6in,9in}]{geometry}
+\documentclass[12pt,openany]{book}%
+\usepackage{lastpage}%
+%
+\usepackage[inner=1in, outer=1in, top=.7in, bottom=1in, papersize={6in,9in}, headheight=13pt]{geometry}
 \usepackage{polyglossia}
 \usepackage[12pt]{moresize}
 \usepackage{soul}%
-\usepackage[tracking=true]{microtype}
-\usepackage[]{tocbasic}
+\usepackage{microtype}
+\usepackage{tocbasic}
 \usepackage{realscripts}
 \usepackage{epigraph}%
 \usepackage{setspace}%
@@ -17,9 +20,26 @@
 \usepackage{graphicx}
 \usepackage{verse}
 \usepackage{relsize}
+\usepackage{etoolbox}
+\usepackage[a-3u]{pdfx}
+
+\hypersetup{
+colorlinks=true, 
+urlcolor=black, 
+linkcolor=black, 
+citecolor=black 
+} 
 
 % use a small amount of tracking on small caps
 \SetTracking[ spacing = {25*,166, } ]{ encoding = *, shape = sc }{ 25 }
+
+% add a blank page
+\newcommand{\blankpage}{
+\newpage
+\thispagestyle{empty}
+\mbox{}
+\newpage
+}
 
 % define languages
 \setdefaultlanguage[]{english}
@@ -42,9 +62,9 @@
 
 % use if arno sanskrit is available. display is applied to \chapter and \part, subhead to \section and \subsection. When specifying semibold, the italic must be defined.
 \setmainfont[Numbers=OldStyle]{Arno Pro}
-\newfontfamily\Semibolddisplayfont[BoldItalicFont = Arno Pro SemiBold Italic Display]{Arno Pro SemiBold Display} %
-\newfontfamily\Semiboldsubheadfont[BoldItalicFont = Arno Pro SemiBold Italic Subhead]{Arno Pro SemiBold Subhead}
-\newfontfamily\Semiboldnormalfont[BoldItalicFont = Arno Pro SemiBold Italic]{Arno Pro SemiBold}
+\newfontfamily\Semibolddisplayfont[BoldItalicFont = Arno Pro Smbd Italic Display]{Arno Pro Smbd Display} %
+\newfontfamily\Semiboldsubheadfont[BoldItalicFont = Arno Pro Smbd Italic Subhead]{Arno Pro Smbd Subhead}
+\newfontfamily\Semiboldnormalfont[BoldItalicFont = Arno Pro Smbd Italic]{Arno Pro Smbd}
 \newfontfamily\Marginalfont[RawFeature=+subs]{Arno Pro Regular}
 \newfontfamily\Allsmallcapsfont[RawFeature=+c2sc]{Arno Pro}
 \newfontfamily\Noligaturefont[Renderer=Basic]{Arno Pro}
@@ -69,15 +89,14 @@
 \DeclareTOCStyleEntries[
   raggedentrytext,
   linefill=\hfill,
-  numwidth=1em,
-  numsep=1ex,
-  dynnumwidth,
-  beforeskip=.2em plus -2pt minus -1pt
-]{tocline}{chapter,section,subsection,subsubsection,paragraph,subparagraph}
-\DeclareTOCStyleEntries[
-  indent=0pt,
-  dynindent
-]{tocline}{section,subsection,subsubsection,paragraph,subparagraph}
+  pagenumberwidth=.5in,
+  pagenumberformat=\normalfont,
+  entryformat=\normalfont
+]{tocline}{chapter,section}
+
+
+  \setlength\topsep{0pt}%
+  \setlength\parskip{0pt}%
 
 % redefine part, so that it adds a toc entry without page number
 \let\oldcontentsline\contentsline
@@ -87,14 +106,13 @@
 \renewcommand*\l@part[2]{%
   \ifnum \c@tocdepth >-2\relax
     \addpenalty{-\@highpenalty}%
-    \addvspace{2.25em \@plus\p@}%
+    \addvspace{0em \@plus\p@}%
     \setlength\@tempdima{3em}%
     \begingroup
       \parindent \z@ \rightskip \@pnumwidth
       \parfillskip -\@pnumwidth
       {\leavevmode
-       \hspace*{\fill}\centering\large\scshape #1\hspace*{\fill}\llap{#2}}\par
-       \smallskip
+       \begin{center}\setstretch{.85}\large\scshape #1\vspace*{-1em}\end{center}\llap{#2}}\par
        \nobreak
          \global\@nobreaktrue
          \everypar{\global\@nobreakfalse\everypar{}}%
@@ -120,8 +138,7 @@
       \parindent \z@ \rightskip \@pnumwidth
       \parfillskip -\@pnumwidth
       {\leavevmode
-       \hspace*{\fill}\centering\large\itshape\scshape\MakeLowercase{#1}\hspace*{\fill}\llap{#2}}\par
-       \smallskip
+       \begin{center}\setstretch{.85}\large\itshape\scshape\lowercase{#1}\vspace*{-1em}\end{center}\llap{#2}}\par
        \nobreak
          \global\@nobreaktrue
          \everypar{\global\@nobreakfalse\everypar{}}%
@@ -142,9 +159,27 @@
 \subsubsectionfont{\setstretch{.85}\Semiboldnormalfont}
 
 % style elements of suttatitle
-\newcommand*{\suttatitleacronym}[1]{\smaller[2]{#1}}
+\newcommand*{\suttatitleacronym}[1]{\smaller[2]{#1}\vspace*{.3em}}
 \newcommand*{\suttatitletranslation}[1]{\linebreak{#1}}
 \newcommand*{\suttatitleroot}[1]{\linebreak\smaller[2]\itshape{#1}}
+
+\DeclareTOCStyleEntries[
+  indent=3.3em,
+  dynindent,
+  beforeskip=.2em plus -2pt minus -1pt,
+]{tocline}{section}
+
+\DeclareTOCStyleEntries[
+  indent=0em,
+  dynindent,
+  beforeskip=.4em plus -2pt minus -1pt,
+]{tocline}{chapter}
+
+\newcommand*{\tocacronym}[1]{\hspace*{-3.3em}{#1}\quad}
+\newcommand*{\toctranslation}[1]{#1}
+\newcommand*{\tocroot}[1]{(\textit{#1})}
+\newcommand*{\tocchapterline}[1]{\bfseries\itshape{#1}}
+
 
 % redefine paragraph and subparagraph headings to not be inline
 \makeatletter
@@ -161,10 +196,13 @@
             {\noindent\Semiboldnormalfont\small}}
 \makeatother
 
-% suppress page numbers on \part
-\usepackage{etoolbox}
+% use etoolbox to suppress page numbers on \part
 \patchcmd{\part}{\thispagestyle{plain}}{\thispagestyle{empty}}
   {}{\errmessage{Cannot patch \string\part}}
+
+% and to reduce margins on quotation
+\patchcmd{\quotation}{\rightmargin}{\leftmargin 1.2em \rightmargin}{}{}
+\AtBeginEnvironment{quotation}{\small}
 
 % titlepage
 \newcommand*{\titlepageTranslationTitle}[1]{{\begin{center}\begin{large}{#1}\end{large}\end{center}}}
@@ -205,8 +243,8 @@
 \newcommand*{\scbyline}[1]{\begin{flushright}\textit{#1}\end{flushright}\bigskip}
 
 % manage and style page header and footer. "fancy" has header and footer, "plain" has footer only
+
 \pagestyle{fancy}
-\addtolength{\headheight}{\baselineskip}
 \fancyhf{}
 \fancyfoot[RE,LO]{\thepage}
 \fancyfoot[LE,RO]{\footnotesize\lastleftxmark}
@@ -232,10 +270,36 @@
 \makeatother
 
 % hang quotes (requires microtype)
+\microtypesetup{
+  protrusion = true,
+  expansion  = true,
+  tracking   = true,
+  factor     = 1000,
+  patch      = all,
+  final
+}
+
+% Custom protrusion rules to allow hanging punctuation
 \SetProtrusion
-{encoding= *,}
-{\textquotedblleft = {1000, },
-\textquoteleft = {1000, }}
+{ encoding = *}
+{
+% char   right left
+  {-} = {    , 500 },
+  % Double Quotes
+  \textquotedblleft
+      = {1000,     },
+  \textquotedblright
+      = {    , 1000},
+  \quotedblbase
+      = {1000,     },
+  % Single Quotes
+  \textquoteleft
+      = {1000,     },
+  \textquoteright
+      = {    , 1000},
+  \quotesinglbase
+      = {1000,     }
+}
 
 % make latex use actual font em for parindent, not Computer Modern Roman
 \AtBeginDocument{\setlength{\parindent}{1em}}%
@@ -251,4 +315,7 @@
 \displaywidowpenalty = 10000
 \hfuzz \vfuzz
  \raggedbottom%
-%
+
+\title{\VAR{translation_title | safe}}
+\author{\VAR{creator_name | safe}}
+\date{}

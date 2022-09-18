@@ -1,0 +1,10 @@
+\Author{\VAR{creator_name | safe}}
+\Title{\VAR{translation_title | safe}}
+\Language{\VAR{translation_lang_name | safe}}
+\Keywords{dhamma, dharma, discourse, sutta, sutra, tipitaka, tripitaka, pali, scripture, canon}
+\Publisher{SuttaCentral}
+\Subject{\VAR{translation_subtitle | safe}}
+\Date{\VAR{created | safe}}
+\PublicationType{book}
+\Source{\VAR{source_url | safe}}
+\URLlink{\VAR{publication_url | safe}}

@@ -111,7 +111,7 @@ class EditionParser(ABC):
             "source_url": self.config.publication.source_url,
             "text_description": self.config.publication.text_description,
             "text_uid": self.config.edition.text_uid,
-            "translation_name": self.config.publication.translation_lang_name,
+            "translation_lang_name": self.config.publication.translation_lang_name,
             "translation_subtitle": self.config.publication.translation_subtitle,
             "translation_title": self.config.publication.translation_title,
             "updated": self.config.edition.updated,

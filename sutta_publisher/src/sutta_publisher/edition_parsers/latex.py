@@ -2,6 +2,7 @@ import ast
 import logging
 import os.path
 import re
+import tempfile
 from pathlib import Path
 from typing import Callable, cast
 
@@ -472,8 +473,9 @@ class LatexEdition(EditionParser):
     def _process_html_element(self, volume: Volume, doc: Document, element: PageElement) -> str:
         if isinstance(element, Tag) and not (element.has_attr("id") and element["id"] in MATTERS_TO_SKIP):
             if (name := self._get_matter_name(element)) in MATTERS_WITH_TEX_TEMPLATES:
-                template: Template = self._get_template(name=name)
-                return cast(str, NoEscape(template.render(volume.dict(), images_directory=IMG_DIR)))
+                _template: Template = self._get_template(name=name)
+                tex = _template.render(**volume.dict(exclude_none=True, exclude_unset=True), images_directory=IMG_DIR)
+                return cast(str, NoEscape(tex))
             else:
                 return cast(str, NoEscape(self._process_tag(doc=doc, tag=element)))
         elif isinstance(element, NavigableString) and element != "\n":
@@ -525,10 +527,21 @@ class LatexEdition(EditionParser):
         doc.preamble.append(NoEscape(_template.render()))
         self._append_edition_config(doc=doc, volume=volume)
 
+    def _set_xmpdata(self, volume: Volume) -> None:
+        _template: Template = self._get_template(name="metadata")
+        _output = _template.render(**volume.dict(exclude_none=True, exclude_unset=True))
+        _path: str = os.path.join(tempfile.gettempdir(), f"{volume.filename}.xmpdata")
+
+        with open(file=_path, mode="wt") as f:
+            f.write(_output)
+
     def _generate_latex(self, volume: Volume) -> Document:
         # setup
         self.endnotes: list[str] | None = volume.endnotes if volume.endnotes else None
         self.section_type: str = "chapter" if self._has_chapter_sutta_title(volume=volume) else "section"
+
+        # create .xmpdata file
+        self._set_xmpdata(volume=volume)
 
         doc = Document(**LATEX_DOCUMENT_CONFIG)
 

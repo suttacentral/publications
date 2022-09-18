@@ -113,7 +113,7 @@ class Volume(BaseModel):
     source_url: str = ""
     text_description: str = ""
     text_uid: str = ""
-    translation_name: str = ""
+    translation_lang_name: str = ""
     translation_subtitle: str = ""
     translation_title: str = ""
     updated: str = ""

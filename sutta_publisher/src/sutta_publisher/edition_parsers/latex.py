@@ -32,6 +32,8 @@ TEXTS_WITH_CHAPTER_SUTTA_TITLES: dict[str, str | tuple] = ast.literal_eval(
     os.getenv("TEXTS_WITH_CHAPTER_SUTTA_TITLES", "")
 )
 
+IMG_DIR = os.path.join(os.getcwd(), "sutta_publisher/images/")
+
 
 class LatexEdition(EditionParser):
     edition_type = "latex_parser"
@@ -471,7 +473,7 @@ class LatexEdition(EditionParser):
         if isinstance(element, Tag) and not (element.has_attr("id") and element["id"] in MATTERS_TO_SKIP):
             if (name := self._get_matter_name(element)) in MATTERS_WITH_TEX_TEMPLATES:
                 template: Template = self._get_template(name=name)
-                return cast(str, NoEscape(template.render(volume.dict())))
+                return cast(str, NoEscape(template.render(volume.dict(), images_directory=IMG_DIR)))
             else:
                 return cast(str, NoEscape(self._process_tag(doc=doc, tag=element)))
         elif isinstance(element, NavigableString) and element != "\n":

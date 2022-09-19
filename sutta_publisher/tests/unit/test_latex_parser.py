@@ -91,8 +91,8 @@ def latex_edition(config, data):
             "\\addtocontents{toc}{\\let\\protect\\contentsline\\protect\\nopagecontentsline}\n\\part*{Test}\n\\addcontentsline{toc}{part}{Test}\n\\markboth{}{}\n\\addtocontents{toc}{\\let\\protect\\contentsline\\protect\\oldcontentsline}\n\n",
         ),
         (
-            "<h2 class='section-title'>Test</h1>",
-            "\\addtocontents{toc}{\\let\\protect\\contentsline\\protect\\nopagecontentsline}\n\\chapter*{Test}\n\\addcontentsline{toc}{chapter}{Test}\n\\addtocontents{toc}{\\let\\protect\\contentsline\\protect\\oldcontentsline}\n\n",
+            "<h2 class='section-title'>Test</h2>",
+            "\\addtocontents{toc}{\\let\\protect\\contentsline\\protect\\nopagecontentsline}\n\\chapter*{Test}\n\\addcontentsline{toc}{chapter}{\\tocchapterline{Test}}\n\\addtocontents{toc}{\\let\\protect\\contentsline\\protect\\oldcontentsline}\n\n",
         ),
         ("<i lang='pli'>Mūlapariyāyasutta</i>", "\\textit{\\textsanskrit{Mūlapariyāyasutta}}"),
         ("<test>Test & test _ test ~ test</test>", "Test \\& test \\_ test \\textasciitilde test"),

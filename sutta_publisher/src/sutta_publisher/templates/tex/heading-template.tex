@@ -1,4 +1,4 @@
-\\VAR{section_type}*{{\suttatitleacronym \VAR{acronym | safe}}{\suttatitletranslation \VAR{name | safe}}{\suttatitleroot \VAR{root_name | safe}}}
-\addcontentsline{toc}{\VAR{section_type}}{\tocacronym{\VAR{acronym | safe}} \toctranslation{\VAR{name | safe}} \tocroot{\VAR{root_name | safe}}}
+\\VAR{section_type}*{{\suttatitleacronym \VAR{acronym | safe}}\BLOCK{if display_name}{\suttatitletranslation \VAR{name | safe}}\BLOCK{endif}{\suttatitleroot \VAR{root_name | safe}}}
+\addcontentsline{toc}{\VAR{section_type}}{\tocacronym{\VAR{acronym | safe}} \BLOCK{if display_name}\toctranslation{\VAR{name | safe}} \BLOCK{endif}\tocroot{\VAR{root_name | safe}}}
 \markboth{\VAR{name | safe}}{\VAR{root_name | safe}}
 \extramarks{\VAR{acronym | safe}}{\VAR{acronym | safe}}

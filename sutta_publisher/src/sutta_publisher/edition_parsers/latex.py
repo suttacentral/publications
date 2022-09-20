@@ -32,6 +32,9 @@ TEX_TEMPLATES_DIR = Path(__file__).parent.parent / "templates" / "tex"
 TEXTS_WITH_CHAPTER_SUTTA_TITLES: dict[str, str | tuple] = ast.literal_eval(
     os.getenv("TEXTS_WITH_CHAPTER_SUTTA_TITLES", "")
 )
+SUTTATITLES_WITHOUT_TRANSLATED_TITLE: list[str] = ast.literal_eval(
+    os.getenv("SUTTATITLES_WITHOUT_TRANSLATED_TITLE", "")
+)
 
 IMG_DIR = os.path.join(os.getcwd(), "sutta_publisher/images/")
 
@@ -163,11 +166,13 @@ class LatexEdition(EditionParser):
             "name": _name,
             "root_name": _root_name,
             "section_type": self.section_type,
+            "display_name": tag.parent and tag.parent.get("id") not in SUTTATITLES_WITHOUT_TRANSLATED_TITLE,
         }
         tex += template.render(data) + NoEscape("\n\n")
         return cast(str, tex)
 
-    def _append_custom_chapter(self, doc: Document, tag: Tag) -> str:
+    @staticmethod
+    def _append_custom_chapter(doc: Document, tag: Tag) -> str:
         _template: Template = LatexEdition._get_template(name="chapter")
         return cast(str, _template.render(name=tag.string) + NoEscape("\n\n"))
 
@@ -179,7 +184,8 @@ class LatexEdition(EditionParser):
         tex += Command("markboth", arguments=[_title, _title]).dumps() + NoEscape("\n\n")
         return tex
 
-    def _append_custom_part(self, doc: Document, tag: Tag) -> str:
+    @staticmethod
+    def _append_custom_part(doc: Document, tag: Tag) -> str:
         _template: Template = LatexEdition._get_template(name="part")
         return cast(str, _template.render(name=tag.string) + NoEscape("\n\n"))
 
@@ -215,19 +221,20 @@ class LatexEdition(EditionParser):
         tex: str = Command("subparagraph*", _title).dumps() + NoEscape("\n\n")
         return tex
 
-    def _append_pannasa(self, tag: Tag) -> str:
+    @staticmethod
+    def _append_pannasa(tag: Tag) -> str:
         _template: Template = LatexEdition._get_template(name="pannasa")
         return cast(str, _template.render(name=tag.string) + NoEscape("\n\n"))
 
     def _append_section_title(self, doc: Document, tag: Tag) -> str:
         if tag.has_attr("id") and ("pannasaka" in tag["id"] or tag["id"] in ADDITIONAL_PANNASAKA_IDS):
             # The pannasa in AN and SN requires a special markup
-            return self._append_pannasa(tag=tag)
+            return LatexEdition._append_pannasa(tag=tag)
 
         else:
             actions: list[Callable] = [
-                self._append_custom_part,
-                self._append_custom_chapter,
+                LatexEdition._append_custom_part,
+                LatexEdition._append_custom_chapter,
             ]
             _heading_depth: int = get_heading_depth(tag)
 
@@ -503,7 +510,7 @@ class LatexEdition(EditionParser):
                 else self.config.publication.translation_title
             )
             _tag.string = _title
-            doc.append(NoEscape(self._append_custom_part(doc=doc, tag=_tag)))
+            doc.append(NoEscape(LatexEdition._append_custom_part(doc=doc, tag=_tag)))
 
     def _append_edition_config(self, doc: Document, volume: Volume) -> None:
         try:
@@ -527,7 +534,8 @@ class LatexEdition(EditionParser):
         doc.preamble.append(NoEscape(_template.render()))
         self._append_edition_config(doc=doc, volume=volume)
 
-    def _set_xmpdata(self, volume: Volume) -> None:
+    @staticmethod
+    def _set_xmpdata(volume: Volume) -> None:
         _template: Template = LatexEdition._get_template(name="metadata")
         _output = _template.render(**volume.dict(exclude_none=True, exclude_unset=True))
         _path: str = os.path.join(tempfile.gettempdir(), f"{volume.filename}.xmpdata")
@@ -541,7 +549,7 @@ class LatexEdition(EditionParser):
         self.section_type: str = "chapter" if self._has_chapter_sutta_title(volume=volume) else "section"
 
         # create .xmpdata file
-        self._set_xmpdata(volume=volume)
+        LatexEdition._set_xmpdata(volume=volume)
 
         doc = Document(**LATEX_DOCUMENT_CONFIG)
 

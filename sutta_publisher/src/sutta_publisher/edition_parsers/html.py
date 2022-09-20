@@ -81,7 +81,7 @@ class HtmlEdition(EditionParser):
 
         # Generating output HTML
         _html = _template.render(css=_css, **volume.dict(exclude_none=True, exclude_unset=True))
-        _output = self._apply_pretty_printing(html=_html)
+        _output = HtmlEdition._apply_pretty_printing(html=_html)
 
         _path: str = os.path.join(tempfile.gettempdir(), f"{volume.filename}.html")
 

@@ -332,7 +332,7 @@ class EditionParser(ABC):
             for _node in _part
             if _node.type == "leaf" and _node.mainmatter.markup
         ]
-        self._insert_span_tags(headings=_sutta_headings, nodes=_sutta_nodes)
+        EditionParser._insert_span_tags(headings=_sutta_headings, nodes=_sutta_nodes)
 
         # Add class "subheading" for all HTML headings below hX with class "sutta-title"
         _start_depth = _sutta_title_depth + 1
@@ -516,7 +516,7 @@ class EditionParser(ABC):
 
         # Applies to SN edition only
         if volume.text_uid == "sn":
-            self._insert_samyutta_numbers(headings=_headings)
+            EditionParser._insert_samyutta_numbers(headings=_headings)
 
         volume.main_toc = MainTableOfContents.parse_obj({"headings": _headings})
 
@@ -750,7 +750,7 @@ class EditionParser(ABC):
     def add_secondary_toc_to_mainmatter(self, volume: Volume) -> None:
         """Add secondary toc to mainmatter"""
         if secondary_toc := self.config.edition.secondary_toc:
-            _secondary_tocs = self._process_secondary_toc(volume.secondary_toc)
+            _secondary_tocs = EditionParser._process_secondary_toc(volume.secondary_toc)
             _mainmatter = BeautifulSoup(volume.mainmatter, "lxml")
             _main_toc_depth: int = parse_main_toc_depth(depth=self.config.edition.main_toc_depth, html=_mainmatter)
             for heading, toc in zip(_mainmatter.find_all(f"h{_main_toc_depth}"), _secondary_tocs.values()):

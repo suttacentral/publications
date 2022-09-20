@@ -140,7 +140,7 @@ class EpubEdition(EditionParser):
             # connect blurb links with appropriate chapters
             elif _chapter_name == "blurbs":
                 _links = _frontmatter_part_html.find_all("a", class_="blurb-link")
-                self._process_links(links=_links, mapping=mainmatter_uids_mapping)
+                EpubEdition._process_links(links=_links, mapping=mainmatter_uids_mapping)
 
             self._set_chapter(book=book, html=_frontmatter_part_html, chapter_name=_chapter_name)
 
@@ -149,11 +149,11 @@ class EpubEdition(EditionParser):
 
             # connect secondary toc items to appropriate chapters
             if self.config.edition.secondary_toc and (_section := _part.find("section", class_="secondary-toc")):
-                self._process_secondary_toc_links(html=_section, mapping=mainmatter_uids_mapping)
+                EpubEdition._process_secondary_toc_links(html=_section, mapping=mainmatter_uids_mapping)
 
             # connect note references with endnotes chapter
             if _links := _part.find_all("a", role="doc-noteref"):
-                self._process_links(links=_links, chapter_name="endnotes")
+                EpubEdition._process_links(links=_links, chapter_name="endnotes")
 
                 # prepare helper data
                 for _link in _links:
@@ -169,7 +169,7 @@ class EpubEdition(EditionParser):
             # connect note backlinks to appropriate chapters
             if _chapter_name == "endnotes":
                 _links = _backmatter_part_html.find_all("a", role="doc-backlink")
-                self._process_links(links=_links, mapping=mainmatter_uids_mapping)
+                EpubEdition._process_links(links=_links, mapping=mainmatter_uids_mapping)
 
             self._set_chapter(book=book, html=_backmatter_part_html, chapter_name=_chapter_name)
 

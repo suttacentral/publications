@@ -69,8 +69,8 @@ class LatexEdition(EditionParser):
     def _append_p(self, doc: Document, tag: Tag) -> str:
         tex: str = self._process_contents(doc=doc, contents=tag.contents)
 
-        if self._is_styled(tag=tag):
-            tex = self._apply_styling(tag=tag, tex=tex)
+        if LatexEdition._is_styled(tag=tag):
+            tex = LatexEdition._apply_styling(tag=tag, tex=tex)
         elif tag.has_attr("id"):
             if self.config.edition.text_uid == "dhp":
                 # Dhammapada only marginnote uid
@@ -79,7 +79,7 @@ class LatexEdition(EditionParser):
                 # default marginnote uid
                 _uid = tag["id"].split(":")[1]
 
-            tex = self._append_marginnote(tex=tex, uid=_uid)
+            tex = LatexEdition._append_marginnote(tex=tex, uid=_uid)
 
         return cast(str, tex + NoEscape("\n\n"))
 
@@ -93,7 +93,7 @@ class LatexEdition(EditionParser):
                 if all(_class in tag["class"] for _class in ["blurb-item", "acronym"]):
                     return f"{tex}: "
 
-                tex = self._apply_styling(tag=tag, tex=tex)
+                tex = LatexEdition._apply_styling(tag=tag, tex=tex)
                 return tex
         else:
             return self._process_contents(doc=doc, contents=tag.contents)
@@ -138,7 +138,7 @@ class LatexEdition(EditionParser):
                 or all(_class in ["blurb-item", "root-title"] for _class in tag["class"])
             )
         ):
-            _tex = self._append_sanskrit(_tex)
+            _tex = LatexEdition._append_sanskrit(_tex)
         return cast(str, italic(_tex, escape=False))
 
     def _append_foreign_script_macro(self, doc: Document, tag: Tag) -> str:
@@ -157,7 +157,7 @@ class LatexEdition(EditionParser):
     def _append_sutta_title(self, doc: Document, tag: Tag) -> str:
         tex: str = ""
         _acronym, _name, _root_name = [self._process_tag(doc=doc, tag=_span) for _span in tag.children]
-        template: Template = self._get_template(name="heading")
+        template: Template = LatexEdition._get_template(name="heading")
         data = {
             "acronym": _acronym,
             "name": _name,
@@ -168,7 +168,7 @@ class LatexEdition(EditionParser):
         return cast(str, tex)
 
     def _append_custom_chapter(self, doc: Document, tag: Tag) -> str:
-        _template: Template = self._get_template(name="chapter")
+        _template: Template = LatexEdition._get_template(name="chapter")
         return cast(str, _template.render(name=tag.string) + NoEscape("\n\n"))
 
     def _append_custom_section(self, doc: Document, tag: Tag) -> str:
@@ -180,7 +180,7 @@ class LatexEdition(EditionParser):
         return tex
 
     def _append_custom_part(self, doc: Document, tag: Tag) -> str:
-        _template: Template = self._get_template(name="part")
+        _template: Template = LatexEdition._get_template(name="part")
         return cast(str, _template.render(name=tag.string) + NoEscape("\n\n"))
 
     def _append_chapter(self, doc: Document, tag: Tag) -> str:
@@ -216,7 +216,7 @@ class LatexEdition(EditionParser):
         return tex
 
     def _append_pannasa(self, tag: Tag) -> str:
-        _template: Template = self._get_template(name="pannasa")
+        _template: Template = LatexEdition._get_template(name="pannasa")
         return cast(str, _template.render(name=tag.string) + NoEscape("\n\n"))
 
     def _append_section_title(self, doc: Document, tag: Tag) -> str:
@@ -278,10 +278,10 @@ class LatexEdition(EditionParser):
             if _tag := tag.find(class_=_class):
                 if _class == "epigraph-text":
                     _tag = _tag.p
-                self._strip_tag_string(_tag)
+                LatexEdition._strip_tag_string(_tag)
                 data[_var] = self._process_contents(doc=doc, contents=_tag.contents)
 
-        template: Template = self._get_template(name="epigraph")
+        template: Template = LatexEdition._get_template(name="epigraph")
         return cast(str, template.render(data) + NoEscape("\n"))
 
     def _append_enjambment(self, doc: Document, tag: Tag) -> str:
@@ -366,7 +366,7 @@ class LatexEdition(EditionParser):
                 return self._append_quotation(doc=doc, tag=tag)
 
             case "br":
-                return self._append_breakline()
+                return LatexEdition._append_breakline()
 
             case "cite":
                 return self._append_italic(doc=doc, tag=tag)
@@ -393,7 +393,7 @@ class LatexEdition(EditionParser):
                 return self._append_p(doc=doc, tag=tag)
 
             case "section" if tag.has_attr("id") and tag["id"] == "main-toc":
-                return self._append_tableofcontents()
+                return LatexEdition._append_tableofcontents()
 
             case "section" if tag.has_attr("class") and "secondary-toc" in tag["class"]:
                 return ""
@@ -472,8 +472,8 @@ class LatexEdition(EditionParser):
 
     def _process_html_element(self, volume: Volume, doc: Document, element: PageElement) -> str:
         if isinstance(element, Tag) and not (element.has_attr("id") and element["id"] in MATTERS_TO_SKIP):
-            if (name := self._get_matter_name(element)) in MATTERS_WITH_TEX_TEMPLATES:
-                _template: Template = self._get_template(name=name)
+            if (name := LatexEdition._get_matter_name(element)) in MATTERS_WITH_TEX_TEMPLATES:
+                _template: Template = LatexEdition._get_template(name=name)
                 tex = _template.render(**volume.dict(exclude_none=True, exclude_unset=True), images_directory=IMG_DIR)
                 return cast(str, NoEscape(tex))
             else:
@@ -517,18 +517,18 @@ class LatexEdition(EditionParser):
             _template_name = f"individual/{_edition_mapping}"
 
         try:
-            _template: Template = self._get_template(raw_name=_template_name)
+            _template: Template = LatexEdition._get_template(raw_name=_template_name)
             doc.preamble.append(NoEscape(_template.render()))
         except TemplateNotFound:
             log.info(f"Template '{_template_name}' for edition specific configuration not found.")
 
     def _append_preamble(self, doc: Document, volume: Volume) -> None:
-        _template: Template = self._get_template(name="preamble")
+        _template: Template = LatexEdition._get_template(name="preamble")
         doc.preamble.append(NoEscape(_template.render()))
         self._append_edition_config(doc=doc, volume=volume)
 
     def _set_xmpdata(self, volume: Volume) -> None:
-        _template: Template = self._get_template(name="metadata")
+        _template: Template = LatexEdition._get_template(name="metadata")
         _output = _template.render(**volume.dict(exclude_none=True, exclude_unset=True))
         _path: str = os.path.join(tempfile.gettempdir(), f"{volume.filename}.xmpdata")
 
@@ -552,7 +552,7 @@ class LatexEdition(EditionParser):
         doc.append(Command("frontmatter"))
         for _page in volume.frontmatter:
             _frontmatter_element: PageElement = BeautifulSoup(_page, "lxml").find("body").next_element
-            self._remove_all_nav(html=_frontmatter_element)
+            LatexEdition._remove_all_nav(html=_frontmatter_element)
             doc.append(self._process_html_element(volume=volume, doc=doc, element=_frontmatter_element))
 
         # set mainmatter

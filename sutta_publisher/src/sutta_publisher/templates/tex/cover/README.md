@@ -3,10 +3,10 @@
 ## basics
 
 - make two covers, for paperback and epub.
-- use the same images and latex process for both.
-- each has one template file, which includes both the preamble and the template.
+- use the same images for both.
+- each has one main file, which includes both the preamble and the template.
 - fonts are the same as the books
-- colors are varied per text: dn is one color, mn is one clor, etc. the small books in kn (dhp, snp, etc.) all have the same color.
+- colors are varied per text: dn is one color, mn is one color, etc. The small books in kn (dhp, snp, etc.) all have the same color. These are all determined in the individual files.
 - each cover has a different leaf image
 
 ## process
@@ -23,7 +23,9 @@ The individual specifications are appended to the preamble, as with the books. I
 - colors
 - images
 
-Templates are stamped out with data from the publications API.
+Templates are stamped out with data from the publications API. I've added most of these already the best I can.
+
+- **I don't know the templates for the blurbs on the back cover, so these must be added!"**
 
 ## wrap words in `\z{}` on front
 
@@ -39,7 +41,7 @@ This applies to all commands that begin with `front`, i.e.
 After creating the epub cover, the pdf file must be converted to jpg. Use imagemagick or similar. I got reasonable results with:
 
 ```
-convert -density 200 epub.pdf -quality 90 epub.jpg
+convert -density 200 epub-example.pdf -quality 90 epub-example.jpg
 ```
 
 ## examples

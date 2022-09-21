@@ -433,8 +433,8 @@ class LatexEdition(EditionParser):
                 _element.string.replace_with(_element.string.strip())
 
     @staticmethod
-    def _get_template(name: str = "", raw_name: str = "") -> Template:
-        if not raw_name:
+    def _get_template(name: str = "", is_shared: bool = True) -> Template:
+        if is_shared:
             if not LATEX_TEMPLATES_MAPPING:
                 raise EnvironmentError(
                     "Missing .env_public file or the file lacks required variable LATEX_TEMPLATES_MAPPING."
@@ -445,11 +445,14 @@ class LatexEdition(EditionParser):
                 raise EnvironmentError(
                     f"'LATEX_TEMPLATES_MAPPING' in .env_public file lacks required key-value pair for {name} template."
                 )
+            _subdir = "shared"
+
         else:
-            _template_name = raw_name
+            _template_name = name
+            _subdir = "individual"
 
         try:
-            _template_loader: FileSystemLoader = FileSystemLoader(searchpath=LatexEdition.TEX_TEMPLATES_DIR)
+            _template_loader: FileSystemLoader = FileSystemLoader(searchpath=LatexEdition.TEX_TEMPLATES_DIR / _subdir)
             _template_env: jinja2_Environment = jinja2_Environment(
                 block_start_string="\BLOCK{",
                 block_end_string="}",
@@ -511,19 +514,19 @@ class LatexEdition(EditionParser):
             _tag.string = _title
             doc.append(NoEscape(LatexEdition._append_custom_part(doc=doc, tag=_tag)))
 
-    def _append_edition_config(self, doc: Document, volume: Volume) -> None:
+    def _append_individual_config(self, doc: Document, volume: Volume) -> None:
         try:
             _edition_mapping = INDIVIDUAL_TEMPLATES_MAPPING.get(self.config.edition.text_uid)
         except KeyError:
             raise EnvironmentError(f"Individual template mapping for {self.config.edition.text_uid} not found.")
 
         if isinstance(_edition_mapping, list):
-            _template_name = f"individual/{_edition_mapping[volume.volume_number - 1]}"  # type: ignore
+            _template_name = _edition_mapping[volume.volume_number - 1]
         else:
-            _template_name = f"individual/{_edition_mapping}"
+            _template_name = _edition_mapping
 
         try:
-            _template: Template = LatexEdition._get_template(raw_name=_template_name)
+            _template: Template = LatexEdition._get_template(name=_template_name, is_shared=False)
             doc.preamble.append(NoEscape(_template.render()))
         except TemplateNotFound:
             log.info(f"Template '{_template_name}' for edition specific configuration not found.")
@@ -531,7 +534,7 @@ class LatexEdition(EditionParser):
     def _append_preamble(self, doc: Document, volume: Volume) -> None:
         _template: Template = LatexEdition._get_template(name="preamble")
         doc.preamble.append(NoEscape(_template.render()))
-        self._append_edition_config(doc=doc, volume=volume)
+        self._append_individual_config(doc=doc, volume=volume)
 
     @staticmethod
     def _set_xmpdata(volume: Volume) -> None:

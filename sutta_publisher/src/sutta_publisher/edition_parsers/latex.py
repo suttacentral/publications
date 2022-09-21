@@ -39,6 +39,8 @@ TEXTS_WITH_CHAPTER_SUTTA_TITLES: dict[str, str | tuple] = ast.literal_eval(
 
 class LatexEdition(EditionParser):
     TEX_TEMPLATES_DIR = Path(__file__).parent.parent / "templates" / "tex"
+    INDIVIDUAL_TEMPLATES_SUBDIR = "individual"
+    SHARED_TEMPLATES_SUBDIR = "shared"
     IMGAGES_DIR = Path(__file__).parent.parent / "images"
     edition_type = "latex_parser"
     endnotes: list[str] | None
@@ -445,11 +447,11 @@ class LatexEdition(EditionParser):
                 raise EnvironmentError(
                     f"'LATEX_TEMPLATES_MAPPING' in .env_public file lacks required key-value pair for {name} template."
                 )
-            _subdir = "shared"
+            _subdir = LatexEdition.SHARED_TEMPLATES_SUBDIR
 
         else:
             _template_name = name
-            _subdir = "individual"
+            _subdir = LatexEdition.INDIVIDUAL_TEMPLATES_SUBDIR
 
         try:
             _template_loader: FileSystemLoader = FileSystemLoader(searchpath=LatexEdition.TEX_TEMPLATES_DIR / _subdir)

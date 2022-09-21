@@ -645,7 +645,7 @@ class EditionParser(ABC):
             return response.text
 
     @staticmethod
-    def _process_raw_matter(matter: str, volume: Volume) -> str:
+    def _get_template(name: str) -> Template:
         # Match names of matters in API with the name of templates
         if not MATTERS_TO_TEMPLATES_MAPPING:
             raise EnvironmentError(
@@ -653,47 +653,31 @@ class EditionParser(ABC):
             )
         else:
             try:
-                # Get template filename associated with that matter
-                _template_name: str = MATTERS_TO_TEMPLATES_MAPPING[matter]
-
-                # Fetch Jinja template from file
-                _template_loader: FileSystemLoader = jinja2.FileSystemLoader(
-                    searchpath=EditionParser.HTML_TEMPLATES_DIR
+                _template_name: str = MATTERS_TO_TEMPLATES_MAPPING[name]
+            except KeyError:
+                raise EnvironmentError(
+                    f"'MATTERS_TO_TEMPLATES_MAPPING' in .env_public file lacks required key-value pair for {name} template."
                 )
-                _template_env: Environment = jinja2.Environment(loader=_template_loader, autoescape=True)
-                _template: Template = _template_env.get_template(name=_template_name)
 
-                # Throw all attributes at the templates, only relevant variables will stick as long as
-                # their names match variable names in jinja2 template.
-                matter_html: str = _template.render(**volume.dict())
+            _template_loader: FileSystemLoader = jinja2.FileSystemLoader(searchpath=EditionParser.HTML_TEMPLATES_DIR)
+            _template_env: Environment = jinja2.Environment(loader=_template_loader, autoescape=True)
 
-                return matter_html
-
+            try:
+                template: Template = _template_env.get_template(name=_template_name)
             except TemplateNotFound:
-                log.warning(f"Matter '{matter}' is not supported.")
-                return ""
+                raise TemplateNotFound(f"Template '{_template_name}' not found.")
+
+            return template
+
+    @staticmethod
+    def _process_raw_matter(matter: str, volume: Volume) -> str:
+        _template: Template = EditionParser._get_template(name=matter)
+        return _template.render(**volume.dict())
 
     @staticmethod
     def _process_main_toc_as_matter(matter: MainTableOfContents) -> str:
-        if not MATTERS_TO_TEMPLATES_MAPPING:
-            raise EnvironmentError(
-                "Missing .env_public file or the file lacks required variable MATTERS_TO_TEMPLATES_MAPPING."
-            )
-        else:
-            try:
-                _template_name: str = MATTERS_TO_TEMPLATES_MAPPING["main-toc"]
-                _template_loader: FileSystemLoader = jinja2.FileSystemLoader(
-                    searchpath=EditionParser.HTML_TEMPLATES_DIR
-                )
-                _template_env: Environment = jinja2.Environment(loader=_template_loader, autoescape=True)
-                _template: Template = _template_env.get_template(name=_template_name)
-                _matter: str = matter.to_html_str(_template)
-
-                return _matter
-
-            except FileNotFoundError:
-                log.warning(f"Matter '{matter}' is not supported.")
-                return ""
+        _template: Template = EditionParser._get_template(name="main-toc")
+        return matter.to_html_str(_template)  # type: ignore
 
     def set_frontmatter(self, volume: Volume) -> None:
         """Add a frontmatter to a volume"""
@@ -717,24 +701,8 @@ class EditionParser(ABC):
 
     @staticmethod
     def _process_secondary_toc(matter: SecondaryTablesOfContents) -> dict[Tag, str]:
-        if not MATTERS_TO_TEMPLATES_MAPPING:
-            raise EnvironmentError(
-                "Missing .env_public file or the file lacks required variable MATTERS_TO_TEMPLATES_MAPPING."
-            )
-        else:
-            try:
-                _template_name: str = MATTERS_TO_TEMPLATES_MAPPING["secondary-toc"]
-                _template_loader: FileSystemLoader = jinja2.FileSystemLoader(
-                    searchpath=EditionParser.HTML_TEMPLATES_DIR
-                )
-                _template_env: Environment = jinja2.Environment(loader=_template_loader, autoescape=True)
-                _template: Template = _template_env.get_template(name=_template_name)
-                _secondary_tocs: dict[Tag, str] = matter.to_html_str(_template)
-
-                return _secondary_tocs
-
-            except FileNotFoundError:
-                raise SystemExit(f"Matter '{matter}' is not supported.")
+        _template: Template = EditionParser._get_template(name="secondary-toc")
+        return matter.to_html_str(_template)  # type: ignore
 
     def add_secondary_toc_to_mainmatter(self, volume: Volume) -> None:
         """Add secondary toc to mainmatter"""

@@ -1,6 +1,6 @@
 import logging
-import os.path
 import tempfile
+from pathlib import Path
 from typing import Callable
 
 from sutta_publisher.shared.value_objects.edition import EditionResult, EditionType
@@ -18,7 +18,7 @@ class PaperbackEdition(LatexEdition):
     def _generate_paperback(self, volume: Volume) -> None:
         log.debug(f"Generating paperback... (vol {volume.volume_number or 1} of {len(self.config.edition.volumes)})")
 
-        _path: str = os.path.join(tempfile.gettempdir(), volume.filename)
+        _path = Path(tempfile.gettempdir()) / volume.filename
         log.debug("Generating tex...")
         doc = self._generate_latex(volume=volume)
         # doc.generate_tex(filepath=_path)  # dev

@@ -53,6 +53,7 @@ from sutta_publisher.shared.value_objects.parser_objects import (
 log = logging.getLogger(__name__)
 
 ADDITIONAL_HEADINGS = ast.literal_eval(os.getenv("ADDITIONAL_HEADINGS", ""))
+MATTERS_TO_TEMPLATES_MAPPING: dict[str, str] = ast.literal_eval(os.getenv("MATTERS_TO_TEMPLATES_MAPPING", ""))
 SUTTACENTRAL_URL = os.getenv("SUTTACENTRAL_URL", "/")
 
 
@@ -646,10 +647,6 @@ class EditionParser(ABC):
     @staticmethod
     def _process_raw_matter(matter: str, volume: Volume) -> str:
         # Match names of matters in API with the name of templates
-        MATTERS_TO_TEMPLATES_MAPPING: dict[str, str] = ast.literal_eval(
-            os.getenv("MATTERS_TO_TEMPLATES_MAPPING")  # type: ignore
-        )
-
         if not MATTERS_TO_TEMPLATES_MAPPING:
             raise EnvironmentError(
                 "Missing .env_public file or the file lacks required variable MATTERS_TO_TEMPLATES_MAPPING."
@@ -678,10 +675,6 @@ class EditionParser(ABC):
 
     @staticmethod
     def _process_main_toc_as_matter(matter: MainTableOfContents) -> str:
-        MATTERS_TO_TEMPLATES_MAPPING: dict[str, str] = ast.literal_eval(
-            os.getenv("MATTERS_TO_TEMPLATES_MAPPING")  # type: ignore
-        )
-
         if not MATTERS_TO_TEMPLATES_MAPPING:
             raise EnvironmentError(
                 "Missing .env_public file or the file lacks required variable MATTERS_TO_TEMPLATES_MAPPING."
@@ -724,10 +717,6 @@ class EditionParser(ABC):
 
     @staticmethod
     def _process_secondary_toc(matter: SecondaryTablesOfContents) -> dict[Tag, str]:
-        MATTERS_TO_TEMPLATES_MAPPING: dict[str, str] = ast.literal_eval(
-            os.getenv("MATTERS_TO_TEMPLATES_MAPPING")  # type: ignore
-        )
-
         if not MATTERS_TO_TEMPLATES_MAPPING:
             raise EnvironmentError(
                 "Missing .env_public file or the file lacks required variable MATTERS_TO_TEMPLATES_MAPPING."

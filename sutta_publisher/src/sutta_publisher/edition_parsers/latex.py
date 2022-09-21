@@ -1,6 +1,6 @@
 import ast
 import logging
-import os.path
+import os
 import re
 import tempfile
 from pathlib import Path
@@ -19,27 +19,27 @@ from .helper_functions import find_sutta_title_depth, get_heading_depth
 
 log = logging.getLogger(__name__)
 
+ADDITIONAL_PANNASAKA_IDS: list[str] = ast.literal_eval(os.getenv("ADDITIONAL_PANNASAKA_IDS", ""))
 FOREIGN_SCRIPT_MACRO_LANGUAGES: list[str] = ast.literal_eval(os.getenv("FOREIGN_SCRIPT_MACRO_LANGUAGES", ""))
-LATEX_DOCUMENT_CONFIG: dict[str, str] = ast.literal_eval(os.getenv("LATEX_DOCUMENT_CONFIG", ""))
 INDIVIDUAL_TEMPLATES_MAPPING: dict[str, list] = ast.literal_eval(os.getenv("INDIVIDUAL_TEMPLATES_MAPPING", ""))
+LATEX_DOCUMENT_CONFIG: dict[str, str] = ast.literal_eval(os.getenv("LATEX_DOCUMENT_CONFIG", ""))
+LATEX_TEMPLATES_MAPPING: dict[str, str] = ast.literal_eval(os.getenv("LATEX_TEMPLATES_MAPPING", ""))
 MATTERS_TO_SKIP: list[str] = ast.literal_eval(os.getenv("MATTERS_TO_SKIP", ""))
 MATTERS_WITH_TEX_TEMPLATES: list[str] = ast.literal_eval(os.getenv("MATTERS_WITH_TEX_TEMPLATES", ""))
-ADDITIONAL_PANNASAKA_IDS: list[str] = ast.literal_eval(os.getenv("ADDITIONAL_PANNASAKA_IDS", ""))
 SANSKRIT_LANGUAGES: list[str] = ast.literal_eval(os.getenv("SANSKRIT_LANGUAGES", ""))
 SANSKRIT_PATTERN = re.compile(r"\b(?=\w*[āīūṭḍṁṅñṇḷśṣṛ])\w+\b")
 STYLING_CLASSES: list[str] = ast.literal_eval(os.getenv("STYLING_CLASSES", ""))
-TEX_TEMPLATES_DIR = Path(__file__).parent.parent / "templates" / "tex"
-TEXTS_WITH_CHAPTER_SUTTA_TITLES: dict[str, str | tuple] = ast.literal_eval(
-    os.getenv("TEXTS_WITH_CHAPTER_SUTTA_TITLES", "")
-)
 SUTTATITLES_WITHOUT_TRANSLATED_TITLE: list[str] = ast.literal_eval(
     os.getenv("SUTTATITLES_WITHOUT_TRANSLATED_TITLE", "")
 )
-
-IMG_DIR = os.path.join(os.getcwd(), "sutta_publisher/images/")
+TEXTS_WITH_CHAPTER_SUTTA_TITLES: dict[str, str | tuple] = ast.literal_eval(
+    os.getenv("TEXTS_WITH_CHAPTER_SUTTA_TITLES", "")
+)
 
 
 class LatexEdition(EditionParser):
+    TEX_TEMPLATES_DIR = Path(__file__).parent.parent / "templates" / "tex"
+    IMGAGES_DIR = Path(__file__).parent.parent / "images"
     edition_type = "latex_parser"
     endnotes: list[str] | None
     section_type: str
@@ -435,9 +435,6 @@ class LatexEdition(EditionParser):
     @staticmethod
     def _get_template(name: str = "", raw_name: str = "") -> Template:
         if not raw_name:
-            LATEX_TEMPLATES_MAPPING: dict[str, str] = ast.literal_eval(
-                os.getenv("LATEX_TEMPLATES_MAPPING")  # type: ignore
-            )
             if not LATEX_TEMPLATES_MAPPING:
                 raise EnvironmentError(
                     "Missing .env_public file or the file lacks required variable LATEX_TEMPLATES_MAPPING."
@@ -452,7 +449,7 @@ class LatexEdition(EditionParser):
             _template_name = raw_name
 
         try:
-            _template_loader: FileSystemLoader = FileSystemLoader(searchpath=TEX_TEMPLATES_DIR)
+            _template_loader: FileSystemLoader = FileSystemLoader(searchpath=LatexEdition.TEX_TEMPLATES_DIR)
             _template_env: jinja2_Environment = jinja2_Environment(
                 block_start_string="\BLOCK{",
                 block_end_string="}",
@@ -481,7 +478,9 @@ class LatexEdition(EditionParser):
         if isinstance(element, Tag) and not (element.has_attr("id") and element["id"] in MATTERS_TO_SKIP):
             if (name := LatexEdition._get_matter_name(element)) in MATTERS_WITH_TEX_TEMPLATES:
                 _template: Template = LatexEdition._get_template(name=name)
-                tex = _template.render(**volume.dict(exclude_none=True, exclude_unset=True), images_directory=IMG_DIR)
+                tex = _template.render(
+                    **volume.dict(exclude_none=True, exclude_unset=True), images_directory=LatexEdition.IMGAGES_DIR
+                )
                 return cast(str, NoEscape(tex))
             else:
                 return cast(str, NoEscape(self._process_tag(doc=doc, tag=element)))
@@ -538,7 +537,7 @@ class LatexEdition(EditionParser):
     def _set_xmpdata(volume: Volume) -> None:
         _template: Template = LatexEdition._get_template(name="metadata")
         _output = _template.render(**volume.dict(exclude_none=True, exclude_unset=True))
-        _path: str = os.path.join(tempfile.gettempdir(), f"{volume.filename}.xmpdata")
+        _path = Path(tempfile.gettempdir()) / f"{volume.filename}.xmpdata"
 
         with open(file=_path, mode="wt") as f:
             f.write(_output)

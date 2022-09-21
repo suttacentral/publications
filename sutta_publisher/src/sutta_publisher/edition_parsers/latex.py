@@ -533,7 +533,7 @@ class LatexEdition(EditionParser):
 
     def _append_preamble(self, doc: Document, volume: Volume) -> None:
         _template: Template = LatexEdition._get_template(name="preamble")
-        doc.preamble.append(NoEscape(_template.render()))
+        doc.preamble.append(NoEscape(_template.render(**volume.dict(exclude_none=True, exclude_unset=True))))
         self._append_individual_config(doc=doc, volume=volume)
 
     @staticmethod

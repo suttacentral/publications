@@ -672,7 +672,7 @@ class EditionParser(ABC):
     @staticmethod
     def _process_raw_matter(matter: str, volume: Volume) -> str:
         _template: Template = EditionParser._get_template(name=matter)
-        return _template.render(**volume.dict())
+        return _template.render(**volume.dict(exclude_none=True, exclude_unset=True))
 
     @staticmethod
     def _process_main_toc_as_matter(matter: MainTableOfContents) -> str:

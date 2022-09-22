@@ -143,6 +143,9 @@ citecolor=black
   \fi}
 \makeatother
 
+% don't put page number on first page of toc (relies on etoolbox)
+\patchcmd{\chapter}{plain}{empty}{}{}
+
 % global line height
 \setstretch{1.05}
 

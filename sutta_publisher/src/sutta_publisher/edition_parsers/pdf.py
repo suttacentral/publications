@@ -1,6 +1,6 @@
 import logging
-import os.path
 import tempfile
+from pathlib import Path
 from typing import Callable
 
 from sutta_publisher.shared.value_objects.edition import EditionResult, EditionType
@@ -18,7 +18,7 @@ class PdfEdition(LatexEdition):
     def _generate_pdf(self, volume: Volume) -> None:
         log.debug("Generating pdf...")
 
-        _path: str = os.path.join(tempfile.gettempdir(), volume.filename)
+        _path = Path(tempfile.gettempdir()) / volume.filename
         doc = self._generate_latex(volume=volume)
         doc.generate_pdf(filepath=_path, clean_tex=False, compiler="latexmk")
 

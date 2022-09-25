@@ -22,7 +22,6 @@ log = logging.getLogger(__name__)
 ADDITIONAL_PANNASAKA_IDS: list[str] = ast.literal_eval(os.getenv("ADDITIONAL_PANNASAKA_IDS", ""))
 FOREIGN_SCRIPT_MACRO_LANGUAGES: list[str] = ast.literal_eval(os.getenv("FOREIGN_SCRIPT_MACRO_LANGUAGES", ""))
 INDIVIDUAL_TEMPLATES_MAPPING: dict[str, list] = ast.literal_eval(os.getenv("INDIVIDUAL_TEMPLATES_MAPPING", ""))
-LATEX_DOCUMENT_CONFIG: dict[str, str] = ast.literal_eval(os.getenv("LATEX_DOCUMENT_CONFIG", ""))
 LATEX_TEMPLATES_MAPPING: dict[str, str] = ast.literal_eval(os.getenv("LATEX_TEMPLATES_MAPPING", ""))
 MATTERS_TO_SKIP: list[str] = ast.literal_eval(os.getenv("MATTERS_TO_SKIP", ""))
 MATTERS_WITH_TEX_TEMPLATES: list[str] = ast.literal_eval(os.getenv("MATTERS_WITH_TEX_TEMPLATES", ""))
@@ -38,10 +37,11 @@ TEXTS_WITH_CHAPTER_SUTTA_TITLES: dict[str, str | tuple] = ast.literal_eval(
 
 
 class LatexEdition(EditionParser):
+    LATEX_DOCUMENT_CONFIG: dict[str, str] = ast.literal_eval(os.getenv("LATEX_DOCUMENT_CONFIG", ""))
     TEX_TEMPLATES_DIR = Path(__file__).parent.parent / "templates" / "tex"
     INDIVIDUAL_TEMPLATES_SUBDIR = "individual"
     SHARED_TEMPLATES_SUBDIR = "shared"
-    IMGAGES_DIR = Path(__file__).parent.parent / "images"
+    IMAGES_DIR = Path(__file__).parent.parent / "images"
     edition_type = "latex_parser"
     endnotes: list[str] | None
     section_type: str
@@ -486,7 +486,7 @@ class LatexEdition(EditionParser):
             if (name := LatexEdition._get_matter_name(element)) in MATTERS_WITH_TEX_TEMPLATES:
                 _template: Template = LatexEdition._get_template(name=name)
                 tex = _template.render(
-                    **volume.dict(exclude_none=True, exclude_unset=True), images_directory=LatexEdition.IMGAGES_DIR
+                    **volume.dict(exclude_none=True, exclude_unset=True), images_directory=LatexEdition.IMAGES_DIR
                 )
                 return cast(str, NoEscape(tex))
             else:
@@ -565,7 +565,7 @@ class LatexEdition(EditionParser):
         # create .xmpdata file
         LatexEdition._set_xmpdata(volume=volume)
 
-        doc = Document(**LATEX_DOCUMENT_CONFIG)
+        doc = Document(**self.LATEX_DOCUMENT_CONFIG)
 
         # set preamble
         self._append_preamble(doc=doc, volume=volume)

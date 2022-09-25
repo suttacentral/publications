@@ -2,6 +2,9 @@ import ast
 import logging
 import os
 import re
+import shutil
+import tempfile
+from pathlib import Path
 from typing import Any, cast, no_type_check
 
 import requests
@@ -338,3 +341,14 @@ def get_true_volume_index(volume: Volume) -> int:
     else:
         # volume_number is 1-based index, whereas, lists have 0-based index
         return cast(int, volume.volume_number - 1)
+
+
+def replace_first_line(file_name: Path, to_insert: str) -> None:
+    with open(file_name) as old_file, tempfile.NamedTemporaryFile('w', dir=file_name.parent, delete=False) as new_file:
+        old_file.readline()
+        new_file.write(to_insert + '\n')
+        shutil.copyfileobj(old_file, new_file)
+
+    os.unlink(file_name)
+    os.rename(new_file.name, file_name)
+    os.chmod(file_name, 644)

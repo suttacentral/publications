@@ -232,7 +232,8 @@ class LatexEdition(EditionParser):
         if tag.has_attr("id") and ("pannasaka" in tag["id"] or tag["id"] in ADDITIONAL_PANNASAKA_IDS):
             # The pannasa in AN and SN requires a special markup
             return LatexEdition._append_pannasa(tag=tag)
-
+        elif self.section_type == "chapter":
+            return cast(str, LatexEdition._append_custom_part(doc=doc, tag=tag))
         else:
             actions: list[Callable] = [
                 LatexEdition._append_custom_part,
@@ -252,6 +253,7 @@ class LatexEdition(EditionParser):
                 index = _heading_depth - 1
             else:
                 index = -1
+
             return cast(str, actions[index](doc=doc, tag=tag))
 
     def _append_subheading(self, doc: Document, tag: Tag) -> str:
@@ -507,12 +509,20 @@ class LatexEdition(EditionParser):
         self.sutta_depth = find_sutta_title_depth(html)
 
         if self.sutta_depth <= 2:  # append additional latex part heading
+            _vol_title = volume.volume_translation_title
+
+            if _vol_title:
+                _first_heading = html.find("h1").string
+
+                if not _first_heading or _vol_title != _first_heading.strip():
+                    _title = _vol_title
+                else:  # _vol_title == _first_heading.strip()
+                    return
+
+            else:
+                _title = self.config.publication.translation_title
+
             _tag = html.new_tag("h1")
-            _title = (
-                volume.volume_translation_title
-                if volume.volume_translation_title
-                else self.config.publication.translation_title
-            )
             _tag.string = _title
             doc.append(NoEscape(LatexEdition._append_custom_part(doc=doc, tag=_tag)))
 

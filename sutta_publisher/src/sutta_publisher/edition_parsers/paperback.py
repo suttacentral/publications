@@ -21,9 +21,9 @@ class PaperbackEdition(LatexEdition):
         _path = Path(tempfile.gettempdir()) / volume.filename
         log.debug("Generating tex...")
         doc = self._generate_latex(volume=volume)
-        # doc.generate_tex(filepath=_path)  # dev
+        # doc.generate_tex(filepath=str(_path))  # dev
         log.debug("Generating pdf...")
-        doc.generate_pdf(filepath=_path, clean_tex=False, compiler="latexmk", compiler_args=["-lualatex"])
+        doc.generate_pdf(filepath=str(_path), clean_tex=False, compiler="latexmk", compiler_args=["-lualatex"])
 
     def collect_all(self):  # type: ignore
         _edition: Edition = super().collect_all()

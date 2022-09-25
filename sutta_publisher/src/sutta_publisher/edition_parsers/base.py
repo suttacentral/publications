@@ -3,6 +3,7 @@ from __future__ import annotations
 import ast
 import logging
 import os
+import tempfile
 from abc import ABC
 from pathlib import Path
 from typing import Any, Callable, cast
@@ -59,6 +60,7 @@ SUTTACENTRAL_URL = os.getenv("SUTTACENTRAL_URL", "/")
 
 class EditionParser(ABC):
     HTML_TEMPLATES_DIR = Path(__file__).parent.parent / "templates" / "html"
+    TEMP_DIR = Path(tempfile.gettempdir())
     config: EditionConfig
     raw_data: EditionData
     edition_type: EditionType

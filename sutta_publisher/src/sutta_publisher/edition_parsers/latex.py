@@ -2,7 +2,6 @@ import ast
 import logging
 import os
 import re
-import tempfile
 from pathlib import Path
 from typing import Callable, cast
 
@@ -548,11 +547,10 @@ class LatexEdition(EditionParser):
         doc.preamble.append(NoEscape(_template.render(**volume.dict(exclude_none=True, exclude_unset=True))))
         self._append_individual_config(doc=doc, volume=volume)
 
-    @staticmethod
-    def _set_xmpdata(volume: Volume) -> None:
+    def _set_xmpdata(self, volume: Volume) -> None:
         _template: Template = LatexEdition._get_template(name="metadata")
         _output = _template.render(**volume.dict(exclude_none=True, exclude_unset=True))
-        _path = Path(tempfile.gettempdir()) / f"{volume.filename}.xmpdata"
+        _path = self.TEMP_DIR / f"{volume.filename}.xmpdata"
 
         with open(file=_path, mode="wt") as f:
             f.write(_output)
@@ -563,7 +561,7 @@ class LatexEdition(EditionParser):
         self.section_type: str = "chapter" if self._has_chapter_sutta_title(volume=volume) else "section"
 
         # create .xmpdata file
-        LatexEdition._set_xmpdata(volume=volume)
+        self._set_xmpdata(volume=volume)
 
         doc = Document(**self.LATEX_DOCUMENT_CONFIG)
 

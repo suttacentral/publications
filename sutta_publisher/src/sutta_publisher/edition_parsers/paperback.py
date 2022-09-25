@@ -18,12 +18,11 @@ log = logging.getLogger(__name__)
 
 class PaperbackEdition(LatexEdition):
     edition_type = EditionType.paperback
-    _tmp_dir_path = Path(tempfile.gettempdir())
 
     def _generate_paperback(self, volume: Volume) -> None:
         log.debug(f"Generating paperback... (vol {volume.volume_number or 1} of {len(self.config.edition.volumes)})")
 
-        _path = self._tmp_dir_path / volume.filename
+        _path = self.TEMP_DIR / volume.filename
         log.debug("Generating tex...")
         doc = self._generate_latex(volume=volume)
         # doc.generate_tex(filepath=str(_path))  # dev
@@ -31,7 +30,7 @@ class PaperbackEdition(LatexEdition):
         doc.generate_pdf(filepath=str(_path), clean_tex=False, compiler="latexmk", compiler_args=["-lualatex"])
 
     def _insert_spine_width(self, volume: Volume) -> None:
-        _pdf_file_path = self._tmp_dir_path / f"{volume.filename}.pdf"
+        _pdf_file_path = self.TEMP_DIR / f"{volume.filename}.pdf"
 
         if _pdf_file_path.exists():
             log.debug("Appending spine width...")
@@ -40,7 +39,7 @@ class PaperbackEdition(LatexEdition):
             # Lulu formula for spine width calculation
             _spine_width = (_number_of_pages / 444) + 0.06
 
-            _tex_file_path = self._tmp_dir_path / f"{volume.filename}.tex"
+            _tex_file_path = self.TEMP_DIR / f"{volume.filename}.tex"
             _arguments = self.LATEX_DOCUMENT_CONFIG["documentclass"]
             _options = f'{self.LATEX_DOCUMENT_CONFIG["document_options"]},spinewidth={_spine_width}in'
             _documentclass = Command("documentclass", _arguments, _options).dumps()

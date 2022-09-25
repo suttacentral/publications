@@ -38,7 +38,7 @@ class PaperbackEdition(LatexEdition):
             _number_of_pages = len(PdfReader(_pdf_file_path).pages)
 
             # Lulu formula for spine width calculation
-            _spine_width = (_number_of_pages / 444) + .06
+            _spine_width = (_number_of_pages / 444) + 0.06
 
             _tex_file_path = self._tmp_dir_path / f"{volume.filename}.tex"
             _arguments = self.LATEX_DOCUMENT_CONFIG["documentclass"]

@@ -344,9 +344,9 @@ def get_true_volume_index(volume: Volume) -> int:
 
 
 def replace_first_line(file_name: Path, to_insert: str) -> None:
-    with open(file_name) as old_file, tempfile.NamedTemporaryFile('w', dir=file_name.parent, delete=False) as new_file:
+    with open(file_name) as old_file, tempfile.NamedTemporaryFile("w", dir=file_name.parent, delete=False) as new_file:
         old_file.readline()
-        new_file.write(to_insert + '\n')
+        new_file.write(to_insert + "\n")
         shutil.copyfileobj(old_file, new_file)
 
     os.unlink(file_name)

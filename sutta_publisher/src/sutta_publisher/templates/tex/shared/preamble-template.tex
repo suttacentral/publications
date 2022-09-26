@@ -69,7 +69,7 @@ citecolor=black
 
 % chinese fonts
 \newfontfamily\cjk{Noto Serif TC}
-\newcommand*{\langlzh}[1]{\cjk{#1}}%
+\newcommand*{\langlzh}[1]{\cjk{#1}\normalfont}%
 
 % use subscript numerals for margin notes
 \renewcommand*{\marginfont}{\Marginalfont}
@@ -95,6 +95,21 @@ citecolor=black
   \setlength\topsep{0pt}%
   \setlength\parskip{0pt}%
 
+% define new \centerpars command for use in ToC. This ensures centering, proper wrapping, and no page break after
+\def\startcenter{%
+  \par
+  \begingroup
+  \leftskip=0pt plus 1fil
+  \rightskip=\leftskip
+  \parindent=0pt
+  \parfillskip=0pt
+}
+\def\stopcenter{%
+  \par
+  \endgroup
+}
+\long\def\centerpars#1{\startcenter#1\stopcenter}
+
 % redefine part, so that it adds a toc entry without page number
 \let\oldcontentsline\contentsline
 \newcommand{\nopagecontentsline}[3]{\oldcontentsline{#1}{#2}{}}
@@ -109,7 +124,7 @@ citecolor=black
       \parindent \z@ \rightskip \@pnumwidth
       \parfillskip -\@pnumwidth
       {\leavevmode
-       \begin{center}\setstretch{.85}\large\scshape #1\vspace*{-1em}\end{center}\llap{#2}}\par
+       \setstretch{.85}\large\scshape\centerpars{#1}\vspace*{-1em}\llap{#2}}\par
        \nobreak
          \global\@nobreaktrue
          \everypar{\global\@nobreakfalse\everypar{}}%
@@ -135,13 +150,16 @@ citecolor=black
       \parindent \z@ \rightskip \@pnumwidth
       \parfillskip -\@pnumwidth
       {\leavevmode
-       \begin{center}\setstretch{.85}\large\itshape\scshape\lowercase{#1}\vspace*{-1em}\end{center}\llap{#2}}\par
+       \setstretch{.85}\large\itshape\scshape\lowercase{\centerpars{#1}}\vspace*{-1em}\llap{#2}}\par
        \nobreak
          \global\@nobreaktrue
          \everypar{\global\@nobreakfalse\everypar{}}%
     \endgroup
   \fi}
 \makeatother
+
+% don't put page number on first page of toc (relies on etoolbox)
+\patchcmd{\chapter}{plain}{empty}{}{}
 
 % global line height
 \setstretch{1.05}

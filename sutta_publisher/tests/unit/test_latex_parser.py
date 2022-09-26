@@ -74,7 +74,7 @@ def latex_edition(config, data):
         ("<section class='secondary-toc'>Test</section>", ""),
         (
             "<article class='epigraph'><blockquote class='epigraph-text'><p>Test</p></blockquote><p class='epigraph-attribution'><span class='epigraph-translated-title'>Name<span><span class='epigraph-root-title'>Mūlapariyāyasutta</span><span class='epigraph-reference'>Acronym</span></p></article>",
-            "\\newpage\n\n\\vspace*{\\fill}\n\n\\begin{center}\n\\epigraph{Test}\n{\n\\epigraphTranslatedTitle{Name\\textsanskrit{Mūlapariyāyasutta}Acronym}\n\\epigraphRootTitle{\\textsanskrit{Mūlapariyāyasutta}}\n\\epigraphReference{Acronym}\n}\n\\end{center}\n\n\\vspace*{2in}\n\n\\vspace*{\\fill}\n\n\\setlength{\\parindent}{1em}\n",
+            "\\newpage\n\n\\vspace*{\\fill}\n\n\\begin{center}\n\\epigraph{Test}\n{\n\\epigraphTranslatedTitle{Name\\textsanskrit{Mūlapariyāyasutta}Acronym}\n\\epigraphRootTitle{\\textsanskrit{Mūlapariyāyasutta}}\n\\epigraphReference{Acronym}\n}\n\\end{center}\n\n\\vspace*{2in}\n\n\\vspace*{\\fill}\n\n\\blankpage%\n\n\\setlength{\\parindent}{1em}\n",
         ),
         ("<ul><li>Test 1</li></ul>", "\\begin{itemize}%\n\\item Test 1%\n\\end{itemize}\n\n"),
         ("<ol><li>Test 1</li></ol>", "\\begin{enumerate}%\n\\item Test 1%\n\\end{enumerate}\n\n"),

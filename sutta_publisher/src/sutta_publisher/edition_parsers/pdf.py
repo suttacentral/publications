@@ -5,12 +5,12 @@ from sutta_publisher.shared.value_objects.edition import EditionResult, EditionT
 from sutta_publisher.shared.value_objects.parser_objects import Edition, Volume
 
 from .base import EditionParser
-from .latex import LatexEdition
+from .latex import LatexParser
 
 log = logging.getLogger(__name__)
 
 
-class PdfEdition(LatexEdition):
+class PdfEdition(LatexParser):
     edition_type = EditionType.pdf
 
     def _generate_pdf(self, volume: Volume) -> None:

@@ -1,13 +1,3 @@
-\documentclass[
-coverheight=9in,
-coverwidth=6in,
-spinewidth=1in,
-pagecolor=backgroundcolor,
-bleedwidth=.125in,
-marklength=0in,
-12pt
-]{bookcover}
-
 \letnamebookcoverpart{bg spine bottom}{bg spine}[,,,7.5in]
 
 \letnamebookcoverpart{bg spine top}{bg spine}[,,,-7.5in]
@@ -112,7 +102,8 @@ marklength=0in,
 
 \setstretch{1.05}
 
-%%% insert individual below %%%
+% individual
+\VAR{individual_cover_template | safe}
 
 \begin{document}
 
@@ -121,7 +112,7 @@ marklength=0in,
 % spine
 
 \bookcovercomponent{center}{bg spine top}{
-\begin{minipage}[t][][c]{\spinewidth} 
+\begin{minipage}[t][][c]{\spinewidth}
 
 \spinevolumenumber{\BLOCK{if volume_number}Vol. \VAR{volume_number | safe}\BLOCK{endif}}
 
@@ -172,9 +163,9 @@ marklength=0in,
 % Text on the back cover
 \bookcovercomponent{normal}{back}[1in,.85in,1in,1in]{
 
-\backpublicationblurb{<<<Blurb for the whole publication>>>}
+\backpublicationblurb{\BLOCK{if publication_blurb}\VAR{publication_blurb | safe}\BLOCK{endif}}
 
-\backvolumeblurb{<<<Blurb for the individual volume, if there is one.>>>}
+\backvolumeblurb{\VAR{volume_blurb | safe}}
 
 \backpublisherblurb{The wisdom of the Buddha has been preserved in a vast ocean of ancient texts. SuttaCentral offers fresh translations of these texts in the world’s languages. Setting aside the boundaries of language and tradition, we let the Buddha speak for himself.
 }
@@ -185,8 +176,8 @@ marklength=0in,
 
 \begin{minipage}[c][][c]{2in}
 \backlogo{} \backpublishername{SuttaCentral}
-\end{minipage}\begin{minipage}[c][][c]{2in} 
-\backisbn{{volume_isbn | safe}}
+\end{minipage}\begin{minipage}[c][][c]{2in}
+\backisbn{\VAR{volume_isbn | safe}}
 \end{minipage}
 
 \end{minipage}

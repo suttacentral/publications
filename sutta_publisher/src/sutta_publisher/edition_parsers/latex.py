@@ -36,12 +36,17 @@ TEXTS_WITH_CHAPTER_SUTTA_TITLES: dict[str, str | tuple] = ast.literal_eval(
 
 
 class LatexParser(EditionParser):
+    edition_type = "latex_parser"
+
     LATEX_DOCUMENT_CONFIG: dict[str, str] = ast.literal_eval(os.getenv("LATEX_DOCUMENT_CONFIG", ""))
+    LATEX_COVER_CONFIG: dict[str, str] = ast.literal_eval(os.getenv("LATEX_COVER_CONFIG", ""))
+
+    IMAGES_DIR = Path(__file__).parent.parent / "images"
     TEX_TEMPLATES_DIR = Path(__file__).parent.parent / "templates" / "tex"
     INDIVIDUAL_TEMPLATES_SUBDIR = "individual"
     SHARED_TEMPLATES_SUBDIR = "shared"
-    IMAGES_DIR = Path(__file__).parent.parent / "images"
-    edition_type = "latex_parser"
+    COVER_TEMPLATES_SUBDIR = "cover"
+
     endnotes: list[str] | None
     section_type: str
     sutta_depth: int
@@ -161,7 +166,7 @@ class LatexParser(EditionParser):
     def _append_sutta_title(self, doc: Document, tag: Tag) -> str:
         tex: str = ""
         _acronym, _name, _root_name = [self._process_tag(doc=doc, tag=_span) for _span in tag.children]
-        template: Template = LatexParser._get_template(name="heading")
+        template: Template = LatexParser._get_shared_template(name="heading")
         data = {
             "acronym": _acronym,
             "name": _name,
@@ -174,7 +179,7 @@ class LatexParser(EditionParser):
 
     @staticmethod
     def _append_custom_chapter(doc: Document, tag: Tag) -> str:
-        _template: Template = LatexParser._get_template(name="chapter")
+        _template: Template = LatexParser._get_shared_template(name="chapter")
         return cast(str, _template.render(name=tag.string) + NoEscape("\n\n"))
 
     def _append_custom_section(self, doc: Document, tag: Tag) -> str:
@@ -187,7 +192,7 @@ class LatexParser(EditionParser):
 
     @staticmethod
     def _append_custom_part(doc: Document, tag: Tag) -> str:
-        _template: Template = LatexParser._get_template(name="part")
+        _template: Template = LatexParser._get_shared_template(name="part")
         return cast(str, _template.render(name=tag.string) + NoEscape("\n\n"))
 
     def _append_chapter(self, doc: Document, tag: Tag) -> str:
@@ -224,7 +229,7 @@ class LatexParser(EditionParser):
 
     @staticmethod
     def _append_pannasa(tag: Tag) -> str:
-        _template: Template = LatexParser._get_template(name="pannasa")
+        _template: Template = LatexParser._get_shared_template(name="pannasa")
         return cast(str, _template.render(name=tag.string) + NoEscape("\n\n"))
 
     def _append_section_title(self, doc: Document, tag: Tag) -> str:
@@ -291,7 +296,7 @@ class LatexParser(EditionParser):
                 LatexParser._strip_tag_string(_tag)
                 data[_var] = self._process_contents(doc=doc, contents=_tag.contents)
 
-        template: Template = LatexParser._get_template(name="epigraph")
+        template: Template = LatexParser._get_shared_template(name="epigraph")
         return cast(str, template.render(data) + NoEscape("\n"))
 
     def _append_enjambment(self, doc: Document, tag: Tag) -> str:
@@ -436,26 +441,65 @@ class LatexParser(EditionParser):
                 _element.string.replace_with(_element.string.strip())
 
     @staticmethod
-    def _get_template(name: str = "", is_shared: bool = True) -> Template:
-        if is_shared:
-            if not LATEX_TEMPLATES_MAPPING:
-                raise EnvironmentError(
-                    "Missing .env_public file or the file lacks required variable LATEX_TEMPLATES_MAPPING."
-                )
-            try:
-                _template_name: str = LATEX_TEMPLATES_MAPPING[name]
-            except KeyError:
-                raise EnvironmentError(
-                    f"'LATEX_TEMPLATES_MAPPING' in .env_public file lacks required key-value pair for {name} template."
-                )
-            _subdir = LatexParser.SHARED_TEMPLATES_SUBDIR
-
-        else:
-            _template_name = name
-            _subdir = LatexParser.INDIVIDUAL_TEMPLATES_SUBDIR
+    def _get_shared_template(name: str) -> Template:
+        if not LATEX_TEMPLATES_MAPPING:
+            raise EnvironmentError(
+                "Missing .env_public file or the file lacks required variable LATEX_TEMPLATES_MAPPING."
+            )
 
         try:
-            _template_loader: FileSystemLoader = FileSystemLoader(searchpath=LatexParser.TEX_TEMPLATES_DIR / _subdir)
+            _template_name: str = LATEX_TEMPLATES_MAPPING[name]
+        except KeyError:
+            raise EnvironmentError(
+                f"'LATEX_TEMPLATES_MAPPING' in .env_public file lacks required key-value pair for {name} template."
+            )
+
+        return LatexParser._get_template(name=_template_name, subdir=LatexParser.SHARED_TEMPLATES_SUBDIR)
+
+    def _get_individual_template(self, volume: Volume, type_: str) -> Template | None:
+        if not INDIVIDUAL_TEMPLATES_MAPPING:
+            log.warning(
+                "Missing .env_public file or the file lacks variable INDIVIDUAL_TEMPLATES_MAPPING."
+                f"Skipping appending individual {type_} template."
+            )
+
+        try:
+            _publication_mapping = INDIVIDUAL_TEMPLATES_MAPPING.get(self.config.edition.text_uid)
+        except KeyError:
+            log.warning(f"Individual {type_} template mapping for {self.config.edition.text_uid} not found.")
+            return None
+
+        if isinstance(_publication_mapping, list):
+            _template_name = _publication_mapping[volume.volume_number - 1]
+        else:
+            _template_name = _publication_mapping
+
+        if type_ == "config":
+            _subdir = LatexParser.INDIVIDUAL_TEMPLATES_SUBDIR
+        elif type_ == "cover":
+            _subdir = os.path.join(LatexParser.COVER_TEMPLATES_SUBDIR, LatexParser.INDIVIDUAL_TEMPLATES_SUBDIR)
+        else:
+            log.warning(
+                "Wrong argument in _get_individual_template() method:" "'type_={type_}'. Choices: 'config', 'cover'."
+            )
+            return None
+
+        try:
+            return LatexParser._get_template(name=_template_name, subdir=_subdir)
+        except TemplateNotFound:
+            log.warning(f"Template '{_template_name}' for publication/volume specific configuration not found.")
+            return None
+
+    @staticmethod
+    def _get_cover_base_template() -> Template:
+        return LatexParser._get_template(name="paperback-template.tex", subdir=LatexParser.COVER_TEMPLATES_SUBDIR)
+
+    @staticmethod
+    def _get_template(name: str, subdir: str = "") -> Template:
+        _path = LatexParser.TEX_TEMPLATES_DIR / subdir if subdir else LatexParser.TEX_TEMPLATES_DIR
+
+        try:
+            _template_loader: FileSystemLoader = FileSystemLoader(searchpath=_path)
             _template_env: jinja2_Environment = jinja2_Environment(
                 block_start_string="\BLOCK{",
                 block_end_string="}",
@@ -469,11 +513,11 @@ class LatexParser(EditionParser):
                 autoescape=True,
                 loader=_template_loader,
             )
-            template: Template = _template_env.get_template(name=_template_name)
+            template: Template = _template_env.get_template(name=name)
             return template
 
         except TemplateNotFound:
-            raise TemplateNotFound(f"Template '{_template_name}' for Latex edition is missing.")
+            raise TemplateNotFound(f"Template '{name}' for Latex edition is missing.")
 
     @staticmethod
     def _get_matter_name(matter: Tag) -> str:
@@ -483,7 +527,7 @@ class LatexParser(EditionParser):
     def _process_html_element(self, volume: Volume, doc: Document, element: PageElement) -> str:
         if isinstance(element, Tag) and not (element.has_attr("id") and element["id"] in MATTERS_TO_SKIP):
             if (name := LatexParser._get_matter_name(element)) in MATTERS_WITH_TEX_TEMPLATES:
-                _template: Template = LatexParser._get_template(name=name)
+                _template: Template = LatexParser._get_shared_template(name=name)
                 tex = _template.render(
                     **volume.dict(exclude_none=True, exclude_unset=True), images_directory=LatexParser.IMAGES_DIR
                 )
@@ -526,36 +570,23 @@ class LatexParser(EditionParser):
             doc.append(NoEscape(LatexParser._append_custom_part(doc=doc, tag=_tag)))
 
     def _append_individual_config(self, doc: Document, volume: Volume) -> None:
-        try:
-            _edition_mapping = INDIVIDUAL_TEMPLATES_MAPPING.get(self.config.edition.text_uid)
-        except KeyError:
-            raise EnvironmentError(f"Individual template mapping for {self.config.edition.text_uid} not found.")
-
-        if isinstance(_edition_mapping, list):
-            _template_name = _edition_mapping[volume.volume_number - 1]
-        else:
-            _template_name = _edition_mapping
-
-        try:
-            _template: Template = LatexParser._get_template(name=_template_name, is_shared=False)
+        if _template := self._get_individual_template(volume=volume, type_="config"):
             doc.preamble.append(NoEscape(_template.render()))
-        except TemplateNotFound:
-            log.info(f"Template '{_template_name}' for edition specific configuration not found.")
 
     def _append_preamble(self, doc: Document, volume: Volume) -> None:
-        _template: Template = LatexParser._get_template(name="preamble")
+        _template: Template = LatexParser._get_shared_template(name="preamble")
         doc.preamble.append(NoEscape(_template.render(**volume.dict(exclude_none=True, exclude_unset=True))))
         self._append_individual_config(doc=doc, volume=volume)
 
     def _set_xmpdata(self, volume: Volume) -> None:
-        _template: Template = LatexParser._get_template(name="metadata")
+        _template: Template = LatexParser._get_shared_template(name="metadata")
         _output = _template.render(**volume.dict(exclude_none=True, exclude_unset=True))
         _path = self.TEMP_DIR / f"{volume.filename}.xmpdata"
 
         with open(file=_path, mode="wt") as f:
             f.write(_output)
 
-    def _generate_latex(self, volume: Volume) -> Document:
+    def _generate_tex(self, volume: Volume) -> Document:
         # setup
         self.endnotes: list[str] | None = volume.endnotes if volume.endnotes else None
         self.section_type: str = "chapter" if self._has_chapter_sutta_title(volume=volume) else "section"
@@ -590,5 +621,16 @@ class LatexParser(EditionParser):
         for _page in volume.backmatter:
             _backmatter_element: PageElement = BeautifulSoup(_page, "lxml").find("body").next_element
             doc.append(self._process_html_element(volume=volume, doc=doc, element=_backmatter_element))
+
+        return doc
+
+    def _generate_cover(self, volume: Volume) -> Document:
+        doc = Document(**self.LATEX_COVER_CONFIG)
+
+        _template: Template = LatexParser._get_cover_base_template()
+        _tex = _template.render(
+            **volume.dict(exclude_none=True, exclude_unset=True), images_directory=LatexParser.IMAGES_DIR
+        )
+        doc.append(NoEscape(_tex))
 
         return doc

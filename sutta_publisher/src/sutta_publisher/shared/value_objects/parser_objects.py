@@ -86,6 +86,7 @@ class Volume(BaseModel):
 
     # Content
     cover: Any = None
+    spine_width: float | None = None
     main_toc: MainTableOfContents | None = None
     secondary_toc: SecondaryTablesOfContents | None = None
     frontmatter: list[str] = []

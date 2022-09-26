@@ -6,7 +6,7 @@ import os
 import tempfile
 from abc import ABC
 from pathlib import Path
-from typing import Any, Callable, cast
+from typing import Callable, cast
 
 import jinja2
 import requests
@@ -728,13 +728,6 @@ class EditionParser(ABC):
             for _matter in getattr(volume, _matters):
                 _processed_matters.append(make_absolute_links(_matter))
             setattr(volume, _matters, _processed_matters)
-
-    def _generate_cover(self, volume: Volume) -> Any:
-        log.debug("Generating covers...")
-        # TODO [58]: implement
-
-    def set_cover(self, volume: Volume) -> None:
-        volume.cover = self._generate_cover(volume)
 
     # --- putting it all together
     def collect_all(self) -> Edition:

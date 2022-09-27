@@ -19,6 +19,7 @@ from .helper_functions import find_sutta_title_depth, get_heading_depth
 log = logging.getLogger(__name__)
 
 ADDITIONAL_PANNASAKA_IDS: list[str] = ast.literal_eval(os.getenv("ADDITIONAL_PANNASAKA_IDS", ""))
+COVER_TEMPLATES_MAPPING: dict[str, str] = ast.literal_eval(os.getenv("COVER_TEMPLATES_MAPPING", ""))
 FOREIGN_SCRIPT_MACRO_LANGUAGES: list[str] = ast.literal_eval(os.getenv("FOREIGN_SCRIPT_MACRO_LANGUAGES", ""))
 INDIVIDUAL_TEMPLATES_MAPPING: dict[str, list] = ast.literal_eval(os.getenv("INDIVIDUAL_TEMPLATES_MAPPING", ""))
 LATEX_TEMPLATES_MAPPING: dict[str, str] = ast.literal_eval(os.getenv("LATEX_TEMPLATES_MAPPING", ""))
@@ -346,7 +347,7 @@ class LatexParser(EditionParser):
             and int(tag.name[1:]) == self.sutta_depth
         )
 
-    def _process_tag(self, doc: Document, tag: Tag) -> str:
+    def _process_tag(self, doc: Document, tag: Tag | PageElement) -> str:
 
         match tag.name:
 
@@ -451,22 +452,38 @@ class LatexParser(EditionParser):
             _template_name: str = LATEX_TEMPLATES_MAPPING[name]
         except KeyError:
             raise EnvironmentError(
-                f"'LATEX_TEMPLATES_MAPPING' in .env_public file lacks required key-value pair for {name} template."
+                f"'LATEX_TEMPLATES_MAPPING' in .env_public file lacks required key-value pair for '{name}' template. "
+                f"Example:\n"
+                "LATEX_TEMPLATES_MAPPING = '{\n"
+                '\t"chapter": "chapter-template.tex",\n'
+                '\t"metadata": "metadata-template.xmpdata",\n'
+                "}'"
             )
 
         return LatexParser._get_template(name=_template_name, subdir=LatexParser.SHARED_TEMPLATES_SUBDIR)
 
-    def _get_individual_template(self, volume: Volume, type_: str) -> Template | None:
+    def _get_individual_template(self, volume: Volume) -> Template | None:
         if not INDIVIDUAL_TEMPLATES_MAPPING:
             log.warning(
                 "Missing .env_public file or the file lacks variable INDIVIDUAL_TEMPLATES_MAPPING."
-                f"Skipping appending individual {type_} template."
+                f"Skipping appending individual config template."
             )
+            return None
 
         try:
-            _publication_mapping = INDIVIDUAL_TEMPLATES_MAPPING.get(self.config.edition.text_uid)
+            _publication_mapping: list[str] | str = INDIVIDUAL_TEMPLATES_MAPPING[self.config.edition.text_uid]
         except KeyError:
-            log.warning(f"Individual {type_} template mapping for {self.config.edition.text_uid} not found.")
+            log.warning(
+                "'INDIVIDUAL_TEMPLATES_MAPPING' in .env_public file lacks key-value pair for "
+                f"'{self.config.edition.text_uid}' individual config template. Example:\n"
+                "INDIVIDUAL_TEMPLATES_MAPPING = '{\n"
+                '\t"ud": "ud.tex",\n'
+                '\t"pli-tv-vi": [\n'
+                '\t\t"vinaya-1.tex",\n'
+                '\t\t"vinaya-2.tex",\n'
+                "\t]\n"
+                '"}\'"'
+            )
             return None
 
         if isinstance(_publication_mapping, list):
@@ -474,25 +491,33 @@ class LatexParser(EditionParser):
         else:
             _template_name = _publication_mapping
 
-        if type_ == "config":
-            _subdir = LatexParser.INDIVIDUAL_TEMPLATES_SUBDIR
-        elif type_ == "cover":
-            _subdir = os.path.join(LatexParser.COVER_TEMPLATES_SUBDIR, LatexParser.INDIVIDUAL_TEMPLATES_SUBDIR)
-        else:
-            log.warning(
-                "Wrong argument in _get_individual_template() method:" "'type_={type_}'. Choices: 'config', 'cover'."
-            )
-            return None
-
         try:
-            return LatexParser._get_template(name=_template_name, subdir=_subdir)
+            return LatexParser._get_template(name=_template_name, subdir=LatexParser.INDIVIDUAL_TEMPLATES_SUBDIR)
         except TemplateNotFound:
             log.warning(f"Template '{_template_name}' for publication/volume specific configuration not found.")
             return None
 
-    @staticmethod
-    def _get_cover_base_template() -> Template:
-        return LatexParser._get_template(name="paperback-template.tex", subdir=LatexParser.COVER_TEMPLATES_SUBDIR)
+    def _get_cover_template(self, name: str, is_individual: bool = False) -> Template:
+        if not COVER_TEMPLATES_MAPPING:
+            log.warning("Missing .env_public file or the file lacks variable COVER_TEMPLATES_MAPPING.")
+
+        try:
+            _template_name: str = COVER_TEMPLATES_MAPPING[name].format(
+                publication_type=self.config.edition.publication_type.name
+            )
+        except KeyError:
+            raise SystemExit(
+                "'COVER_TEMPLATES_MAPPING' in .env_public file lacks required key-value pair for "
+                f"'{self.config.edition.text_uid}' cover {name} template. Example:\n"
+                "COVER_TEMPLATES_MAPPING = '{\n"
+                '\t"body": "{publication_type}-body-template.tex",\n'
+                '\t"preamble": "{publication_type}-preamble-template.tex",\n'
+                "}'"
+            )
+        try:
+            return LatexParser._get_template(name=_template_name, subdir=LatexParser.COVER_TEMPLATES_SUBDIR)
+        except TemplateNotFound:
+            raise SystemExit(f"Template '{_template_name}' for volume cover not found.")
 
     @staticmethod
     def _get_template(name: str, subdir: str = "") -> Template:
@@ -517,7 +542,7 @@ class LatexParser(EditionParser):
             return template
 
         except TemplateNotFound:
-            raise TemplateNotFound(f"Template '{name}' for Latex edition is missing.")
+            raise TemplateNotFound(f"Template '{name}' is missing.")
 
     @staticmethod
     def _get_matter_name(matter: Tag) -> str:
@@ -570,7 +595,7 @@ class LatexParser(EditionParser):
             doc.append(NoEscape(LatexParser._append_custom_part(doc=doc, tag=_tag)))
 
     def _append_individual_config(self, doc: Document, volume: Volume) -> None:
-        if _template := self._get_individual_template(volume=volume, type_="config"):
+        if _template := self._get_individual_template(volume=volume):
             doc.preamble.append(NoEscape(_template.render()))
 
     def _append_preamble(self, doc: Document, volume: Volume) -> None:
@@ -624,13 +649,24 @@ class LatexParser(EditionParser):
 
         return doc
 
+    def _fill_document_options(self, volume: Volume) -> None:
+        self.LATEX_COVER_CONFIG["document_options"] = self.LATEX_COVER_CONFIG["document_options"].format(
+            **volume.dict()
+        )
+
     def _generate_cover(self, volume: Volume) -> Document:
+        # setup
+        self._fill_document_options(volume=volume)
         doc = Document(**self.LATEX_COVER_CONFIG)
 
-        _template: Template = LatexParser._get_cover_base_template()
-        _tex = _template.render(
-            **volume.dict(exclude_none=True, exclude_unset=True), images_directory=LatexParser.IMAGES_DIR
-        )
-        doc.append(NoEscape(_tex))
+        # cover preamble
+        _preamble_template = self._get_cover_template(name="preamble")
+        _preamble = _preamble_template.render(**volume.dict(exclude_none=True, exclude_unset=True))
+        doc.preamble.append(NoEscape(_preamble))
+
+        # cover body
+        _body_template = self._get_cover_template(name="body")
+        _body = _body_template.render(**volume.dict(exclude_none=True, exclude_unset=True))
+        doc.append(NoEscape(_body))
 
         return doc

@@ -9,6 +9,7 @@ from .edition import EditionType
 
 
 class VolumeDetail(BaseModel):
+    volume_blurb: str | None
     volume_number: str | None
     volume_isbn: str | None
     volume_acronym: str | None
@@ -18,7 +19,7 @@ class VolumeDetail(BaseModel):
     frontmatter: list[str]
     mainmatter: list[str]
 
-    @validator("volume_number", "volume_isbn", "volume_acronym", pre=True)
+    @validator("volume_blurb", "volume_number", "volume_isbn", "volume_acronym", pre=True)
     def sanitize_input(cls, field: Literal[False] | str) -> str:
         if field is False:
             return ""
@@ -55,6 +56,10 @@ class EditionDetails(BaseModel):
     publication_isbn: str
     noteref_id: int = 0  # Helper field for proper numbering of note references in editions with multiple volumes
     text_uid: str
+    cover_bleed: str | None
+    cover_theme_color: str
+    page_height: str
+    page_width: str
 
     class Config:
         extra = "ignore"
@@ -74,6 +79,7 @@ class PublicationDetails(BaseModel):
     source_url: str
     text_description: str
     translation_lang_name: str
+    publication_blurb: str | None
 
     class Config:
         extra = "ignore"

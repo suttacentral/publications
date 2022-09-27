@@ -33,7 +33,9 @@ class PaperbackEdition(LatexParser):
             _number_of_pages = len(PdfReader(_pdf_file_path).pages)
 
             # Lulu formula for spine width calculation
-            volume.spine_width = (_number_of_pages / 444) + 0.06
+            _spine_width = (_number_of_pages / 444) + 0.06
+
+            volume.spine_width = f"{_spine_width}in"
 
     def generate_cover(self, volume: Volume) -> None:
         log.debug(f"Generating cover... (vol {volume.volume_number or 1} of {len(self.config.edition.volumes)})")
@@ -41,9 +43,9 @@ class PaperbackEdition(LatexParser):
         _path = self.TEMP_DIR / f"{volume.filename}-cover"
         log.debug("Preparing template...")
         doc = self._generate_cover(volume=volume)
-        # doc.generate_tex(filepath=str(_path))  # dev
-        log.debug("Generating pdf...")
-        doc.generate_pdf(filepath=str(_path), clean_tex=False, compiler="latexmk", compiler_args=["-lualatex"])
+        doc.generate_tex(filepath=str(_path))  # dev
+        # log.debug("Generating pdf...")
+        # doc.generate_pdf(filepath=str(_path), clean_tex=False, compiler="latexmk", compiler_args=["-lualatex"])
 
     def collect_all(self):  # type: ignore
         _edition: Edition = super().collect_all()
@@ -51,7 +53,7 @@ class PaperbackEdition(LatexParser):
         _operations: list[Callable] = [
             self.generate_paperback,
             self.calculate_spine_width,
-            # self.generate_cover,
+            self.generate_cover,
         ]
 
         for _operation in _operations:

@@ -42,15 +42,15 @@ class Volumes(BaseModel):
 
 class EditionDetails(BaseModel):
     cover_bleed: str | None
-    cover_theme_color: str
+    cover_theme_color: str | None
     created: str = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
     edition_id: str
     edition_number: str
     main_toc_depth: str
     noteref_id: int = 0  # Helper field for proper numbering of note references in editions with multiple volumes
     number_of_volumes: int
-    page_height: str
-    page_width: str
+    page_height: str | None
+    page_width: str | None
     publication_blurb: str | None
     publication_isbn: str
     publication_number: str

@@ -14,7 +14,7 @@ from pylatex.utils import bold, italic
 from sutta_publisher.shared.value_objects.parser_objects import Volume
 
 from .base import EditionParser
-from .helper_functions import find_sutta_title_depth, get_heading_depth
+from .helper_functions import find_sutta_title_depth, get_heading_depth, get_individual_cover_template_name
 
 log = logging.getLogger(__name__)
 
@@ -42,7 +42,7 @@ class LatexParser(EditionParser):
     LATEX_DOCUMENT_CONFIG: dict[str, str] = ast.literal_eval(os.getenv("LATEX_DOCUMENT_CONFIG", ""))
     LATEX_COVER_CONFIG: dict[str, str] = ast.literal_eval(os.getenv("LATEX_COVER_CONFIG", ""))
 
-    IMAGES_DIR = Path(__file__).parent.parent / "images"
+    IMAGES_DIR = os.path.join(Path(__file__).parent.parent / "images", "")  # os.path.join -> add a trailing slash
     TEX_TEMPLATES_DIR = Path(__file__).parent.parent / "templates" / "tex"
     INDIVIDUAL_TEMPLATES_SUBDIR = "individual"
     SHARED_TEMPLATES_SUBDIR = "shared"
@@ -498,24 +498,31 @@ class LatexParser(EditionParser):
             return None
 
     def _get_cover_template(self, name: str, is_individual: bool = False) -> Template:
-        if not COVER_TEMPLATES_MAPPING:
-            log.warning("Missing .env_public file or the file lacks variable COVER_TEMPLATES_MAPPING.")
+        _subdir = LatexParser.COVER_TEMPLATES_SUBDIR
+
+        if not is_individual:
+            if not COVER_TEMPLATES_MAPPING:
+                log.warning("Missing .env_public file or the file lacks variable COVER_TEMPLATES_MAPPING.")
+
+            try:
+                _template_name = COVER_TEMPLATES_MAPPING[name].format(
+                    publication_type=self.config.edition.publication_type.name
+                )
+            except KeyError:
+                raise SystemExit(
+                    "'COVER_TEMPLATES_MAPPING' in .env_public file lacks required key-value pair for "
+                    f"'{self.config.edition.text_uid}' cover {name} template. Example:\n"
+                    "COVER_TEMPLATES_MAPPING = '{\n"
+                    '\t"body": "{publication_type}-body-template.tex",\n'
+                    '\t"preamble": "{publication_type}-preamble-template.tex",\n'
+                    "}'"
+                )
+        else:
+            _subdir = os.path.join(_subdir, "individual")
+            _template_name = name
 
         try:
-            _template_name: str = COVER_TEMPLATES_MAPPING[name].format(
-                publication_type=self.config.edition.publication_type.name
-            )
-        except KeyError:
-            raise SystemExit(
-                "'COVER_TEMPLATES_MAPPING' in .env_public file lacks required key-value pair for "
-                f"'{self.config.edition.text_uid}' cover {name} template. Example:\n"
-                "COVER_TEMPLATES_MAPPING = '{\n"
-                '\t"body": "{publication_type}-body-template.tex",\n'
-                '\t"preamble": "{publication_type}-preamble-template.tex",\n'
-                "}'"
-            )
-        try:
-            return LatexParser._get_template(name=_template_name, subdir=LatexParser.COVER_TEMPLATES_SUBDIR)
+            return LatexParser._get_template(name=_template_name, subdir=_subdir)
         except TemplateNotFound:
             raise SystemExit(f"Template '{_template_name}' for volume cover not found.")
 
@@ -661,7 +668,13 @@ class LatexParser(EditionParser):
 
         # cover preamble
         _preamble_template = self._get_cover_template(name="preamble")
-        _preamble = _preamble_template.render(**volume.dict(exclude_none=True, exclude_unset=True))
+        _individual_template = self._get_cover_template(
+            name=get_individual_cover_template_name(volume=volume), is_individual=True
+        )
+        _preamble = _preamble_template.render(
+            **volume.dict(exclude_none=True, exclude_unset=True),
+            individual_cover_template=_individual_template.render(images_directory=self.IMAGES_DIR),
+        )
         doc.preamble.append(NoEscape(_preamble))
 
         # cover body

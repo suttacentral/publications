@@ -338,3 +338,10 @@ def get_true_volume_index(volume: Volume) -> int:
     else:
         # volume_number is 1-based index, whereas, lists have 0-based index
         return cast(int, volume.volume_number - 1)
+
+
+def get_individual_cover_template_name(volume: Volume) -> str:
+    if volume.volume_number:
+        return f"{volume.text_uid}-{volume.volume_number}.tex"
+    else:
+        return f"{volume.text_uid}.tex"

@@ -95,7 +95,6 @@ class EditionParser(ABC):
     def _collect_metadata(self, volume: Volume) -> dict[str, str | int | list[str] | list[Blurb]]:
         _index = get_true_volume_index(volume)
         return {
-            "acronym": self.raw_data[_index].acronym,
             "blurbs": self._collect_blurbs(volume),
             "cover_bleed": self.config.edition.cover_bleed,
             "cover_theme_color": self.config.edition.cover_theme_color,
@@ -106,10 +105,10 @@ class EditionParser(ABC):
             "creator_uid": self.config.publication.creator_uid,
             "edition_number": self.config.edition.edition_number,
             "first_published": self.config.publication.first_published,
-            "number_of_volumes": len(self.raw_data),
+            "number_of_volumes": self.config.edition.number_of_volumes,
             "page_height": self.config.edition.page_height,
             "page_width": self.config.edition.page_width,
-            "publication_blurb": self.config.publication.publication_blurb,
+            "publication_blurb": self.config.edition.publication_blurb,
             "publication_isbn": self.config.edition.publication_isbn,
             "publication_number": self.config.edition.publication_number,
             "publication_url": self._get_publication_url(),

@@ -16,8 +16,9 @@ class PaperbackEdition(LatexParser):
     edition_type = EditionType.paperback
 
     def generate_paperback(self, volume: Volume) -> None:
-        log.debug(f"Generating paperback... (vol {volume.volume_number or 1} of {len(self.config.edition.volumes)})")
-
+        log.debug(
+            f"Generating paperback... (vol {volume.volume_number or 1} of {self.config.edition.number_of_volumes})"
+        )
         _path = self.TEMP_DIR / volume.filename
         log.debug("Generating tex...")
         doc = self._generate_tex(volume=volume)
@@ -38,14 +39,13 @@ class PaperbackEdition(LatexParser):
             volume.spine_width = f"{_spine_width}in"
 
     def generate_cover(self, volume: Volume) -> None:
-        log.debug(f"Generating cover... (vol {volume.volume_number or 1} of {len(self.config.edition.volumes)})")
+        log.debug(f"Generating cover... (vol {volume.volume_number or 1} of {self.config.edition.number_of_volumes})")
 
         _path = self.TEMP_DIR / f"{volume.filename}-cover"
-        log.debug("Preparing template...")
         doc = self._generate_cover(volume=volume)
-        doc.generate_tex(filepath=str(_path))  # dev
-        # log.debug("Generating pdf...")
-        # doc.generate_pdf(filepath=str(_path), clean_tex=False, compiler="latexmk", compiler_args=["-lualatex"])
+        # doc.generate_tex(filepath=str(_path))  # dev
+        log.debug("Generating pdf...")
+        doc.generate_pdf(filepath=str(_path), clean_tex=False, compiler="latexmk", compiler_args=["-lualatex"])
 
     def collect_all(self):  # type: ignore
         _edition: Edition = super().collect_all()

@@ -2,7 +2,6 @@ import ast
 import logging
 import os
 import re
-import tempfile
 from pathlib import Path
 from typing import Callable, cast
 
@@ -22,7 +21,6 @@ log = logging.getLogger(__name__)
 ADDITIONAL_PANNASAKA_IDS: list[str] = ast.literal_eval(os.getenv("ADDITIONAL_PANNASAKA_IDS", ""))
 FOREIGN_SCRIPT_MACRO_LANGUAGES: list[str] = ast.literal_eval(os.getenv("FOREIGN_SCRIPT_MACRO_LANGUAGES", ""))
 INDIVIDUAL_TEMPLATES_MAPPING: dict[str, list] = ast.literal_eval(os.getenv("INDIVIDUAL_TEMPLATES_MAPPING", ""))
-LATEX_DOCUMENT_CONFIG: dict[str, str] = ast.literal_eval(os.getenv("LATEX_DOCUMENT_CONFIG", ""))
 LATEX_TEMPLATES_MAPPING: dict[str, str] = ast.literal_eval(os.getenv("LATEX_TEMPLATES_MAPPING", ""))
 MATTERS_TO_SKIP: list[str] = ast.literal_eval(os.getenv("MATTERS_TO_SKIP", ""))
 MATTERS_WITH_TEX_TEMPLATES: list[str] = ast.literal_eval(os.getenv("MATTERS_WITH_TEX_TEMPLATES", ""))
@@ -37,11 +35,12 @@ TEXTS_WITH_CHAPTER_SUTTA_TITLES: dict[str, str | tuple] = ast.literal_eval(
 )
 
 
-class LatexEdition(EditionParser):
+class LatexParser(EditionParser):
+    LATEX_DOCUMENT_CONFIG: dict[str, str] = ast.literal_eval(os.getenv("LATEX_DOCUMENT_CONFIG", ""))
     TEX_TEMPLATES_DIR = Path(__file__).parent.parent / "templates" / "tex"
     INDIVIDUAL_TEMPLATES_SUBDIR = "individual"
     SHARED_TEMPLATES_SUBDIR = "shared"
-    IMGAGES_DIR = Path(__file__).parent.parent / "images"
+    IMAGES_DIR = Path(__file__).parent.parent / "images"
     edition_type = "latex_parser"
     endnotes: list[str] | None
     section_type: str
@@ -74,8 +73,8 @@ class LatexEdition(EditionParser):
     def _append_p(self, doc: Document, tag: Tag) -> str:
         tex: str = self._process_contents(doc=doc, contents=tag.contents)
 
-        if LatexEdition._is_styled(tag=tag):
-            tex = LatexEdition._apply_styling(tag=tag, tex=tex)
+        if LatexParser._is_styled(tag=tag):
+            tex = LatexParser._apply_styling(tag=tag, tex=tex)
         elif tag.has_attr("id"):
             if self.config.edition.text_uid == "dhp":
                 # Dhammapada only marginnote uid
@@ -84,7 +83,7 @@ class LatexEdition(EditionParser):
                 # default marginnote uid
                 _uid = tag["id"].split(":")[1]
 
-            tex = LatexEdition._append_marginnote(tex=tex, uid=_uid)
+            tex = LatexParser._append_marginnote(tex=tex, uid=_uid)
 
         return cast(str, tex + NoEscape("\n\n"))
 
@@ -98,7 +97,7 @@ class LatexEdition(EditionParser):
                 if all(_class in tag["class"] for _class in ["blurb-item", "acronym"]):
                     return f"{tex}: "
 
-                tex = LatexEdition._apply_styling(tag=tag, tex=tex)
+                tex = LatexParser._apply_styling(tag=tag, tex=tex)
                 return tex
         else:
             return self._process_contents(doc=doc, contents=tag.contents)
@@ -143,7 +142,7 @@ class LatexEdition(EditionParser):
                 or all(_class in ["blurb-item", "root-title"] for _class in tag["class"])
             )
         ):
-            _tex = LatexEdition._append_sanskrit(_tex)
+            _tex = LatexParser._append_sanskrit(_tex)
         return cast(str, italic(_tex, escape=False))
 
     def _append_foreign_script_macro(self, doc: Document, tag: Tag) -> str:
@@ -162,7 +161,7 @@ class LatexEdition(EditionParser):
     def _append_sutta_title(self, doc: Document, tag: Tag) -> str:
         tex: str = ""
         _acronym, _name, _root_name = [self._process_tag(doc=doc, tag=_span) for _span in tag.children]
-        template: Template = LatexEdition._get_template(name="heading")
+        template: Template = LatexParser._get_template(name="heading")
         data = {
             "acronym": _acronym,
             "name": _name,
@@ -175,7 +174,7 @@ class LatexEdition(EditionParser):
 
     @staticmethod
     def _append_custom_chapter(doc: Document, tag: Tag) -> str:
-        _template: Template = LatexEdition._get_template(name="chapter")
+        _template: Template = LatexParser._get_template(name="chapter")
         return cast(str, _template.render(name=tag.string) + NoEscape("\n\n"))
 
     def _append_custom_section(self, doc: Document, tag: Tag) -> str:
@@ -188,7 +187,7 @@ class LatexEdition(EditionParser):
 
     @staticmethod
     def _append_custom_part(doc: Document, tag: Tag) -> str:
-        _template: Template = LatexEdition._get_template(name="part")
+        _template: Template = LatexParser._get_template(name="part")
         return cast(str, _template.render(name=tag.string) + NoEscape("\n\n"))
 
     def _append_chapter(self, doc: Document, tag: Tag) -> str:
@@ -225,19 +224,19 @@ class LatexEdition(EditionParser):
 
     @staticmethod
     def _append_pannasa(tag: Tag) -> str:
-        _template: Template = LatexEdition._get_template(name="pannasa")
+        _template: Template = LatexParser._get_template(name="pannasa")
         return cast(str, _template.render(name=tag.string) + NoEscape("\n\n"))
 
     def _append_section_title(self, doc: Document, tag: Tag) -> str:
         if tag.has_attr("id") and ("pannasaka" in tag["id"] or tag["id"] in ADDITIONAL_PANNASAKA_IDS):
             # The pannasa in AN and SN requires a special markup
-            return LatexEdition._append_pannasa(tag=tag)
+            return LatexParser._append_pannasa(tag=tag)
         elif self.section_type == "chapter":
-            return cast(str, LatexEdition._append_custom_part(doc=doc, tag=tag))
+            return cast(str, LatexParser._append_custom_part(doc=doc, tag=tag))
         else:
             actions: list[Callable] = [
-                LatexEdition._append_custom_part,
-                LatexEdition._append_custom_chapter,
+                LatexParser._append_custom_part,
+                LatexParser._append_custom_chapter,
             ]
             _heading_depth: int = get_heading_depth(tag)
 
@@ -289,10 +288,10 @@ class LatexEdition(EditionParser):
             if _tag := tag.find(class_=_class):
                 if _class == "epigraph-text":
                     _tag = _tag.p
-                LatexEdition._strip_tag_string(_tag)
+                LatexParser._strip_tag_string(_tag)
                 data[_var] = self._process_contents(doc=doc, contents=_tag.contents)
 
-        template: Template = LatexEdition._get_template(name="epigraph")
+        template: Template = LatexParser._get_template(name="epigraph")
         return cast(str, template.render(data) + NoEscape("\n"))
 
     def _append_enjambment(self, doc: Document, tag: Tag) -> str:
@@ -377,7 +376,7 @@ class LatexEdition(EditionParser):
                 return self._append_quotation(doc=doc, tag=tag)
 
             case "br":
-                return LatexEdition._append_breakline()
+                return LatexParser._append_breakline()
 
             case "cite":
                 return self._append_italic(doc=doc, tag=tag)
@@ -404,7 +403,7 @@ class LatexEdition(EditionParser):
                 return self._append_p(doc=doc, tag=tag)
 
             case "section" if tag.has_attr("id") and tag["id"] == "main-toc":
-                return LatexEdition._append_tableofcontents()
+                return LatexParser._append_tableofcontents()
 
             case "section" if tag.has_attr("class") and "secondary-toc" in tag["class"]:
                 return ""
@@ -449,14 +448,14 @@ class LatexEdition(EditionParser):
                 raise EnvironmentError(
                     f"'LATEX_TEMPLATES_MAPPING' in .env_public file lacks required key-value pair for {name} template."
                 )
-            _subdir = LatexEdition.SHARED_TEMPLATES_SUBDIR
+            _subdir = LatexParser.SHARED_TEMPLATES_SUBDIR
 
         else:
             _template_name = name
-            _subdir = LatexEdition.INDIVIDUAL_TEMPLATES_SUBDIR
+            _subdir = LatexParser.INDIVIDUAL_TEMPLATES_SUBDIR
 
         try:
-            _template_loader: FileSystemLoader = FileSystemLoader(searchpath=LatexEdition.TEX_TEMPLATES_DIR / _subdir)
+            _template_loader: FileSystemLoader = FileSystemLoader(searchpath=LatexParser.TEX_TEMPLATES_DIR / _subdir)
             _template_env: jinja2_Environment = jinja2_Environment(
                 block_start_string="\BLOCK{",
                 block_end_string="}",
@@ -483,10 +482,10 @@ class LatexEdition(EditionParser):
 
     def _process_html_element(self, volume: Volume, doc: Document, element: PageElement) -> str:
         if isinstance(element, Tag) and not (element.has_attr("id") and element["id"] in MATTERS_TO_SKIP):
-            if (name := LatexEdition._get_matter_name(element)) in MATTERS_WITH_TEX_TEMPLATES:
-                _template: Template = LatexEdition._get_template(name=name)
+            if (name := LatexParser._get_matter_name(element)) in MATTERS_WITH_TEX_TEMPLATES:
+                _template: Template = LatexParser._get_template(name=name)
                 tex = _template.render(
-                    **volume.dict(exclude_none=True, exclude_unset=True), images_directory=LatexEdition.IMGAGES_DIR
+                    **volume.dict(exclude_none=True, exclude_unset=True), images_directory=LatexParser.IMAGES_DIR
                 )
                 return cast(str, NoEscape(tex))
             else:
@@ -524,7 +523,7 @@ class LatexEdition(EditionParser):
 
             _tag = html.new_tag("h1")
             _tag.string = _title
-            doc.append(NoEscape(LatexEdition._append_custom_part(doc=doc, tag=_tag)))
+            doc.append(NoEscape(LatexParser._append_custom_part(doc=doc, tag=_tag)))
 
     def _append_individual_config(self, doc: Document, volume: Volume) -> None:
         try:
@@ -538,21 +537,20 @@ class LatexEdition(EditionParser):
             _template_name = _edition_mapping
 
         try:
-            _template: Template = LatexEdition._get_template(name=_template_name, is_shared=False)
+            _template: Template = LatexParser._get_template(name=_template_name, is_shared=False)
             doc.preamble.append(NoEscape(_template.render()))
         except TemplateNotFound:
             log.info(f"Template '{_template_name}' for edition specific configuration not found.")
 
     def _append_preamble(self, doc: Document, volume: Volume) -> None:
-        _template: Template = LatexEdition._get_template(name="preamble")
+        _template: Template = LatexParser._get_template(name="preamble")
         doc.preamble.append(NoEscape(_template.render(**volume.dict(exclude_none=True, exclude_unset=True))))
         self._append_individual_config(doc=doc, volume=volume)
 
-    @staticmethod
-    def _set_xmpdata(volume: Volume) -> None:
-        _template: Template = LatexEdition._get_template(name="metadata")
+    def _set_xmpdata(self, volume: Volume) -> None:
+        _template: Template = LatexParser._get_template(name="metadata")
         _output = _template.render(**volume.dict(exclude_none=True, exclude_unset=True))
-        _path = Path(tempfile.gettempdir()) / f"{volume.filename}.xmpdata"
+        _path = self.TEMP_DIR / f"{volume.filename}.xmpdata"
 
         with open(file=_path, mode="wt") as f:
             f.write(_output)
@@ -563,9 +561,9 @@ class LatexEdition(EditionParser):
         self.section_type: str = "chapter" if self._has_chapter_sutta_title(volume=volume) else "section"
 
         # create .xmpdata file
-        LatexEdition._set_xmpdata(volume=volume)
+        self._set_xmpdata(volume=volume)
 
-        doc = Document(**LATEX_DOCUMENT_CONFIG)
+        doc = Document(**self.LATEX_DOCUMENT_CONFIG)
 
         # set preamble
         self._append_preamble(doc=doc, volume=volume)
@@ -574,7 +572,7 @@ class LatexEdition(EditionParser):
         doc.append(Command("frontmatter"))
         for _page in volume.frontmatter:
             _frontmatter_element: PageElement = BeautifulSoup(_page, "lxml").find("body").next_element
-            LatexEdition._remove_all_nav(html=_frontmatter_element)
+            LatexParser._remove_all_nav(html=_frontmatter_element)
             doc.append(self._process_html_element(volume=volume, doc=doc, element=_frontmatter_element))
 
         # set mainmatter

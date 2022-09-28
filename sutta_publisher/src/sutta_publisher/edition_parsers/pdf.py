@@ -1,24 +1,22 @@
 import logging
-import tempfile
-from pathlib import Path
 from typing import Callable
 
 from sutta_publisher.shared.value_objects.edition import EditionResult, EditionType
 from sutta_publisher.shared.value_objects.parser_objects import Edition, Volume
 
 from .base import EditionParser
-from .latex import LatexEdition
+from .latex import LatexParser
 
 log = logging.getLogger(__name__)
 
 
-class PdfEdition(LatexEdition):
+class PdfEdition(LatexParser):
     edition_type = EditionType.pdf
 
     def _generate_pdf(self, volume: Volume) -> None:
         log.debug("Generating pdf...")
 
-        _path = Path(tempfile.gettempdir()) / volume.filename
+        _path = self.TEMP_DIR / volume.filename
         doc = self._generate_latex(volume=volume)
         doc.generate_pdf(filepath=str(_path), clean_tex=False, compiler="latexmk")
 

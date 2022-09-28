@@ -4,7 +4,7 @@ import pytest
 from bs4 import BeautifulSoup
 from pylatex import Document, NoEscape
 
-from sutta_publisher.edition_parsers.latex import LatexEdition
+from sutta_publisher.edition_parsers.latex import LatexParser
 
 
 @pytest.fixture()
@@ -16,7 +16,7 @@ def doc():
 @mock.patch("sutta_publisher.shared.value_objects.edition_config.EditionConfig.__init__", return_value=None)
 @mock.patch("sutta_publisher.shared.value_objects.edition_data.EditionData.__init__", return_value=None)
 def latex_edition(config, data):
-    return LatexEdition(config, data)
+    return LatexParser(config, data)
 
 
 @pytest.mark.parametrize(

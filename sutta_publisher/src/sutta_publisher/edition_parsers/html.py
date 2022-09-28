@@ -1,6 +1,5 @@
 import logging
 import re
-import tempfile
 from pathlib import Path
 from typing import Callable
 
@@ -82,7 +81,7 @@ class HtmlEdition(EditionParser):
         _html = _template.render(css=_css, **volume.dict(exclude_none=True, exclude_unset=True))
         _output = HtmlEdition._apply_pretty_printing(html=_html)
 
-        _path = Path(tempfile.gettempdir()) / f"{volume.filename}.html"
+        _path = self.TEMP_DIR / f"{volume.filename}.html"
 
         with open(file=_path, mode="wt") as f:
             f.write(_output)

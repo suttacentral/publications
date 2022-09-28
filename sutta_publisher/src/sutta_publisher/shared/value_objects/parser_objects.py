@@ -83,6 +83,14 @@ class Volume(BaseModel):
     volume_number: int | None = None
     volume_root_title: str = ""
     volume_translation_title: str = ""
+    volume_blurb: str = ""
+
+    # Per volume cover info
+    cover_bleed: str = ""
+    cover_theme_color: str = ""
+    page_height: str = ""
+    page_width: str = ""
+    spine_width: str = ""
 
     # Content
     cover: Any = None
@@ -92,10 +100,10 @@ class Volume(BaseModel):
     mainmatter: str = ""
     backmatter: list[str] = []
     endnotes: list[str] | None = []
+    blurbs: list[Blurb] | None = None
 
     # Edition metadata (common for all volumes)
     acronym: str = ""
-    blurbs: list[Blurb] | None = None
     created: str = "None"
     creation_process: str = ""
     creator_biography: str = ""
@@ -104,6 +112,7 @@ class Volume(BaseModel):
     edition_number: int | None = None
     first_published: str = ""
     number_of_volumes: int | None = None
+    publication_blurb: str | bool = False
     publication_isbn: str = ""
     publication_number: str = ""
     publication_url: str = ""

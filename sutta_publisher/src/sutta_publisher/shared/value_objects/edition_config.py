@@ -9,6 +9,7 @@ from .edition import EditionType
 
 
 class VolumeDetail(BaseModel):
+    volume_blurb: str | None
     volume_number: str | None
     volume_isbn: str | None
     volume_acronym: str | None
@@ -18,7 +19,7 @@ class VolumeDetail(BaseModel):
     frontmatter: list[str]
     mainmatter: list[str]
 
-    @validator("volume_number", "volume_isbn", "volume_acronym", pre=True)
+    @validator("volume_blurb", "volume_number", "volume_isbn", "volume_acronym", pre=True)
     def sanitize_input(cls, field: Literal[False] | str) -> str:
         if field is False:
             return ""
@@ -40,20 +41,26 @@ class Volumes(BaseModel):
 
 
 class EditionDetails(BaseModel):
+    cover_bleed: str | None
+    cover_theme_color: str | None
+    created: str = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
     edition_id: str
+    edition_number: str
+    main_toc_depth: str
+    noteref_id: int = 0  # Helper field for proper numbering of note references in editions with multiple volumes
+    number_of_volumes: int
+    page_height: str | None
+    page_width: str | None
+    publication_blurb: str | None
+    publication_isbn: str
     publication_number: str
     publication_type: EditionType
-    volumes: Volumes
-    created: str = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    secondary_toc: bool
     updated: Optional[
         str
     ]  # Upon the first publication we leave it uninitialized. This will only be initialized/changed when further changes are introduced.
+    volumes: Volumes
     working_dir: str
-    main_toc_depth: str
-    secondary_toc: bool
-    edition_number: str
-    publication_isbn: str
-    noteref_id: int = 0  # Helper field for proper numbering of note references in editions with multiple volumes
     text_uid: str
 
     class Config:
@@ -61,19 +68,19 @@ class EditionDetails(BaseModel):
 
 
 class PublicationDetails(BaseModel):
+    creation_process: str
     creator_name: str
     creator_uid: str
     creator_bio: str | None = None
-    translation_subtitle: str
-    translation_title: str
-    translation_lang_iso: str
-    creation_process: str
     first_published: str
     root_lang_name: str
     root_title: str
     source_url: str
     text_description: str
+    translation_lang_iso: str
     translation_lang_name: str
+    translation_subtitle: str
+    translation_title: str
 
     class Config:
         extra = "ignore"

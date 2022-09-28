@@ -3,9 +3,10 @@ from __future__ import annotations
 import ast
 import logging
 import os
+import tempfile
 from abc import ABC
 from pathlib import Path
-from typing import Any, Callable, cast
+from typing import Callable, cast
 
 import jinja2
 import requests
@@ -59,6 +60,7 @@ SUTTACENTRAL_URL = os.getenv("SUTTACENTRAL_URL", "/")
 
 class EditionParser(ABC):
     HTML_TEMPLATES_DIR = Path(__file__).parent.parent / "templates" / "html"
+    TEMP_DIR = Path(tempfile.gettempdir())
     config: EditionConfig
     raw_data: EditionData
     edition_type: EditionType
@@ -93,8 +95,9 @@ class EditionParser(ABC):
     def _collect_metadata(self, volume: Volume) -> dict[str, str | int | list[str] | list[Blurb]]:
         _index = get_true_volume_index(volume)
         return {
-            "acronym": self.raw_data[_index].acronym,
             "blurbs": self._collect_blurbs(volume),
+            "cover_bleed": self.config.edition.cover_bleed,
+            "cover_theme_color": self.config.edition.cover_theme_color,
             "created": self.config.edition.created,
             "creation_process": self.config.publication.creation_process,
             "creator_biography": self.config.publication.creator_bio,
@@ -102,7 +105,10 @@ class EditionParser(ABC):
             "creator_uid": self.config.publication.creator_uid,
             "edition_number": self.config.edition.edition_number,
             "first_published": self.config.publication.first_published,
-            "number_of_volumes": len(self.raw_data),
+            "number_of_volumes": self.config.edition.number_of_volumes,
+            "page_height": self.config.edition.page_height,
+            "page_width": self.config.edition.page_width,
+            "publication_blurb": self.config.edition.publication_blurb,
             "publication_isbn": self.config.edition.publication_isbn,
             "publication_number": self.config.edition.publication_number,
             "publication_url": self._get_publication_url(),
@@ -117,6 +123,7 @@ class EditionParser(ABC):
             "translation_title": self.config.publication.translation_title,
             "updated": self.config.edition.updated,
             "volume_acronym": self.config.edition.volumes[_index].volume_acronym,
+            "volume_blurb": self.config.edition.volumes[_index].volume_blurb,
             "volume_isbn": self.config.edition.volumes[_index].volume_isbn,
             "volume_root_title": self.config.edition.volumes[_index].volume_root_title,
             "volume_translation_title": self.config.edition.volumes[_index].volume_translation_title,
@@ -726,13 +733,6 @@ class EditionParser(ABC):
             for _matter in getattr(volume, _matters):
                 _processed_matters.append(make_absolute_links(_matter))
             setattr(volume, _matters, _processed_matters)
-
-    def _generate_cover(self, volume: Volume) -> Any:
-        log.debug("Generating covers...")
-        # TODO [58]: implement
-
-    def set_cover(self, volume: Volume) -> None:
-        volume.cover = self._generate_cover(volume)
 
     # --- putting it all together
     def collect_all(self) -> Edition:

@@ -14,7 +14,7 @@ from pylatex.utils import bold, italic
 from sutta_publisher.shared.value_objects.parser_objects import Volume
 
 from .base import EditionParser
-from .helper_functions import find_sutta_title_depth, get_heading_depth, get_individual_cover_template_name
+from .helper_functions import find_sutta_title_depth, get_heading_depth, get_individual_cover_template_name, wrap_in_z
 
 log = logging.getLogger(__name__)
 
@@ -549,6 +549,7 @@ class LatexParser(EditionParser):
                 autoescape=True,
                 loader=_template_loader,
             )
+            _template_env.filters["wrap_in_z"] = wrap_in_z
             template: Template = _template_env.get_template(name=name)
             return template
 
@@ -665,7 +666,7 @@ class LatexParser(EditionParser):
             **volume.dict()
         )
 
-    def _process_cover_input_data(self, input_data: Any) -> str:
+    def _convert_input_to_tex(self, input_data: Any) -> str:
         _html: PageElement = BeautifulSoup(input_data, "lxml").find("body").next_element
         return self._process_tag(tag=_html).replace("\n\n", "")
 
@@ -686,7 +687,7 @@ class LatexParser(EditionParser):
         doc.preamble.append(NoEscape(_preamble))
 
         # cover body
-        _body_template = self._get_cover_template(name="body", finalize=self._process_cover_input_data)
+        _body_template = self._get_cover_template(name="body", finalize=self._convert_input_to_tex)
         _body = _body_template.render(**volume.dict(exclude_none=True, exclude_unset=True))
         doc.append(NoEscape(_body))
 

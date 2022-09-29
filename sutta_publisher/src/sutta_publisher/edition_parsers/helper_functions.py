@@ -345,3 +345,7 @@ def get_individual_cover_template_name(volume: Volume) -> str:
         return f"{volume.text_uid}-{volume.volume_number}.tex"
     else:
         return f"{volume.text_uid}.tex"
+
+
+def wrap_in_z(text: str) -> str:
+    return " ".join(f"\\z{{{word}}}" for word in text.split(" "))

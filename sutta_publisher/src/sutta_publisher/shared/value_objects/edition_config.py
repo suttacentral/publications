@@ -51,7 +51,7 @@ class EditionDetails(BaseModel):
     number_of_volumes: int
     page_height: str | None
     page_width: str | None
-    publication_blurb: str | None
+    publication_blurb: str
     publication_isbn: str
     publication_number: str
     publication_type: EditionType
@@ -62,6 +62,13 @@ class EditionDetails(BaseModel):
     volumes: Volumes
     working_dir: str
     text_uid: str
+
+    @validator("publication_blurb", pre=True)
+    def sanitize_input(cls, field: Literal[False] | str) -> str:
+        if field is False:
+            return ""
+        else:
+            return field
 
     class Config:
         extra = "ignore"

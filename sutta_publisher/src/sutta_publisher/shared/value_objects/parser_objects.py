@@ -112,7 +112,7 @@ class Volume(BaseModel):
     edition_number: int | None = None
     first_published: str = ""
     number_of_volumes: int | None = None
-    publication_blurb: str | bool = False
+    publication_blurb: str = ""
     publication_isbn: str = ""
     publication_number: str = ""
     publication_url: str = ""

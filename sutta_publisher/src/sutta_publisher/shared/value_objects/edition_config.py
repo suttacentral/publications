@@ -51,7 +51,7 @@ class EditionDetails(BaseModel):
     number_of_volumes: int
     page_height: str | None
     page_width: str | None
-    publication_blurb: str
+    publication_blurb: str | None
     publication_isbn: str
     publication_number: str
     publication_type: EditionType

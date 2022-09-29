@@ -103,4 +103,4 @@ def test_process_tag(doc, latex_edition, html, expected):
     latex_edition.endnotes = ["Note"]
     latex_edition.sutta_depth = 3
     latex_edition.section_type = "section"
-    assert latex_edition._process_tag(doc=doc, tag=tag) == expected
+    assert latex_edition._process_tag(tag=tag) == expected

@@ -315,7 +315,7 @@ class LatexParser(EditionParser):
         for _item in tag.contents:
             if isinstance(_item, Tag):
                 if _li_value := _item.get("value"):
-                    enum.add_item(s=self._process_tag(tag=_item), options=_li_value)
+                    enum.add_item(s=self._process_tag(tag=_item), options=f"{_li_value}.")
         return cast(str, enum.dumps().replace("\\item%\n", "\\item ").replace("]%\n", "] ") + NoEscape("\n\n"))
 
     def _append_itemize(self, tag: Tag) -> str:

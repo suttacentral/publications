@@ -16,7 +16,6 @@ from jinja2 import Environment, FileSystemLoader, Template, TemplateNotFound
 from sutta_publisher.edition_parsers.helper_functions import (
     add_class,
     collect_actual_headings,
-    create_html_heading_with_id,
     extract_string,
     fetch_possible_refs,
     find_all_headings,
@@ -34,14 +33,7 @@ from sutta_publisher.edition_parsers.helper_functions import (
 )
 from sutta_publisher.shared.value_objects.edition import EditionType
 from sutta_publisher.shared.value_objects.edition_config import EditionConfig
-from sutta_publisher.shared.value_objects.edition_data import (
-    EditionData,
-    MainMatter,
-    MainMatterPart,
-    Node,
-    VolumeData,
-    VolumePreheadings,
-)
+from sutta_publisher.shared.value_objects.edition_data import EditionData, MainMatter, MainMatterPart, Node, VolumeData
 from sutta_publisher.shared.value_objects.parser_objects import (
     Blurb,
     Edition,
@@ -203,9 +195,10 @@ class EditionParser(ABC):
         # so node1 is built of text1, markup1 and references1, mainmatter_part1 is built of node1 and node2 and so on...
 
         # Postprocess mainmatter
-        _index: int = get_true_volume_index(volume)
-        _raw_data: VolumeData = self.raw_data[_index]
-        _mainmatter_raw: str = self._process_mainmatter(_raw_data.mainmatter)
+        _volume_index: int = get_true_volume_index(volume)
+
+        _raw_data: VolumeData = self.raw_data[_volume_index]
+        _mainmatter_raw: str = self._process_mainmatter(mainmatter=_raw_data.mainmatter, volume_index=_volume_index)
 
         _mainmatter_html: BeautifulSoup = BeautifulSoup(_mainmatter_raw, "lxml")
 
@@ -213,16 +206,16 @@ class EditionParser(ABC):
 
         return mainmatter
 
-    def _process_mainmatter(self, mainmatter: MainMatter) -> str:
+    def _process_mainmatter(self, mainmatter: MainMatter, volume_index: int) -> str:
         """Mainmatter may consist of several parts, deal with them separately and concatenate results into string."""
-        return "".join([self._process_mainmatter_part(_part) for _part in mainmatter])
+        return "".join([self._process_mainmatter_part(part=_part, volume_index=volume_index) for _part in mainmatter])
 
-    def _process_mainmatter_part(self, part: MainMatterPart) -> str:
+    def _process_mainmatter_part(self, part: MainMatterPart, volume_index: int) -> str:
         """Part of mainmatter consists of nodes, deal with them separately and concatenate results into a string."""
-        return "".join([self._process_mainmatter_node(_node) for _node in part])
+        return "".join([self._process_mainmatter_node(node=_node, volume_index=volume_index) for _node in part])
 
-    def _process_mainmatter_node(self, node: Node) -> str:
-        """Parse a single 'node' from API and return a ready HTML string with several lines of mainmatter.
+    def _process_mainmatter_node(self, node: Node, volume_index: int) -> str:
+        """Parse a single 'node' from API and return a ready HTML string.
 
         Each node's content is split between dictionaries with lines of text, markup and references.
         Keys are always segment IDs.
@@ -230,10 +223,30 @@ class EditionParser(ABC):
 
         validate_node(node)
 
-        # Some nodes are branches or empty leaves - they contain preheadings/headings but no mainmatter, we skip them.
-        if node.type == "branch" or not node.mainmatter.markup:
+        # Branches, except the branch with publication title
+        if node.type == "branch":
+
+            if (
+                node.uid != self.config.edition.text_uid
+                or len(self.config.edition.volumes[volume_index].mainmatter) > 1
+                or self.config.edition.number_of_volumes > 1
+            ):
+                try:
+                    _heading_depth = self.raw_data[volume_index].depths[node.uid]
+                except KeyError:
+                    raise SystemExit(
+                        f"Error while inserting section heading '{node.uid}'. Heading ID not found in structure tree. Stopping."
+                    )
+                return f"<h{_heading_depth} class='section-title' id='{node.uid}'>{node.name}</h{_heading_depth}>"
+
+            else:
+                return ""
+
+        # Some nodes are empty leaves. We skip them.
+        elif not node.mainmatter.markup:
             return ""
 
+        # Leaves with content
         else:
             # Only store segment_id if it has matching markup (prune empty strings)
             _segment_ids: list[str] = [
@@ -315,22 +328,12 @@ class EditionParser(ABC):
         for heading in find_all_headings(mainmatter):
             increment_heading_by_number(by_number=_additional_depth, heading=heading)
 
-        # Insert preheadings
-        EditionParser._insert_preheadings(
-            mainmatter=mainmatter,
-            preheadings=_raw_data.preheadings,
-            tree=_raw_data.depths,
-        )
-
         # Remove all empty tags
         remove_empty_tags(html=mainmatter)
 
         # Add class "heading" for all HTML headings between h1 and hX which has class "sutta-title"
         _headings = collect_actual_headings(end_depth=_sutta_title_depth, html=mainmatter)
         add_class(tags=_headings, class_="heading")
-
-        # Add class "section-title" for all headings that are not sutta-titles
-        add_class(tags=[h for h in _headings if "sutta-title" not in h.attrs["class"]], class_="section-title")
 
         # Add <span> tags with acronyms, translated and root titles into sutta-title headings
         _sutta_headings: list[Tag] = [h for h in _headings if h.name == f"h{_sutta_title_depth}"]
@@ -361,54 +364,6 @@ class EditionParser(ABC):
         add_class(tags=_pannasa, class_="pannasaka-heading")
 
         return cast(str, extract_string(mainmatter))
-
-    @staticmethod
-    def _insert_preheadings(
-        mainmatter: BeautifulSoup,
-        preheadings: VolumePreheadings,
-        tree: dict,
-    ) -> None:
-        """Insert preheadings (additional HTML tags) into mainmatter"""
-        tree_keys = list(tree.keys())
-
-        for mainmatter_preheadings in preheadings:
-            for preheading_group in mainmatter_preheadings:
-
-                # Firstly we need the first sutta-title tag in given section (preheading group)
-                _sutta_uid = tree_keys[tree_keys.index(preheading_group[-1].uid) + 1]
-                target: Tag = mainmatter.find(id=_sutta_uid)
-
-                for _preheading in preheading_group:
-                    # Then we insert all section headings (preheadings) before that sutta-title tag.
-                    # The exemplary structure looks like this:
-                    #      [main preheadings group] - main preheading                                              (h1)
-                    #      [main preheadings group]    - another preheading, before each group of suttas           (h2)
-                    #      [main preheadings group]        - yet another preheading, before each group of suttas   (h3)
-                    #                                             - sutta                                          (h4 class="sutta-title")
-                    #                                             - sutta                                          (h4 class="sutta-title")
-                    #                                             - (...)                                          (h4 class="sutta-title")
-                    # [secondary preheadings group] - another preheading, before each group of suttas              (h2)
-                    # [secondary preheadings group]        - yet another preheading, before each group of suttas   (h3)
-                    #                                             - sutta                                          (h4 class="sutta-title")
-                    #                                             - sutta                                          (h4 class="sutta-title")
-                    #                                             - (...)                                          (h4 class="sutta-title")
-                    #      [main preheadings group] - main preheading                                              (h1)
-                    #      [main preheadings group]    - another preheading, before each group of suttas           (h2)
-                    #      [main preheadings group]        - yet another preheading, before each group of suttas   (h3)
-                    #                                             - sutta                                          (h4 class="sutta-title")
-                    #                                             - sutta                                          (h4 class="sutta-title")
-                    #                                             - (...)                                          (h4 class="sutta-title")
-                    # DEPTH OF PREHEADINGS VARIES! (not only between publications but between parts of a single publication)
-                    try:
-                        target.insert_before(
-                            create_html_heading_with_id(
-                                html=mainmatter, depth=tree[_preheading.uid], text=_preheading.name, id_=_preheading.uid
-                            )
-                        )
-                    except AttributeError:
-                        raise SystemExit(
-                            f"Error while inserting section heading '{_preheading.uid}' before sutta heading '{_sutta_uid}'. Stopping."
-                        )
 
     def set_mainmatter(self, volume: Volume) -> None:
         """Add a mainmatter to a volume"""

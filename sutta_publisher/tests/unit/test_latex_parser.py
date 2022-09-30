@@ -78,7 +78,10 @@ def latex_edition(config, data):
         ),
         ("<ul><li>Test 1</li></ul>", "\\begin{itemize}%\n\\item Test 1%\n\\end{itemize}\n\n"),
         ("<ol><li>Test 1</li></ol>", "\\begin{enumerate}%\n\\item Test 1%\n\\end{enumerate}\n\n"),
-        ("<ol><li>Test 1</li><li value='3'>Test 2</li></ol>", "\\begin{enumerate}%\n\\item Test 1%\n\\item[3.] Test 2%\n\\end{enumerate}\n\n"),
+        (
+            "<ol><li>Test 1</li><li value='3'>Test 2</li></ol>",
+            "\\begin{enumerate}%\n\\item Test 1%\n\\item[3.] Test 2%\n\\end{enumerate}\n\n",
+        ),
         (
             "<ol><li>Test 1<ul><li>Test 2</li></ul></li></ol>",
             "\\begin{enumerate}%\n\\item Test 1\\begin{itemize}%\n\\item Test 2%\n\\end{itemize}\n\n%\n\\end{enumerate}\n\n",
@@ -97,6 +100,7 @@ def latex_edition(config, data):
         ),
         ("<i lang='pli'>Mūlapariyāyasutta</i>", "\\textit{\\textsanskrit{Mūlapariyāyasutta}}"),
         ("<test>Test & test _ test ~ test</test>", "Test \\& test \\_ test \\textasciitilde test"),
+        ("<hr>", "\\thematicbreak\n"),
     ],
 )
 def test_process_tag(doc, latex_edition, html, expected):

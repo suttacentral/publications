@@ -37,6 +37,8 @@ TEXTS_WITH_CHAPTER_SUTTA_TITLES: dict[str, str | tuple] = ast.literal_eval(
 
 
 class CustomEnumerate(Enumerate):
+    _latex_name = "enumerate"
+
     def add_item(self, s: str, options: str | list[str] | None = None) -> None:
         """Overwrite the default method in order to support additional options for list items"""
         self.append(Command("item", options=options))
@@ -316,6 +318,8 @@ class LatexParser(EditionParser):
             if isinstance(_item, Tag):
                 if _li_value := _item.get("value"):
                     enum.add_item(s=self._process_tag(tag=_item), options=f"{_li_value}.")
+                else:
+                    enum.add_item(s=self._process_tag(tag=_item))
         return cast(str, enum.dumps().replace("\\item%\n", "\\item ").replace("]%\n", "] ") + NoEscape("\n\n"))
 
     def _append_itemize(self, tag: Tag) -> str:

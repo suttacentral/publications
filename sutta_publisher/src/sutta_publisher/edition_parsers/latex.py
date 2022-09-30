@@ -3,7 +3,7 @@ import logging
 import os
 import re
 from pathlib import Path
-from typing import Callable, cast
+from typing import Any, Callable, cast
 
 from bs4 import BeautifulSoup, NavigableString, PageElement, Tag
 from jinja2 import Environment as jinja2_Environment, FileSystemLoader, Template, TemplateNotFound
@@ -14,11 +14,12 @@ from pylatex.utils import bold, italic
 from sutta_publisher.shared.value_objects.parser_objects import Volume
 
 from .base import EditionParser
-from .helper_functions import find_sutta_title_depth, get_heading_depth
+from .helper_functions import find_sutta_title_depth, get_heading_depth, get_individual_cover_template_name, wrap_in_z
 
 log = logging.getLogger(__name__)
 
 ADDITIONAL_PANNASAKA_IDS: list[str] = ast.literal_eval(os.getenv("ADDITIONAL_PANNASAKA_IDS", ""))
+COVER_TEMPLATES_MAPPING: dict[str, str] = ast.literal_eval(os.getenv("COVER_TEMPLATES_MAPPING", ""))
 FOREIGN_SCRIPT_MACRO_LANGUAGES: list[str] = ast.literal_eval(os.getenv("FOREIGN_SCRIPT_MACRO_LANGUAGES", ""))
 INDIVIDUAL_TEMPLATES_MAPPING: dict[str, list] = ast.literal_eval(os.getenv("INDIVIDUAL_TEMPLATES_MAPPING", ""))
 LATEX_TEMPLATES_MAPPING: dict[str, str] = ast.literal_eval(os.getenv("LATEX_TEMPLATES_MAPPING", ""))
@@ -36,12 +37,17 @@ TEXTS_WITH_CHAPTER_SUTTA_TITLES: dict[str, str | tuple] = ast.literal_eval(
 
 
 class LatexParser(EditionParser):
+    edition_type = "latex_parser"
+
     LATEX_DOCUMENT_CONFIG: dict[str, str] = ast.literal_eval(os.getenv("LATEX_DOCUMENT_CONFIG", ""))
+    LATEX_COVER_CONFIG: dict[str, str] = ast.literal_eval(os.getenv("LATEX_COVER_CONFIG", ""))
+
+    IMAGES_DIR = os.path.join(Path(__file__).parent.parent / "images", "")  # os.path.join -> add a trailing slash
     TEX_TEMPLATES_DIR = Path(__file__).parent.parent / "templates" / "tex"
     INDIVIDUAL_TEMPLATES_SUBDIR = "individual"
     SHARED_TEMPLATES_SUBDIR = "shared"
-    IMAGES_DIR = Path(__file__).parent.parent / "images"
-    edition_type = "latex_parser"
+    COVER_TEMPLATES_SUBDIR = "cover"
+
     endnotes: list[str] | None
     section_type: str
     sutta_depth: int
@@ -70,8 +76,8 @@ class LatexParser(EditionParser):
             return f"{tex}{marginnote} "
         return f"{tex_1}{marginnote} {tex_2}"
 
-    def _append_p(self, doc: Document, tag: Tag) -> str:
-        tex: str = self._process_contents(doc=doc, contents=tag.contents)
+    def _append_p(self, tag: Tag) -> str:
+        tex: str = self._process_contents(contents=tag.contents)
 
         if LatexParser._is_styled(tag=tag):
             tex = LatexParser._apply_styling(tag=tag, tex=tex)
@@ -87,12 +93,12 @@ class LatexParser(EditionParser):
 
         return cast(str, tex + NoEscape("\n\n"))
 
-    def _append_span(self, doc: Document, tag: Tag) -> str:
+    def _append_span(self, tag: Tag) -> str:
         if tag.has_attr("class"):
             if all(_class in tag["class"] for _class in ["blurb-item", "root-title"]):
-                return f"({self._append_italic(doc=doc, tag=tag)})"
+                return f"({self._append_italic(tag=tag)})"
             else:
-                tex: str = self._process_contents(doc=doc, contents=tag.contents)
+                tex: str = self._process_contents(contents=tag.contents)
 
                 if all(_class in tag["class"] for _class in ["blurb-item", "acronym"]):
                     return f"{tex}: "
@@ -100,19 +106,19 @@ class LatexParser(EditionParser):
                 tex = LatexParser._apply_styling(tag=tag, tex=tex)
                 return tex
         else:
-            return self._process_contents(doc=doc, contents=tag.contents)
+            return self._process_contents(contents=tag.contents)
 
-    def _append_verse(self, doc: Document, tag: Tag) -> str:
+    def _append_verse(self, tag: Tag) -> str:
         verse_env: Environment = Environment()
         verse_env._latex_name = "verse"
-        _data: str = self._process_contents(doc=doc, contents=tag.contents)
+        _data: str = self._process_contents(contents=tag.contents)
         verse_env.append(_data)
         return cast(str, verse_env.dumps() + NoEscape("\n\n"))
 
-    def _append_quotation(self, doc: Document, tag: Tag) -> str:
+    def _append_quotation(self, tag: Tag) -> str:
         quotation_env: Environment = Environment()
         quotation_env._latex_name = "quotation"
-        _data: str = self._process_contents(doc=doc, contents=tag.contents)
+        _data: str = self._process_contents(contents=tag.contents)
         quotation_env.append(_data)
         return cast(str, quotation_env.dumps() + NoEscape("\n\n"))
 
@@ -120,20 +126,20 @@ class LatexParser(EditionParser):
     def _append_breakline() -> str:
         return cast(str, NoEscape(r"\\") + NoEscape("\n"))
 
-    def _append_bold(self, doc: Document, tag: Tag) -> str:
-        _tex: str = self._process_contents(doc=doc, contents=tag.contents)
+    def _append_bold(self, tag: Tag) -> str:
+        _tex: str = self._process_contents(contents=tag.contents)
         return cast(str, bold(_tex, escape=False))
 
-    def _append_emphasis(self, doc: Document, tag: Tag) -> str:
-        _tex: str = self._process_contents(doc=doc, contents=tag.contents)
+    def _append_emphasis(self, tag: Tag) -> str:
+        _tex: str = self._process_contents(contents=tag.contents)
         return cast(str, Command("emph", _tex).dumps())
 
     @staticmethod
     def _append_sanskrit(tex: str) -> str:
         return cast(str, Command("textsanskrit", tex).dumps())
 
-    def _append_italic(self, doc: Document, tag: Tag) -> str:
-        _tex: str = self._process_contents(doc=doc, contents=tag.contents)
+    def _append_italic(self, tag: Tag) -> str:
+        _tex: str = self._process_contents(contents=tag.contents)
         if (
             tag.has_attr("class")
             and "\\textsanskrit" not in _tex
@@ -145,23 +151,23 @@ class LatexParser(EditionParser):
             _tex = LatexParser._append_sanskrit(_tex)
         return cast(str, italic(_tex, escape=False))
 
-    def _append_foreign_script_macro(self, doc: Document, tag: Tag) -> str:
-        _tex: str = self._process_contents(doc=doc, contents=tag.contents)
+    def _append_foreign_script_macro(self, tag: Tag) -> str:
+        _tex: str = self._process_contents(contents=tag.contents)
         return cast(str, Command(f'lang{tag["lang"]}', _tex).dumps())
 
-    def _append_footnote(self, doc: Document) -> str:
+    def _append_footnote(self) -> str:
         if self.endnotes:
             _endnote = BeautifulSoup(self.endnotes.pop(0), "lxml")
             _contents = _endnote.p.contents if _endnote.p else _endnote.body.contents
-            _data: str = self._process_contents(doc=doc, contents=_contents)
+            _data: str = self._process_contents(contents=_contents)
             return cast(str, Command("footnote", _data).dumps())
         else:
             return ""
 
-    def _append_sutta_title(self, doc: Document, tag: Tag) -> str:
+    def _append_sutta_title(self, tag: Tag) -> str:
         tex: str = ""
-        _acronym, _name, _root_name = [self._process_tag(doc=doc, tag=_span) for _span in tag.children]
-        template: Template = LatexParser._get_template(name="heading")
+        _acronym, _name, _root_name = [self._process_tag(tag=_span) for _span in tag.children]
+        template: Template = LatexParser._get_shared_template(name="heading")
         data = {
             "acronym": _acronym,
             "name": _name,
@@ -173,66 +179,66 @@ class LatexParser(EditionParser):
         return cast(str, tex)
 
     @staticmethod
-    def _append_custom_chapter(doc: Document, tag: Tag) -> str:
-        _template: Template = LatexParser._get_template(name="chapter")
+    def _append_custom_chapter(tag: Tag) -> str:
+        _template: Template = LatexParser._get_shared_template(name="chapter")
         return cast(str, _template.render(name=tag.string) + NoEscape("\n\n"))
 
-    def _append_custom_section(self, doc: Document, tag: Tag) -> str:
+    def _append_custom_section(self, tag: Tag) -> str:
         tex: str = ""
-        _title: str = self._process_contents(doc=doc, contents=tag.contents)
+        _title: str = self._process_contents(contents=tag.contents)
         tex += Command("section*", _title).dumps() + NoEscape("\n")
         tex += Command("addcontentsline", arguments=["toc", "section", _title]).dumps() + NoEscape("\n")
         tex += Command("markboth", arguments=[_title, _title]).dumps() + NoEscape("\n\n")
         return tex
 
     @staticmethod
-    def _append_custom_part(doc: Document, tag: Tag) -> str:
-        _template: Template = LatexParser._get_template(name="part")
+    def _append_custom_part(tag: Tag) -> str:
+        _template: Template = LatexParser._get_shared_template(name="part")
         return cast(str, _template.render(name=tag.string) + NoEscape("\n\n"))
 
-    def _append_chapter(self, doc: Document, tag: Tag) -> str:
-        _title: str = self._process_contents(doc=doc, contents=tag.contents)
+    def _append_chapter(self, tag: Tag) -> str:
+        _title: str = self._process_contents(contents=tag.contents)
         tex: str = Command("chapter*", _title).dumps() + NoEscape("\n")
         tex += Command("addcontentsline", arguments=["toc", "chapter", _title]).dumps() + NoEscape("\n")
         tex += Command("markboth", arguments=[_title, _title]).dumps() + NoEscape("\n\n")
         return tex
 
-    def _append_section(self, doc: Document, tag: Tag) -> str:
-        _title: str = self._process_contents(doc=doc, contents=tag.contents)
+    def _append_section(self, tag: Tag) -> str:
+        _title: str = self._process_contents(contents=tag.contents)
         tex: str = Command("section*", _title).dumps() + NoEscape("\n\n")
         return tex
 
-    def _append_subsection(self, doc: Document, tag: Tag) -> str:
-        _title: str = self._process_contents(doc=doc, contents=tag.contents)
+    def _append_subsection(self, tag: Tag) -> str:
+        _title: str = self._process_contents(contents=tag.contents)
         tex: str = Command("subsection*", _title).dumps() + NoEscape("\n\n")
         return tex
 
-    def _append_subsubsection(self, doc: Document, tag: Tag) -> str:
-        _title: str = self._process_contents(doc=doc, contents=tag.contents)
+    def _append_subsubsection(self, tag: Tag) -> str:
+        _title: str = self._process_contents(contents=tag.contents)
         tex: str = Command("subsubsection*", _title).dumps() + NoEscape("\n\n")
         return tex
 
-    def _append_paragraph(self, doc: Document, tag: Tag) -> str:
-        _title: str = self._process_contents(doc=doc, contents=tag.contents)
+    def _append_paragraph(self, tag: Tag) -> str:
+        _title: str = self._process_contents(contents=tag.contents)
         tex: str = Command("paragraph*", _title).dumps() + NoEscape("\n\n")
         return tex
 
-    def _append_subparagraph(self, doc: Document, tag: Tag) -> str:
-        _title: str = self._process_contents(doc=doc, contents=tag.contents)
+    def _append_subparagraph(self, tag: Tag) -> str:
+        _title: str = self._process_contents(contents=tag.contents)
         tex: str = Command("subparagraph*", _title).dumps() + NoEscape("\n\n")
         return tex
 
     @staticmethod
     def _append_pannasa(tag: Tag) -> str:
-        _template: Template = LatexParser._get_template(name="pannasa")
+        _template: Template = LatexParser._get_shared_template(name="pannasa")
         return cast(str, _template.render(name=tag.string) + NoEscape("\n\n"))
 
-    def _append_section_title(self, doc: Document, tag: Tag) -> str:
+    def _append_section_title(self, tag: Tag) -> str:
         if tag.has_attr("id") and ("pannasaka" in tag["id"] or tag["id"] in ADDITIONAL_PANNASAKA_IDS):
             # The pannasa in AN and SN requires a special markup
             return LatexParser._append_pannasa(tag=tag)
         elif self.section_type == "chapter":
-            return cast(str, LatexParser._append_custom_part(doc=doc, tag=tag))
+            return cast(str, LatexParser._append_custom_part(tag=tag))
         else:
             actions: list[Callable] = [
                 LatexParser._append_custom_part,
@@ -253,9 +259,9 @@ class LatexParser(EditionParser):
             else:
                 index = -1
 
-            return cast(str, actions[index](doc=doc, tag=tag))
+            return cast(str, actions[index](tag=tag))
 
-    def _append_subheading(self, doc: Document, tag: Tag) -> str:
+    def _append_subheading(self, tag: Tag) -> str:
         actions: list[Callable] = [
             self._append_subsection,
             self._append_subsubsection,
@@ -266,7 +272,7 @@ class LatexParser(EditionParser):
             actions.insert(0, self._append_section)
 
         index = int(tag.name[1]) - self.sutta_depth - 1
-        return cast(str, actions[index](doc=doc, tag=tag))
+        return cast(str, actions[index](tag=tag))
 
     @staticmethod
     def _append_tableofcontents() -> str:
@@ -275,7 +281,7 @@ class LatexParser(EditionParser):
         tex += Command("pagestyle", "fancy").dumps() + NoEscape("\n")
         return cast(str, tex)
 
-    def _append_epigraph(self, doc: Document, tag: Tag) -> str:
+    def _append_epigraph(self, tag: Tag) -> str:
         data: dict[str, str] = {}
         _epigraph_classes: dict[str, str] = {
             "text": "epigraph-text",
@@ -289,39 +295,39 @@ class LatexParser(EditionParser):
                 if _class == "epigraph-text":
                     _tag = _tag.p
                 LatexParser._strip_tag_string(_tag)
-                data[_var] = self._process_contents(doc=doc, contents=_tag.contents)
+                data[_var] = self._process_contents(contents=_tag.contents)
 
-        template: Template = LatexParser._get_template(name="epigraph")
+        template: Template = LatexParser._get_shared_template(name="epigraph")
         return cast(str, template.render(data) + NoEscape("\n"))
 
-    def _append_enjambment(self, doc: Document, tag: Tag) -> str:
-        return cast(str, f"\\\\>{self._process_contents(doc=doc, contents=tag.contents)}")
+    def _append_enjambment(self, tag: Tag) -> str:
+        return cast(str, f"\\\\>{self._process_contents(contents=tag.contents)}")
 
-    def _append_enumerate(self, doc: Document, tag: Tag) -> str:
+    def _append_enumerate(self, tag: Tag) -> str:
         enum = Enumerate()
         for _item in tag.contents:
             if isinstance(_item, Tag):
-                enum.add_item(s=self._process_tag(doc=doc, tag=_item))
+                enum.add_item(s=self._process_tag(tag=_item))
         return cast(str, enum.dumps().replace("\\item%\n", "\\item ") + NoEscape("\n\n"))
 
-    def _append_itemize(self, doc: Document, tag: Tag) -> str:
+    def _append_itemize(self, tag: Tag) -> str:
         itemize = Itemize()
         for _item in tag.contents:
             if isinstance(_item, Tag):
-                itemize.add_item(s=self._process_tag(doc=doc, tag=_item))
+                itemize.add_item(s=self._process_tag(tag=_item))
         return cast(str, itemize.dumps().replace("\\item%\n", "\\item ") + NoEscape("\n\n"))
 
-    def _append_description(self, doc: Document, tag: Tag) -> str:
+    def _append_description(self, tag: Tag) -> str:
         desc = Description()
         for _key, _value in zip(tag.find_all("dt"), tag.find_all("dd")):
-            _label = self._process_contents(doc=doc, contents=_key.contents)
-            _item = self._process_contents(doc=doc, contents=_value.contents)
+            _label = self._process_contents(contents=_key.contents)
+            _item = self._process_contents(contents=_value.contents)
             desc.add_item(label=_label, s=_item)
         tex = desc.dumps().replace("]%\n", "] ")
 
         return cast(str, tex + NoEscape("\n\n"))
 
-    def _append_heading(self, doc: Document, tag: Tag) -> str:
+    def _append_heading(self, tag: Tag) -> str:
         actions: list[Callable] = [
             self._append_chapter,
             self._append_section,
@@ -331,7 +337,7 @@ class LatexParser(EditionParser):
             self._append_subparagraph,
         ]
         _depth: int = get_heading_depth(tag)
-        return cast(str, actions[_depth - 1](doc=doc, tag=tag))
+        return cast(str, actions[_depth - 1](tag=tag))
 
     def _is_range_or_sutta_title(self, tag: Tag) -> bool:
         return (
@@ -341,66 +347,66 @@ class LatexParser(EditionParser):
             and int(tag.name[1:]) == self.sutta_depth
         )
 
-    def _process_tag(self, doc: Document, tag: Tag) -> str:
+    def _process_tag(self, tag: Tag | PageElement) -> str:
 
         match tag.name:
 
             case range_or_sutta_title if self._is_range_or_sutta_title(tag=tag):
-                return self._append_sutta_title(doc=doc, tag=tag)
+                return self._append_sutta_title(tag=tag)
 
             case section_title if tag.has_attr("class") and "section-title" in tag["class"]:
-                return self._append_section_title(doc=doc, tag=tag)
+                return self._append_section_title(tag=tag)
 
             case subheading if tag.has_attr("class") and "subheading" in tag["class"]:
-                return self._append_subheading(doc=doc, tag=tag)
+                return self._append_subheading(tag=tag)
 
             case heading if tag.name.startswith("h") and tag.name[1].isnumeric():
-                return self._append_heading(doc=doc, tag=tag)
+                return self._append_heading(tag=tag)
 
             case macro_lang if tag.has_attr("lang") and tag["lang"] in FOREIGN_SCRIPT_MACRO_LANGUAGES:
-                return self._append_foreign_script_macro(doc=doc, tag=tag)
+                return self._append_foreign_script_macro(tag=tag)
 
             case "a" if tag.has_attr("role") and "doc-noteref" in tag["role"]:
-                return self._append_footnote(doc=doc)
+                return self._append_footnote()
 
             case "article" if tag.has_attr("class") and "epigraph" in tag["class"]:
-                return self._append_epigraph(doc=doc, tag=tag)
+                return self._append_epigraph(tag=tag)
 
             case "b":
-                return self._append_bold(doc=doc, tag=tag)
+                return self._append_bold(tag=tag)
 
             case "blockquote" if tag.has_attr("class") and "gatha" in tag["class"]:
-                return self._append_verse(doc=doc, tag=tag)
+                return self._append_verse(tag=tag)
 
             case "blockquote":
-                return self._append_quotation(doc=doc, tag=tag)
+                return self._append_quotation(tag=tag)
 
             case "br":
                 return LatexParser._append_breakline()
 
             case "cite":
-                return self._append_italic(doc=doc, tag=tag)
+                return self._append_italic(tag=tag)
 
             case "dl":
-                return self._append_description(doc=doc, tag=tag)
+                return self._append_description(tag=tag)
 
             case "em":
-                return self._append_emphasis(doc=doc, tag=tag)
+                return self._append_emphasis(tag=tag)
 
             case "i" if tag.has_attr("lang"):
-                return self._append_italic(doc=doc, tag=tag)
+                return self._append_italic(tag=tag)
 
             case "i":
-                return self._append_italic(doc=doc, tag=tag)
+                return self._append_italic(tag=tag)
 
             case "j":
-                return self._append_enjambment(doc=doc, tag=tag)
+                return self._append_enjambment(tag=tag)
 
             case "ol":
-                return self._append_enumerate(doc=doc, tag=tag)
+                return self._append_enumerate(tag=tag)
 
             case "p":
-                return self._append_p(doc=doc, tag=tag)
+                return self._append_p(tag=tag)
 
             case "section" if tag.has_attr("id") and tag["id"] == "main-toc":
                 return LatexParser._append_tableofcontents()
@@ -409,19 +415,19 @@ class LatexParser(EditionParser):
                 return ""
 
             case "span":
-                return self._append_span(doc=doc, tag=tag)
+                return self._append_span(tag=tag)
 
             case "ul":
-                return self._append_itemize(doc=doc, tag=tag)
+                return self._append_itemize(tag=tag)
 
-        return self._process_contents(doc=doc, contents=tag.contents)
+        return self._process_contents(contents=tag.contents)
 
-    def _process_contents(self, doc: Document, contents: list[PageElement]) -> str:
+    def _process_contents(self, contents: list[PageElement]) -> str:
         tex: str = ""
 
         for _element in contents:
             if isinstance(_element, Tag):
-                tex += self._process_tag(doc=doc, tag=_element)
+                tex += self._process_tag(tag=_element)
             elif isinstance(_element, NavigableString) and _element != "\n":
                 if not (_element.parent.has_attr("class") and "sutta-heading" in _element.parent["class"]):
                     _element = re.sub(SANSKRIT_PATTERN, r"\\textsanskrit{\g<0>}", _element)
@@ -436,26 +442,99 @@ class LatexParser(EditionParser):
                 _element.string.replace_with(_element.string.strip())
 
     @staticmethod
-    def _get_template(name: str = "", is_shared: bool = True) -> Template:
-        if is_shared:
-            if not LATEX_TEMPLATES_MAPPING:
-                raise EnvironmentError(
-                    "Missing .env_public file or the file lacks required variable LATEX_TEMPLATES_MAPPING."
-                )
-            try:
-                _template_name: str = LATEX_TEMPLATES_MAPPING[name]
-            except KeyError:
-                raise EnvironmentError(
-                    f"'LATEX_TEMPLATES_MAPPING' in .env_public file lacks required key-value pair for {name} template."
-                )
-            _subdir = LatexParser.SHARED_TEMPLATES_SUBDIR
-
-        else:
-            _template_name = name
-            _subdir = LatexParser.INDIVIDUAL_TEMPLATES_SUBDIR
+    def _get_shared_template(name: str) -> Template:
+        if not LATEX_TEMPLATES_MAPPING:
+            raise EnvironmentError(
+                "Missing .env_public file or the file lacks required variable LATEX_TEMPLATES_MAPPING."
+            )
 
         try:
-            _template_loader: FileSystemLoader = FileSystemLoader(searchpath=LatexParser.TEX_TEMPLATES_DIR / _subdir)
+            _template_name: str = LATEX_TEMPLATES_MAPPING[name]
+        except KeyError:
+            raise EnvironmentError(
+                f"'LATEX_TEMPLATES_MAPPING' in .env_public file lacks required key-value pair for '{name}' template. "
+                f"Example:\n"
+                "LATEX_TEMPLATES_MAPPING = '{\n"
+                '\t"chapter": "chapter-template.tex",\n'
+                '\t"metadata": "metadata-template.xmpdata",\n'
+                "}'"
+            )
+
+        return LatexParser._get_template(name=_template_name, subdir=LatexParser.SHARED_TEMPLATES_SUBDIR)
+
+    def _get_individual_template(self, volume: Volume) -> Template | None:
+        if not INDIVIDUAL_TEMPLATES_MAPPING:
+            log.warning(
+                "Missing .env_public file or the file lacks variable INDIVIDUAL_TEMPLATES_MAPPING."
+                f"Skipping appending individual config template."
+            )
+            return None
+
+        try:
+            _publication_mapping: list[str] | str = INDIVIDUAL_TEMPLATES_MAPPING[self.config.edition.text_uid]
+        except KeyError:
+            log.warning(
+                "'INDIVIDUAL_TEMPLATES_MAPPING' in .env_public file lacks key-value pair for "
+                f"'{self.config.edition.text_uid}' individual config template. Example:\n"
+                "INDIVIDUAL_TEMPLATES_MAPPING = '{\n"
+                '\t"ud": "ud.tex",\n'
+                '\t"pli-tv-vi": [\n'
+                '\t\t"vinaya-1.tex",\n'
+                '\t\t"vinaya-2.tex",\n'
+                "\t]\n"
+                '"}\'"'
+            )
+            return None
+
+        if isinstance(_publication_mapping, list):
+            _template_name = _publication_mapping[volume.volume_number - 1]
+        else:
+            _template_name = _publication_mapping
+
+        try:
+            return LatexParser._get_template(name=_template_name, subdir=LatexParser.INDIVIDUAL_TEMPLATES_SUBDIR)
+        except TemplateNotFound:
+            log.warning(f"Template '{_template_name}' for publication/volume specific configuration not found.")
+            return None
+
+    def _get_cover_template(
+        self, name: str, finalize: Callable[[Any], str] = None, is_individual: bool = False
+    ) -> Template:
+
+        _subdir = LatexParser.COVER_TEMPLATES_SUBDIR
+
+        if not is_individual:
+            if not COVER_TEMPLATES_MAPPING:
+                log.warning("Missing .env_public file or the file lacks variable COVER_TEMPLATES_MAPPING.")
+
+            try:
+                _template_name = COVER_TEMPLATES_MAPPING[name].format(
+                    publication_type=self.config.edition.publication_type.name
+                )
+            except KeyError:
+                raise SystemExit(
+                    "'COVER_TEMPLATES_MAPPING' in .env_public file lacks required key-value pair for "
+                    f"'{self.config.edition.text_uid}' cover {name} template. Example:\n"
+                    "COVER_TEMPLATES_MAPPING = '{\n"
+                    '\t"body": "{publication_type}-body-template.tex",\n'
+                    '\t"preamble": "{publication_type}-preamble-template.tex",\n'
+                    "}'"
+                )
+        else:
+            _subdir = os.path.join(_subdir, "individual")
+            _template_name = name
+
+        try:
+            return LatexParser._get_template(name=_template_name, finalize=finalize, subdir=_subdir)
+        except TemplateNotFound:
+            raise SystemExit(f"Template '{_template_name}' for volume cover not found.")
+
+    @staticmethod
+    def _get_template(name: str, finalize: Callable[[Any], str] | None = None, subdir: str = "") -> Template:
+        _path = LatexParser.TEX_TEMPLATES_DIR / subdir if subdir else LatexParser.TEX_TEMPLATES_DIR
+
+        try:
+            _template_loader: FileSystemLoader = FileSystemLoader(searchpath=_path)
             _template_env: jinja2_Environment = jinja2_Environment(
                 block_start_string="\BLOCK{",
                 block_end_string="}",
@@ -466,30 +545,32 @@ class LatexParser(EditionParser):
                 line_statement_prefix="%%",
                 line_comment_prefix="%#",
                 trim_blocks=True,
+                finalize=finalize,
                 autoescape=True,
                 loader=_template_loader,
             )
-            template: Template = _template_env.get_template(name=_template_name)
+            _template_env.filters["wrap_in_z"] = wrap_in_z
+            template: Template = _template_env.get_template(name=name)
             return template
 
         except TemplateNotFound:
-            raise TemplateNotFound(f"Template '{_template_name}' for Latex edition is missing.")
+            raise TemplateNotFound(f"Template '{name}' is missing.")
 
     @staticmethod
     def _get_matter_name(matter: Tag) -> str:
         name: str = matter["id"] if matter.has_attr("id") else matter["class"][0] if matter.has_attr("class") else ""
         return name
 
-    def _process_html_element(self, volume: Volume, doc: Document, element: PageElement) -> str:
+    def _process_html_element(self, element: PageElement, volume: Volume | None = None) -> str:
         if isinstance(element, Tag) and not (element.has_attr("id") and element["id"] in MATTERS_TO_SKIP):
-            if (name := LatexParser._get_matter_name(element)) in MATTERS_WITH_TEX_TEMPLATES:
-                _template: Template = LatexParser._get_template(name=name)
+            if volume and (name := LatexParser._get_matter_name(element)) in MATTERS_WITH_TEX_TEMPLATES:
+                _template: Template = LatexParser._get_shared_template(name=name)
                 tex = _template.render(
                     **volume.dict(exclude_none=True, exclude_unset=True), images_directory=LatexParser.IMAGES_DIR
                 )
                 return cast(str, NoEscape(tex))
             else:
-                return cast(str, NoEscape(self._process_tag(doc=doc, tag=element)))
+                return cast(str, NoEscape(self._process_tag(tag=element)))
         elif isinstance(element, NavigableString) and element != "\n":
             return cast(str, element)
         else:
@@ -523,39 +604,26 @@ class LatexParser(EditionParser):
 
             _tag = html.new_tag("h1")
             _tag.string = _title
-            doc.append(NoEscape(LatexParser._append_custom_part(doc=doc, tag=_tag)))
+            doc.append(NoEscape(LatexParser._append_custom_part(tag=_tag)))
 
     def _append_individual_config(self, doc: Document, volume: Volume) -> None:
-        try:
-            _edition_mapping = INDIVIDUAL_TEMPLATES_MAPPING.get(self.config.edition.text_uid)
-        except KeyError:
-            raise EnvironmentError(f"Individual template mapping for {self.config.edition.text_uid} not found.")
-
-        if isinstance(_edition_mapping, list):
-            _template_name = _edition_mapping[volume.volume_number - 1]
-        else:
-            _template_name = _edition_mapping
-
-        try:
-            _template: Template = LatexParser._get_template(name=_template_name, is_shared=False)
+        if _template := self._get_individual_template(volume=volume):
             doc.preamble.append(NoEscape(_template.render()))
-        except TemplateNotFound:
-            log.info(f"Template '{_template_name}' for edition specific configuration not found.")
 
     def _append_preamble(self, doc: Document, volume: Volume) -> None:
-        _template: Template = LatexParser._get_template(name="preamble")
+        _template: Template = LatexParser._get_shared_template(name="preamble")
         doc.preamble.append(NoEscape(_template.render(**volume.dict(exclude_none=True, exclude_unset=True))))
         self._append_individual_config(doc=doc, volume=volume)
 
     def _set_xmpdata(self, volume: Volume) -> None:
-        _template: Template = LatexParser._get_template(name="metadata")
+        _template: Template = LatexParser._get_shared_template(name="metadata")
         _output = _template.render(**volume.dict(exclude_none=True, exclude_unset=True))
         _path = self.TEMP_DIR / f"{volume.filename}.xmpdata"
 
         with open(file=_path, mode="wt") as f:
             f.write(_output)
 
-    def _generate_latex(self, volume: Volume) -> Document:
+    def _generate_tex(self, volume: Volume) -> Document:
         # setup
         self.endnotes: list[str] | None = volume.endnotes if volume.endnotes else None
         self.section_type: str = "chapter" if self._has_chapter_sutta_title(volume=volume) else "section"
@@ -573,7 +641,7 @@ class LatexParser(EditionParser):
         for _page in volume.frontmatter:
             _frontmatter_element: PageElement = BeautifulSoup(_page, "lxml").find("body").next_element
             LatexParser._remove_all_nav(html=_frontmatter_element)
-            doc.append(self._process_html_element(volume=volume, doc=doc, element=_frontmatter_element))
+            doc.append(self._process_html_element(volume=volume, element=_frontmatter_element))
 
         # set mainmatter
         doc.append(Command("mainmatter"))
@@ -583,12 +651,44 @@ class LatexParser(EditionParser):
 
         _mainmatter_elements = _mainmatter.find("body").contents
         for _element in _mainmatter_elements:
-            doc.append(self._process_html_element(volume=volume, doc=doc, element=_element))
+            doc.append(self._process_html_element(volume=volume, element=_element))
 
         # set backmatter
         doc.append(Command("backmatter"))
         for _page in volume.backmatter:
             _backmatter_element: PageElement = BeautifulSoup(_page, "lxml").find("body").next_element
-            doc.append(self._process_html_element(volume=volume, doc=doc, element=_backmatter_element))
+            doc.append(self._process_html_element(volume=volume, element=_backmatter_element))
+
+        return doc
+
+    def _fill_document_options(self, volume: Volume) -> None:
+        self.LATEX_COVER_CONFIG["document_options"] = self.LATEX_COVER_CONFIG["document_options"].format(
+            **volume.dict()
+        )
+
+    def _convert_input_to_tex(self, input_data: Any) -> str:
+        _html: PageElement = BeautifulSoup(input_data, "lxml").find("body").next_element
+        return self._process_tag(tag=_html).replace("\n\n", "")
+
+    def _generate_cover(self, volume: Volume) -> Document:
+        # setup
+        self._fill_document_options(volume=volume)
+        doc = Document(**self.LATEX_COVER_CONFIG)
+
+        # cover preamble
+        _preamble_template = self._get_cover_template(name="preamble")
+        _individual_template = self._get_cover_template(
+            name=get_individual_cover_template_name(volume=volume), is_individual=True
+        )
+        _preamble = _preamble_template.render(
+            **volume.dict(exclude_none=True, exclude_unset=True),
+            individual_cover_template=_individual_template.render(images_directory=self.IMAGES_DIR),
+        )
+        doc.preamble.append(NoEscape(_preamble))
+
+        # cover body
+        _body_template = self._get_cover_template(name="body", finalize=self._convert_input_to_tex)
+        _body = _body_template.render(**volume.dict(exclude_none=True, exclude_unset=True))
+        doc.append(NoEscape(_body))
 
         return doc

@@ -17,7 +17,7 @@ class PdfEdition(LatexParser):
         log.debug("Generating pdf...")
 
         _path = self.TEMP_DIR / volume.filename
-        doc = self._generate_latex(volume=volume)
+        doc = self._generate_tex(volume=volume)
         doc.generate_pdf(filepath=str(_path), clean_tex=False, compiler="latexmk")
 
     def collect_all(self):  # type: ignore

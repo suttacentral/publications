@@ -221,12 +221,6 @@ def get_edition_data(edition_config: EditionConfig) -> EditionData:
         )
         _extras = get_extras_data(edition_id=edition_config.edition.edition_id)
 
-        _acronym_response = requests.get(
-            API_URL + API_ENDPOINTS["config_with_acronym"].format(uid=_volume_details.mainmatter[0])
-        )
-        _acronym_response.raise_for_status()
-        _acronym = _acronym_response.json()[0]["acronym"]
-
         _depths: dict[str, int] = {}
         get_depths(tree=_edition_tree[_volume_index], depths=_depths)
 
@@ -236,7 +230,6 @@ def get_edition_data(edition_config: EditionConfig) -> EditionData:
                 headings=_headings_ids,
                 mainmatter=_mainmatter,
                 extras=_extras,
-                acronym=_acronym,
                 tree=_edition_tree[_volume_index],
                 depths=_depths,
             )

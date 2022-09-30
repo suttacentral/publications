@@ -101,7 +101,7 @@ class EpubEdition(EditionParser):
         _headings = copy(volume.main_toc.headings)
         return [make_section_or_link(headings=_headings, item=_item, mapping=mapping) for _item in _tree]
 
-    def _generate_epub(self, volume: Volume) -> None:
+    def generate_epub(self, volume: Volume) -> None:
         log.debug("Generating epub...")
 
         book = EpubBook()
@@ -185,7 +185,10 @@ class EpubEdition(EditionParser):
     def collect_all(self) -> EditionResult:
         _edition: Edition = super().collect_all()
 
-        _operations: list[Callable] = [self.set_cover, self._generate_epub]
+        _operations: list[Callable] = [
+            self.generate_epub,
+            # self.generate_cover
+        ]
 
         for _operation in _operations:
             EditionParser.on_each_volume(edition=_edition, operation=_operation)

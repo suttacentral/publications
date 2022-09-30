@@ -1,0 +1,77 @@
+\begin{bookcover}
+
+% spine
+
+\bookcovercomponent{center}{bg spine top}{
+\begin{minipage}[t][][c]{\spinewidth}
+
+\spinevolumenumber{\BLOCK{if volume_number}Vol. \VAR{volume_number | safe}\BLOCK{endif}}
+
+\spinevolumeacronym{\BLOCK{if volume_translation_title}\VAR{volume_translation_title | safe}\BLOCK{endif}}
+
+\end{minipage}
+}
+
+\bookcovercomponent{center rotate}{spine}[0in,1in,0in,1in]{
+
+\begin{tabulary}{6in}{V{4in}|V{3in}}
+\spinetranslationtitle{\VAR{translation_title | safe}} & \spinecreatorname{\VAR{creator_name | safe}}
+\end{tabulary}
+
+}
+
+\bookcovercomponent{center}{bg spine bottom}{
+\spinelogo{}
+}
+
+% front cover
+
+\bookcovercomponent{normal}{bg front}{
+{\coverimage{}}
+}
+
+\bookcovercomponent{normal}{front}[.95in,.92in,1in,.75in]{
+
+\fronttranslationtitle{\VAR{translation_title | safe | wrap_in_z}}
+
+\fronttranslationsubtitle{\VAR{translation_subtitle | safe | wrap_in_z}}
+
+\hfil{\color{secondarytextcolor}{\rule{4in}{1pt}}}\hfil
+
+\frontbyline{\z{translated} \z{by}}
+\frontcreatorname{\VAR{creator_name | safe | wrap_in_z}}
+
+\vfill
+
+\setstretch{1.05}
+
+\frontvolumenumber{\BLOCK{if volume_number}Volume \VAR{volume_number | safe | wrap_in_z}\BLOCK{endif}}
+\frontvolumeacronym{\BLOCK{if volume_acronym}\VAR{volume_acronym | safe | wrap_in_z}\BLOCK{endif}}
+\frontvolumetranslationtitle{\BLOCK{if volume_translation_title}\VAR{volume_translation_title | safe | wrap_in_z}\BLOCK{endif}}
+\frontvolumeroottitle{\BLOCK{if volume_root_title}\VAR{volume_root_title | safe | wrap_in_z}\BLOCK{endif}}
+}
+
+% Text on the back cover
+\bookcovercomponent{normal}{back}[1in,.85in,1in,1in]{
+
+\backpublicationblurb{\BLOCK{if publication_blurb}\VAR{publication_blurb | safe}\BLOCK{endif}}
+
+\backvolumeblurb{\BLOCK{if volume_blurb}\VAR{volume_blurb | safe}\BLOCK{endif}}
+
+\backpublisherblurb{The wisdom of the Buddha has been preserved in a vast ocean of ancient texts. SuttaCentral offers fresh translations of these texts in the world’s languages. Setting aside the boundaries of language and tradition, we let the Buddha speak for himself.}
+
+\vfill
+
+\begin{minipage}[b][][b]{4in}
+
+\begin{minipage}[c][][c]{2in}
+\backlogo{} \backpublishername{SuttaCentral}
+\end{minipage}\begin{minipage}[c][][c]{2in}
+\backisbn{\BLOCK{if volume_isbn}\VAR{volume_isbn | safe}\BLOCK{else}\VAR{publication_isbn | safe}\BLOCK{endif}}
+\end{minipage}
+
+\end{minipage}
+
+}
+
+\end{bookcover}

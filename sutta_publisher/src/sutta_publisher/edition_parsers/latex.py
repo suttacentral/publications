@@ -144,6 +144,10 @@ class LatexParser(EditionParser):
         return cast(str, Command("emph", _tex).dumps())
 
     @staticmethod
+    def _append_thematic_break() -> str:
+        return cast(str, Command("thematicbreak").dumps() + NoEscape("\n"))
+
+    @staticmethod
     def _append_sanskrit(tex: str) -> str:
         return cast(str, Command("textsanskrit", tex).dumps())
 
@@ -404,6 +408,9 @@ class LatexParser(EditionParser):
 
             case "em":
                 return self._append_emphasis(tag=tag)
+
+            case "hr":
+                return LatexParser._append_thematic_break()
 
             case "i" if tag.has_attr("lang"):
                 return self._append_italic(tag=tag)

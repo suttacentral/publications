@@ -2,26 +2,12 @@ from __future__ import annotations
 
 import ast
 import os
-from copy import deepcopy
 from typing import NoReturn
 
 import requests
 
 from sutta_publisher.shared.value_objects.edition_config import EditionConfig, Volumes
-from sutta_publisher.shared.value_objects.edition_data import (
-    EditionData,
-    Heading,
-    HeadingsGroup,
-    MainMatter,
-    MainMatterHeadings,
-    MainMatterPart,
-    MainMatterPreheadings,
-    Preheading,
-    PreheadingsGroup,
-    VolumeData,
-    VolumeHeadings,
-    VolumePreheadings,
-)
+from sutta_publisher.shared.value_objects.edition_data import EditionData, MainMatter, MainMatterPart, VolumeData
 
 API_URL = os.getenv("API_URL")
 API_ENDPOINTS = ast.literal_eval(os.getenv("API_ENDPOINTS", ""))
@@ -79,66 +65,6 @@ def _get_volume_tree(tree: list[dict], uid: str) -> list[dict] | None:
             if _tree:
                 return _tree
     return None
-
-
-def get_mainmatter_preheadings(edition_id: str, uids: list[str], multiple_volumes: bool) -> VolumePreheadings:
-    all_matters_preheadings = VolumePreheadings()
-    multiple_mainmatter: bool = len(uids) > 1
-
-    for uid in uids:
-        response = requests.get(API_URL + API_ENDPOINTS["edition_mainmatter"].format(edition_id=edition_id, uid=uid))
-        response.raise_for_status()
-        nodes = response.json()
-
-        full_mainmatter_preheadings = (
-            MainMatterPreheadings()
-        )  # a collection of headings for a whole mainmatter (single uid)
-        single_leaf_preheadings = PreheadingsGroup()  # a collection of headings to put before each "leaf"
-
-        if not (multiple_mainmatter or multiple_volumes):
-            nodes = nodes[1:]
-
-        for node in nodes:  # we want to skip the uid's preheading (e.g. mn)
-            if node["type"] == "branch":
-                single_leaf_preheadings.append(Preheading.parse_obj(node))
-            elif node["type"] == "leaf" and single_leaf_preheadings:
-                # reached the end of preheadings for one mainmatter
-                # copy the list for that mainmatter to a higher order container (with all mainmatters per uid)
-                full_mainmatter_preheadings.append(deepcopy(single_leaf_preheadings))
-                # and reset the list - start new collection for another mainmatter
-                single_leaf_preheadings.clear()
-            else:
-                continue  # nothing to reset, nothing to add. Continue
-
-        all_matters_preheadings.append(deepcopy(full_mainmatter_preheadings))
-
-    return all_matters_preheadings
-
-
-def get_mainmatters_headings_ids(edition_id: str, uids: list[str]) -> VolumeHeadings:
-    """Only collects headings ids as the titles may be out of sync with the publication content"""
-    all_matters_headings = VolumeHeadings()
-
-    for uid in uids:
-        response = requests.get(API_URL + API_ENDPOINTS["edition_mainmatter"].format(edition_id=edition_id, uid=uid))
-        response.raise_for_status()
-        nodes = response.json()
-
-        full_mainmatter_headings = MainMatterHeadings()
-        leaves_group = HeadingsGroup()
-
-        for node in nodes:
-            if node["type"] == "leaf":
-                leaves_group.append(Heading.parse_obj(node))
-            elif node["type"] == "branch" and leaves_group:
-                full_mainmatter_headings.append(deepcopy(leaves_group))
-                leaves_group = HeadingsGroup()
-        else:
-            full_mainmatter_headings.append(deepcopy(leaves_group))
-
-        all_matters_headings.append(deepcopy(full_mainmatter_headings))
-
-    return all_matters_headings
 
 
 def get_extras_data(edition_id: str) -> dict:
@@ -199,22 +125,12 @@ def get_edition_tree(text_uid: str, volumes: Volumes) -> list[list[dict | str]]:
 def get_edition_data(edition_config: EditionConfig) -> EditionData:
     edition_data = EditionData()
     _text_uid: str = edition_config.edition.text_uid
-    _multiple_volumes: bool = len(edition_config.edition.volumes) > 1
     _edition_tree: list[list[dict | str]] = get_edition_tree(
         text_uid=_text_uid,
         volumes=edition_config.edition.volumes,
     )
 
     for _volume_index, _volume_details in enumerate(edition_config.edition.volumes):
-        _preheadings = get_mainmatter_preheadings(
-            edition_id=edition_config.edition.edition_id,
-            uids=_volume_details.mainmatter,
-            multiple_volumes=_multiple_volumes,
-        )
-        _headings_ids = get_mainmatters_headings_ids(
-            edition_id=edition_config.edition.edition_id,
-            uids=_volume_details.mainmatter,
-        )
         _mainmatter = get_mainmatter_data(
             edition_id=edition_config.edition.edition_id,
             uids=_volume_details.mainmatter,
@@ -226,8 +142,6 @@ def get_edition_data(edition_config: EditionConfig) -> EditionData:
 
         edition_data.append(
             VolumeData(
-                preheadings=_preheadings,
-                headings=_headings_ids,
                 mainmatter=_mainmatter,
                 extras=_extras,
                 tree=_edition_tree[_volume_index],

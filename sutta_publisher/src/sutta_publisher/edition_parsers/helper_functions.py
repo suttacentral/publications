@@ -85,7 +85,7 @@ def process_line(markup: str, segment_id: str, text: str, note: str, references:
 
 def get_heading_depth(tag: Tag) -> int:
     """Extract heading number from html tag i.e. 'h1' -> 1."""
-    return int(re.search(r"^(h)(\d+)$", tag.name).group(2))  # type: ignore
+    return int(tag.name[1:])  # type: ignore
 
 
 def parse_main_toc_depth(depth: str, html: BeautifulSoup) -> int:
@@ -179,32 +179,14 @@ def remove_all_ul(headers: list[BeautifulSoup]) -> None:
 
 def increment_heading_by_number(by_number: int, heading: Tag) -> None:
     """Increases an HTML heading depth by number e.g. h2 -> h4 (in place)"""
-
-    current_depth = get_heading_depth(heading)
-    heading.name = f"h{current_depth + by_number}"
+    if not heading.has_attr("class") or "section-title" not in heading["class"]:
+        current_depth = get_heading_depth(heading)
+        heading.name = f"h{current_depth + by_number}"
 
 
 def find_all_headings(html: BeautifulSoup) -> list[Tag]:
     """Get a list of all hX element from HTML"""
     return list(html.find_all(name=re.compile(r"h\d+")))
-
-
-def create_html_heading_with_id(html: BeautifulSoup, *, depth: int, text: str, id_: str) -> Tag:
-    """Create new tag of format:  <h1><span id="some-id"></span>Some Title</h1>,
-
-    Args:
-        html: an HTML, for which to build a heading
-        depth: a depth of heading e.g. 1 for "h1", 2 for "h2" etc.
-        text: a title for the heading
-        id_: an id property to assign to the new tag
-
-    Returns:
-        Tag: an HTML tag with id ready to insert
-    """
-    nt = html.new_tag(name=f"h{depth}", id=id_)
-    nt.string = text
-
-    return nt
 
 
 def add_class(tags: list[Tag], class_: str) -> None:

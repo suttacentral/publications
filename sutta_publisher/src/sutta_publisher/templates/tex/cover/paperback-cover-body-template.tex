@@ -3,24 +3,33 @@
 % spine
 
 \bookcovercomponent{center}{bg spine top}{
-\begin{minipage}[t][][c]{\spinewidth}
+\begin{minipage}[t][1in][t]{\spinewidth}
+\centering
+\begin{minipage}[t][.78in][c]{.9\spinewidth}
 
 \spinevolumenumber{\BLOCK{if volume_number}Vol. \VAR{volume_number | safe}\BLOCK{endif}}
 
 \spinevolumeacronym{\BLOCK{if volume_translation_title}\VAR{volume_translation_title | safe}\BLOCK{endif}}
 
 \end{minipage}
+{\color{secondarytextcolor}{\rule{\spinewidth}{1pt}}}
+\end{minipage}
 }
 
-\bookcovercomponent{center rotate}{spine}[0in,1in,0in,1in]{
+\bookcovercomponent{center rotate}{spine}[0in,0in,0in,0in]{
 
-\begin{tabulary}{6in}{V{4in}|V{3in}}
+\begin{tabulary}{7in}{V{4in}V{3in}}
 \spinetranslationtitle{\VAR{translation_title | safe}} & \spinecreatorname{\VAR{creator_name | safe}}
 \end{tabulary}
 
 }
 
 \bookcovercomponent{center}{bg spine bottom}{
+
+{\color{secondarytextcolor}{\rule{\spinewidth}{1pt}}}
+
+\vspace*{.3in}
+
 \spinelogo{}
 }
 

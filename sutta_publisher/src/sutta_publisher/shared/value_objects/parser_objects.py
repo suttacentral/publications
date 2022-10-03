@@ -1,10 +1,8 @@
 """
 These are work models for parsers, which facilitate preparation of publication components and their postprocessing.
 Motivation for this is that we often need to iterate over several items from raw data, config data etc.
-(for a, b in zip(a_collection, b_collection: ...)).
-Also our chain of operations heavily depends on a state of processed components
-(i.e. we cannot parse additional preheadings if mainmatter isn't generated;
-we cannot create ToC unless mainmatter and additional preheadings are prepared etc...)
+Also, our chain of operations heavily depends on a state of processed components (i.e. we cannot create ToC unless
+mainmatter is prepared etc...)
 Therefore if we wrap all the parsed data (the output of parsers) into objects just like we did with data from API
 in pydantic objects, they will be more manageable and would have better control over chain of operations executed
 on an object.
@@ -103,7 +101,6 @@ class Volume(BaseModel):
     blurbs: list[Blurb] | None = None
 
     # Edition metadata (common for all volumes)
-    acronym: str = ""
     created: str = "None"
     creation_process: str = ""
     creator_biography: str = ""

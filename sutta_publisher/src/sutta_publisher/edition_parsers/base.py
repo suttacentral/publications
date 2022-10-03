@@ -223,9 +223,10 @@ class EditionParser(ABC):
 
         validate_node(node)
 
-        # Branches, except the branch with publication title
+        # *** Branches (section headings) with no content ***
         if node.type == "branch":
 
+            # Skip the 1st branch in editions that consist of only 1 mainmatter and 1 volume
             if (
                 node.uid != self.config.edition.text_uid
                 or len(self.config.edition.volumes[volume_index].mainmatter) > 1
@@ -242,7 +243,9 @@ class EditionParser(ABC):
             else:
                 return ""
 
-        # Some nodes are empty leaves. We skip them.
+        # *** Leaves (suttas or ranges of suttas) ***
+
+        # Skip empty leaves with no content
         elif not node.mainmatter.markup:
             return ""
 
@@ -322,8 +325,7 @@ class EditionParser(ABC):
         # Remove all <header>...</header> tags from mainmatter, but keep their contents
         remove_all_header(headers=_header_tags)
 
-        # Change numbers of all headings according to how many additional preheadings are. If there are 2 preheadings,
-        # h1 headings become h3 headings.
+        # Change depth of all headings but section-titles
         _additional_depth: int = _sutta_title_depth - 1
         for heading in find_all_headings(mainmatter):
             increment_heading_by_number(by_number=_additional_depth, heading=heading)
@@ -357,7 +359,8 @@ class EditionParser(ABC):
         self._unwrap_verses(mainmatter=mainmatter)
 
         # Insert <br> after <span class="speaker">
-        any(_span.insert_after(mainmatter.new_tag("br")) for _span in mainmatter.find_all("span", class_="speaker"))
+        for _span in mainmatter.find_all("span", class_="speaker"):
+            _span.insert_after(mainmatter.new_tag("br"))
 
         # Find pannasa headings and add class "pannasaka-heading"
         _pannasa = mainmatter.find_all(id=lambda x: x and "pannasaka" in x)

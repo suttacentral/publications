@@ -41,7 +41,8 @@ class PaperbackEdition(LatexParser):
     def generate_cover(self, volume: Volume) -> None:
         log.debug(f"Generating cover... (vol {volume.volume_number or 1} of {self.config.edition.number_of_volumes})")
 
-        _path = self.TEMP_DIR / f"{volume.filename}-paperback"  # TODO: Change cover file name when output dir structure is ready
+        # TODO: Change cover file name when output dir structure is ready
+        _path = self.TEMP_DIR / f"{volume.filename}-paperback"
         doc = self._generate_cover(volume=volume)
         # doc.generate_tex(filepath=str(_path))  # dev
         log.debug("Generating pdf...")

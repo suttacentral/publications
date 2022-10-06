@@ -216,7 +216,8 @@ class EpubEdition(LatexParser):
     def generate_cover(self, volume: Volume) -> None:
         log.debug("Generating cover...")
 
-        _path = self.TEMP_DIR / f"{volume.filename}-epub"  # TODO: Change cover file name when output dir structure is ready
+        # TODO: Change cover file name when output dir structure is ready
+        _path = self.TEMP_DIR / f"{volume.filename}-epub"
         doc = self._generate_cover(volume=volume)
         # doc.generate_tex(filepath=str(_path))  # dev
         log.debug("Generating pdf...")
@@ -225,7 +226,8 @@ class EpubEdition(LatexParser):
     def convert_cover_to_jpg(self, volume: Volume) -> None:
         log.debug("Converting pdf to jpg...")
 
-        _path = self.TEMP_DIR / f"{volume.filename}-epub"  # TODO: Change cover file name when output dir structure is ready
+        # TODO: Change cover file name when output dir structure is ready
+        _path = self.TEMP_DIR / f"{volume.filename}-epub"
         with Image(filename=f"pdf:{_path}.pdf", resolution=self.JPG_DENSITY) as img:
             img.format = "jpeg"
             img.compression_quality = self.JPG_QUALITY

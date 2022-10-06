@@ -8,3 +8,4 @@ lxml
 jinja2
 pylatex
 pypdf2
+wand

@@ -326,7 +326,7 @@ def get_individual_cover_template_name(volume: Volume) -> str:
     if volume.volume_number:
         return f"{volume.text_uid}-{volume.volume_number}.tex"
     else:
-        return f"{volume.text_uid}.tex"
+        return f"{volume.text_uid}-1.tex"
 
 
 def wrap_in_z(text: str) -> str:

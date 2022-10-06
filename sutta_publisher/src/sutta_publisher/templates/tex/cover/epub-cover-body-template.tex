@@ -1,0 +1,29 @@
+\begin{bookcover}
+
+\bookcovercomponent{normal}{bg whole}{
+\vspace*{3in}
+\hspace*{2in}{\coverimage{}}
+}
+
+\bookcovercomponent{normal}{whole}[.95in,.92in,1in,.75in]{
+
+\fronttranslationtitle{\VAR{translation_title | safe | wrap_in_z}}
+
+\fronttranslationsubtitle{\VAR{translation_subtitle | safe | wrap_in_z}}
+
+\hfil{\color{secondarytextcolor}{\rule{4in}{1pt}}}\hfil
+
+\frontbyline{\BLOCK{filter wrap_in_z}translated by\BLOCK{endfilter}}
+\frontcreatorname{\VAR{creator_name | safe | wrap_in_z}}
+
+\vfill
+
+\setstretch{1.05}
+
+\BLOCK{if volume_number}\frontvolumenumber{Volume \VAR{volume_number | safe | wrap_in_z}}\BLOCK{endif}
+\BLOCK{if volume_acronym}\frontvolumeacronym{\VAR{volume_acronym | safe | wrap_in_z}}\BLOCK{endif}
+\BLOCK{if volume_translation_title}\frontvolumetranslationtitle{\VAR{volume_translation_title | safe | wrap_in_z}}\BLOCK{endif}
+\BLOCK{if volume_root_title}\frontvolumeroottitle{\VAR{volume_root_title | safe | wrap_in_z}}\BLOCK{endif}
+}
+
+\end{bookcover}

@@ -1,5 +1,5 @@
 # Files and directiories that should not be ignored
-!templates/
+!sutta_publisher/src/sutta_publisher/templates/tex/cover
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -1,10 +1,13 @@
+import ast
 import logging
+import os
 from copy import copy
 from pathlib import Path
 from typing import Callable, no_type_check
 
 from bs4 import BeautifulSoup, Tag
 from ebooklib.epub import EpubBook, EpubHtml, EpubItem, EpubNav, EpubNcx, Link, Section, write_epub
+from wand.image import Image
 
 from sutta_publisher.edition_parsers.helper_functions import (
     extract_string,
@@ -18,20 +21,33 @@ from sutta_publisher.shared.value_objects.edition import EditionResult, EditionT
 from sutta_publisher.shared.value_objects.parser_objects import Edition, Volume
 
 from .base import EditionParser
+from .latex import LatexParser
 
 log = logging.getLogger(__name__)
 
 
-class EpubEdition(EditionParser):
+class EpubEdition(LatexParser):
     CSS_PATH: Path = Path(__file__).parent.parent / "css_stylesheets/epub.css"
+
+    JPG_DENSITY: int = ast.literal_eval(os.getenv("JPG_DENSITY", 200))  # type: ignore
+    JPG_QUALITY: int = ast.literal_eval(os.getenv("JPG_QUALITY", 90))  # type: ignore
+
     edition_type: EditionType = EditionType.epub
     default_style: EpubItem
+    mainmatter_uids: list[list[str]]
+    mainmatter_uids_mapping: dict[str, str]
+    sutta_depth: int
+    volume_mainmatter: list[BeautifulSoup]
 
     def _set_metadata(self, book: EpubBook) -> None:
         book.set_identifier(self.config.edition.edition_id)
         book.set_title(self.config.publication.translation_title)
         book.set_language(self.config.publication.translation_lang_iso)
         book.add_author(self.config.publication.creator_name)
+
+    def _set_cover(self, book: EpubBook, volume: Volume) -> None:
+        with open(self.TEMP_DIR / f"{volume.filename}-epub.jpg", "rb") as img:
+            book.set_cover(file_name=f"cover.jpg", content=img.read())
 
     def _set_default_style(self) -> EpubItem:
         with open(file=self.CSS_PATH) as f:
@@ -72,22 +88,69 @@ class EpubEdition(EditionParser):
         _mainmatter = extract_string(_html)
         return [BeautifulSoup(_part, "lxml") for _part in _mainmatter.split("//split")]
 
-    def _get_mainmatter_uids(self, mainmatter_parts: list[BeautifulSoup], depth: int) -> list[list[str]]:
-        return [find_mainmatter_part_uids(html=_part, depth=depth) for _part in mainmatter_parts]
+    def _get_mainmatter_uids(self) -> list[list[str]]:
+        return [find_mainmatter_part_uids(html=_part, depth=self.sutta_depth) for _part in self.volume_mainmatter]
 
-    def _make_mainmatter_uids_mapping(self, mainmatter_uids: list[list[str]]) -> dict[str, str]:
-        return {uid: chapter[0] for chapter in mainmatter_uids for uid in chapter}
+    def _make_mainmatter_uids_mapping(self) -> dict[str, str]:
+        return {uid: chapter[0] for chapter in self.mainmatter_uids for uid in chapter}
 
-    @staticmethod
-    def _process_secondary_toc_links(html: BeautifulSoup, mapping: dict[str, str]) -> None:
+    def _set_frontmatter(self, book: EpubBook, volume: Volume) -> None:
+        for _matter_part in volume.frontmatter:
+            _frontmatter_part_html: BeautifulSoup = BeautifulSoup(_matter_part, "lxml")
+            _chapter_name: str = get_chapter_name(_frontmatter_part_html)
+
+            # skip setting html main toc as chapter
+            if _chapter_name == "main-toc":
+                continue
+
+            # connect blurb links with appropriate chapters
+            elif _chapter_name == "blurbs":
+                _links = _frontmatter_part_html.find_all("a", class_="blurb-link")
+                self._process_links(links=_links)
+
+            self._set_chapter(book=book, html=_frontmatter_part_html, chapter_name=_chapter_name)
+
+    def _set_mainmatter(self, book: EpubBook, volume: Volume) -> None:
+        for _part, _uids in zip(self.volume_mainmatter, self.mainmatter_uids):
+
+            # connect secondary toc items to appropriate chapters
+            if self.config.edition.secondary_toc and (_section := _part.find("section", class_="secondary-toc")):
+                self._process_secondary_toc_links(html=_section)
+
+            # connect note references with endnotes chapter
+            if _links := _part.find_all("a", role="doc-noteref"):
+                self._process_links(links=_links, chapter_name="endnotes")
+
+                # prepare helper data
+                for _link in _links:
+                    self.mainmatter_uids_mapping[_link["id"]] = _uids[0]
+
+            self._set_mainmatter_chapter(book=book, html=_part, volume=volume, uids=_uids)
+
+    def _set_backmatter(self, book: EpubBook, volume: Volume) -> None:
+        for _part in volume.backmatter:
+            _backmatter_part_html: BeautifulSoup = BeautifulSoup(_part, "lxml")
+            _chapter_name = get_chapter_name(_backmatter_part_html)
+
+            # connect note backlinks to appropriate chapters
+            if _chapter_name == "endnotes":
+                _links = _backmatter_part_html.find_all("a", role="doc-backlink")
+                self._process_links(links=_links)
+
+            self._set_chapter(book=book, html=_backmatter_part_html, chapter_name=_chapter_name)
+
+    def _process_secondary_toc_links(self, html: BeautifulSoup) -> None:
         for _tag in html.find_all("a", href=True):
-            _tag["href"] = f'{mapping[_tag["href"][1:]]}.xhtml{_tag["href"]}'
+            _tag["href"] = f'{self.mainmatter_uids_mapping[_tag["href"][1:]]}.xhtml{_tag["href"]}'
 
     @no_type_check
-    @staticmethod
-    def _process_links(links: list[Tag], mapping: dict[str, str] = None, chapter_name: str = "") -> None:
+    def _process_links(self, links: list[Tag], chapter_name: str = "") -> None:
         for _tag in links:
-            _target: str = chapter_name if chapter_name else mapping.get(_tag["href"][1:], list(mapping.keys())[0])
+            _target: str = (
+                chapter_name
+                if chapter_name
+                else self.mainmatter_uids_mapping.get(_tag["href"][1:], list(self.mainmatter_uids_mapping.keys())[0])
+            )
             _tag["href"] = f'{_target}.xhtml{_tag["href"]}'
 
     def _set_mainmatter_chapter(self, book: EpubBook, html: BeautifulSoup, volume: Volume, uids: list[str]) -> None:
@@ -95,11 +158,14 @@ class EpubEdition(EditionParser):
         _chapter_name = uids[0]
         self._set_chapter(book=book, html=html, chapter_name=_chapter_name)
 
-    def _set_main_toc(self, volume: Volume, mapping: dict[str, str]) -> list[Link | list[Section | Link]]:
+    def _set_main_toc(self, volume: Volume) -> list[Link | list[Section | Link]]:
         _index = get_true_volume_index(volume)
         _tree = self.raw_data[_index].tree
         _headings = copy(volume.main_toc.headings)
-        return [make_section_or_link(headings=_headings, item=_item, mapping=mapping) for _item in _tree]
+        return [
+            make_section_or_link(headings=_headings, item=_item, mapping=self.mainmatter_uids_mapping)
+            for _item in _tree
+        ]
 
     def generate_epub(self, volume: Volume) -> None:
         log.debug("Generating epub...")
@@ -110,69 +176,34 @@ class EpubEdition(EditionParser):
         ]
 
         # set metadata
-        self._set_metadata(book)
+        self._set_metadata(book=book)
+
+        # set cover
+        self._set_cover(book=book, volume=volume)
 
         # set style
         self.default_style = self._set_default_style()
         book.add_item(self.default_style)
 
         # divide mainmatter into separate chapters
-        volume_mainmatter: list[BeautifulSoup] = self._split_mainmatter(mainmatter=volume.mainmatter)
+        self.volume_mainmatter = self._split_mainmatter(mainmatter=volume.mainmatter)
 
         # prepare helper data
-        _sutta_depth = find_sutta_title_depth(html=BeautifulSoup(volume.mainmatter, "lxml"))
-        mainmatter_uids: list[list[str]] = self._get_mainmatter_uids(
-            mainmatter_parts=volume_mainmatter, depth=_sutta_depth
-        )
-        mainmatter_uids_mapping: dict[str, str] = self._make_mainmatter_uids_mapping(mainmatter_uids=mainmatter_uids)
+        self.sutta_depth = find_sutta_title_depth(html=BeautifulSoup(volume.mainmatter, "lxml"))
+        self.mainmatter_uids = self._get_mainmatter_uids()
+        self.mainmatter_uids_mapping = self._make_mainmatter_uids_mapping()
 
         # set frontmatter
-        for _matter_part in volume.frontmatter:
-            _frontmatter_part_html: BeautifulSoup = BeautifulSoup(_matter_part, "lxml")
-            _chapter_name = get_chapter_name(_frontmatter_part_html)
-
-            # skip setting html main toc as chapter
-            if _chapter_name == "main-toc":
-                continue
-
-            # connect blurb links with appropriate chapters
-            elif _chapter_name == "blurbs":
-                _links = _frontmatter_part_html.find_all("a", class_="blurb-link")
-                EpubEdition._process_links(links=_links, mapping=mainmatter_uids_mapping)
-
-            self._set_chapter(book=book, html=_frontmatter_part_html, chapter_name=_chapter_name)
+        self._set_frontmatter(book=book, volume=volume)
 
         # set mainmatter
-        for _part, _uids in zip(volume_mainmatter, mainmatter_uids):
-
-            # connect secondary toc items to appropriate chapters
-            if self.config.edition.secondary_toc and (_section := _part.find("section", class_="secondary-toc")):
-                EpubEdition._process_secondary_toc_links(html=_section, mapping=mainmatter_uids_mapping)
-
-            # connect note references with endnotes chapter
-            if _links := _part.find_all("a", role="doc-noteref"):
-                EpubEdition._process_links(links=_links, chapter_name="endnotes")
-
-                # prepare helper data
-                for _link in _links:
-                    mainmatter_uids_mapping[_link["id"]] = _uids[0]
-
-            self._set_mainmatter_chapter(book=book, html=_part, volume=volume, uids=_uids)
+        self._set_mainmatter(book=book, volume=volume)
 
         # set backmatter
-        for _part in volume.backmatter:
-            _backmatter_part_html: BeautifulSoup = BeautifulSoup(_part, "lxml")
-            _chapter_name = get_chapter_name(_backmatter_part_html)
-
-            # connect note backlinks to appropriate chapters
-            if _chapter_name == "endnotes":
-                _links = _backmatter_part_html.find_all("a", role="doc-backlink")
-                EpubEdition._process_links(links=_links, mapping=mainmatter_uids_mapping)
-
-            self._set_chapter(book=book, html=_backmatter_part_html, chapter_name=_chapter_name)
+        self._set_backmatter(book=book, volume=volume)
 
         # set table of contents
-        book.toc.extend(self._set_main_toc(volume=volume, mapping=mainmatter_uids_mapping))
+        book.toc.extend(self._set_main_toc(volume=volume))
 
         # add navigation files
         book.add_item(EpubNcx())
@@ -182,19 +213,36 @@ class EpubEdition(EditionParser):
         _path = self.TEMP_DIR / f"{volume.filename}.epub"
         write_epub(name=_path, book=book, options={})
 
+    def generate_cover(self, volume: Volume) -> None:
+        log.debug("Generating cover...")
+
+        _path = self.TEMP_DIR / f"{volume.filename}-epub"
+        doc = self._generate_cover(volume=volume)
+        # doc.generate_tex(filepath=str(_path))  # dev
+        log.debug("Generating pdf...")
+        doc.generate_pdf(filepath=str(_path), clean_tex=False, compiler="latexmk", compiler_args=["-lualatex"])
+
+    def convert_cover_to_jpg(self, volume: Volume) -> None:
+        log.debug("Converting pdf to jpg...")
+
+        _path = self.TEMP_DIR / f"{volume.filename}-epub"
+        with Image(filename=f"pdf:{_path}.pdf", resolution=self.JPG_DENSITY) as img:
+            img.format = "jpeg"
+            img.compression_quality = self.JPG_QUALITY
+            img.save(filename=f"{_path}.jpg")
+
     def collect_all(self) -> EditionResult:
         _edition: Edition = super().collect_all()
 
         _operations: list[Callable] = [
+            self.generate_cover,
+            self.convert_cover_to_jpg,
             self.generate_epub,
-            # self.generate_cover
         ]
 
         for _operation in _operations:
             EditionParser.on_each_volume(edition=_edition, operation=_operation)
 
-        # self._generate_covers()
-        # self._generate_epub()
         txt = "dummy"
         result = EditionResult()
         result.write(txt)

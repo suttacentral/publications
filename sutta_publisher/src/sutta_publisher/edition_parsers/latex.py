@@ -2,8 +2,9 @@ import ast
 import logging
 import os
 import re
+from copy import copy
 from pathlib import Path
-from typing import Any, Callable, cast
+from typing import Any, Callable, cast, no_type_check
 
 from bs4 import BeautifulSoup, NavigableString, PageElement, Tag
 from jinja2 import Environment as jinja2_Environment, FileSystemLoader, Template, TemplateNotFound
@@ -48,8 +49,8 @@ class CustomEnumerate(Enumerate):
 class LatexParser(EditionParser):
     edition_type = "latex_parser"
 
-    LATEX_DOCUMENT_CONFIG: dict[str, str] = ast.literal_eval(os.getenv("LATEX_DOCUMENT_CONFIG", ""))
-    LATEX_COVER_CONFIG: dict[str, str] = ast.literal_eval(os.getenv("LATEX_COVER_CONFIG", ""))
+    LATEX_DOCUMENT_CONFIG: dict[str, str | list[str]] = ast.literal_eval(os.getenv("LATEX_DOCUMENT_CONFIG", ""))
+    LATEX_COVER_CONFIG: dict[str, str | list[str]] = ast.literal_eval(os.getenv("LATEX_COVER_CONFIG", ""))
 
     IMAGES_DIR = os.path.join(Path(__file__).parent.parent / "images", "")  # os.path.join -> add a trailing slash
     TEX_TEMPLATES_DIR = Path(__file__).parent.parent / "templates" / "tex"
@@ -650,7 +651,7 @@ class LatexParser(EditionParser):
         # create .xmpdata file
         self._set_xmpdata(volume=volume)
 
-        doc = Document(**self.LATEX_DOCUMENT_CONFIG)
+        doc = Document(**self._process_document_config(volume=volume, config=copy(self.LATEX_DOCUMENT_CONFIG)))
 
         # set preamble
         self._append_preamble(doc=doc, volume=volume)
@@ -680,10 +681,21 @@ class LatexParser(EditionParser):
 
         return doc
 
-    def _fill_document_options(self, volume: Volume) -> None:
-        self.LATEX_COVER_CONFIG["document_options"] = self.LATEX_COVER_CONFIG["document_options"].format(
-            **volume.dict()
-        )
+    @no_type_check
+    def _process_document_config(self, volume: Volume, config: dict[str, str | list[str]]) -> dict[str, str]:
+        _document_options: list[str] = config.pop("document_options")
+        _processed_options: list[str] = []
+
+        for _option in _document_options:
+            if not (_match := re.search(r"{(\w+)}", _option)) or getattr(volume, _match.group(1)):
+                if self.config.edition.publication_type == "epub" and _match and _match.group(1) == "page_width":
+                    _epub_page_width = re.sub(r"^\d+", lambda x: str(int(int(x.group(0))/2)), volume.page_width)
+                    _processed_options.append(_option.format(**{_match.group(1): _epub_page_width}))
+                else:
+                    _processed_options.append(_option.format(**volume.dict()))
+
+        config["document_options"] = ",".join(_processed_options)
+        return config
 
     def _convert_input_to_tex(self, input_data: Any) -> str:
         _html: PageElement = BeautifulSoup(input_data, "lxml").find("body").next_element
@@ -691,8 +703,7 @@ class LatexParser(EditionParser):
 
     def _generate_cover(self, volume: Volume) -> Document:
         # setup
-        self._fill_document_options(volume=volume)
-        doc = Document(**self.LATEX_COVER_CONFIG)
+        doc = Document(**self._process_document_config(volume=volume, config=copy(self.LATEX_COVER_CONFIG)))
 
         # cover preamble
         _preamble_template = self._get_cover_template(name="preamble")

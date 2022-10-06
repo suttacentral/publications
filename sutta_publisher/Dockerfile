@@ -11,13 +11,16 @@ ENV PYTHONPATH=/app/
 
 RUN apt-get update -y \
     && apt-get upgrade --no-install-recommends -y \
-    && apt-get install perl wget fontconfig -y \
+    && apt-get install perl wget fontconfig libmagickwand-dev -y \
     && apt-get clean -y \
     && cd /tmp \
     && wget -q https://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz \
     && zcat install-tl-unx.tar.gz | tar xf - \
     && cd install-tl-* \
-    && perl ./install-tl --no-interaction 
+    && perl ./install-tl --no-interaction \
+    && cd .. \
+    && rm install-tl-unx.tar.gz \
+    && rm -r install-tl-*
 
 COPY ./assets/fonts/ /tmp/fonts
 RUN cp -Rf /tmp/fonts/Gentium/ /usr/local/share/fonts/ && \
@@ -29,6 +32,8 @@ RUN cp -Rf /tmp/fonts/Gentium/ /usr/local/share/fonts/ && \
 ENV PATH=/usr/local/texlive/2022/bin/x86_64-linux:$PATH
 
 RUN tlmgr install luatextra fontspec
+
+COPY ./policy.xml /etc/ImageMagick-6
 
 ### PRODUCTION
 FROM base as production

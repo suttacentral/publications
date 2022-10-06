@@ -63,7 +63,7 @@ class EditionDetails(BaseModel):
     working_dir: str
     text_uid: str
 
-    @validator("publication_blurb", pre=True)
+    @validator("cover_bleed", "publication_blurb", pre=True)
     def sanitize_input(cls, field: Literal[False] | str) -> str:
         if field is False:
             return ""

@@ -689,7 +689,7 @@ class LatexParser(EditionParser):
         for _option in _document_options:
             if not (_match := re.search(r"{(\w+)}", _option)) or getattr(volume, _match.group(1)):
                 if self.config.edition.publication_type == "epub" and _match and _match.group(1) == "page_width":
-                    _epub_page_width = re.sub(r"^\d+", lambda x: str(int(int(x.group(0))/2)), volume.page_width)
+                    _epub_page_width = re.sub(r"^\d+", lambda x: str(int(int(x.group(0)) / 2)), volume.page_width)
                     _processed_options.append(_option.format(**{_match.group(1): _epub_page_width}))
                 else:
                     _processed_options.append(_option.format(**volume.dict()))

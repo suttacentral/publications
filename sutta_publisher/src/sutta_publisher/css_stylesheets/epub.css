@@ -80,6 +80,11 @@ blockquote
     margin: 1em 2.5em;
 }
 
+blockquote p
+{
+  text-indent: 0
+}
+
 ul,
 ol
 {

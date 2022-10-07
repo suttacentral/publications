@@ -80,6 +80,11 @@ blockquote
     margin: 1em 2.5em;
 }
 
+blockquote p
+{
+    text-indent: 0;
+}
+
 ul,
 ol
 {
@@ -274,7 +279,7 @@ address
     gap: .5em;
 }
 
-.publisher-logo svg
+.publisher-logo img
 {
     width: 1em;
     height: 1em;

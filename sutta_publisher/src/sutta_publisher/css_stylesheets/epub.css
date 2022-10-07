@@ -83,6 +83,8 @@ blockquote
 blockquote p
 {
     text-indent: 0;
+
+    text-align: left;
 }
 
 ul,

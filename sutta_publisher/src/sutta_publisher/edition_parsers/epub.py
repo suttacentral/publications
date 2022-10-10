@@ -229,7 +229,9 @@ class EpubEdition(LatexParser):
         log.debug("Generating pdf...")
         doc.generate_pdf(filepath=str(_path), clean_tex=False, compiler="latexmk", compiler_args=["-lualatex"])
 
-        volume.output_file_paths.extend((_path.with_suffix(".tex"), _path.with_suffix(".pdf")),)
+        volume.output_file_paths.extend(
+            (_path.with_suffix(".tex"), _path.with_suffix(".pdf")),
+        )
 
     def convert_cover_to_jpg(self, volume: Volume) -> None:
         log.debug("Converting pdf to jpg...")
@@ -238,7 +240,7 @@ class EpubEdition(LatexParser):
         with Image(filename=f"pdf:{_path.with_suffix('.pdf')}", resolution=self.JPG_DENSITY) as img:
             img.format = "jpeg"
             img.compression_quality = self.JPG_QUALITY
-            img.save(filename=_path.with_suffix('.jpg'))
+            img.save(filename=_path.with_suffix(".jpg"))
 
         volume.output_file_paths.append(_path.with_suffix(".jpg"))
 

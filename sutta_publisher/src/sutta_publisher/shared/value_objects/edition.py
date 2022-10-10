@@ -1,11 +1,13 @@
 from enum import auto
-from io import StringIO
+from pathlib import Path
+
+from pydantic import BaseModel
 
 from .base import StrEnum
 
 
-class EditionResult(StringIO):
-    pass
+class EditionResult(BaseModel):
+    file_paths: list[Path]
 
 
 class EditionType(StrEnum):

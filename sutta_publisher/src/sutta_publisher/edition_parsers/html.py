@@ -81,10 +81,12 @@ class HtmlEdition(EditionParser):
         _html = _template.render(css=_css, **volume.dict(exclude_none=True, exclude_unset=True))
         _output = HtmlEdition._apply_pretty_printing(html=_html)
 
-        _path = self.TEMP_DIR / f"{volume.filename}.html"
+        _path = (self.TEMP_DIR / volume.filename).with_suffix(".html")
 
         with open(file=_path, mode="wt") as f:
             f.write(_output)
+
+        volume.output_file_paths.append(_path)
 
     def collect_all(self) -> EditionResult:
         _edition: Edition = super().collect_all()
@@ -94,8 +96,6 @@ class HtmlEdition(EditionParser):
         for _operation in _operations:
             EditionParser.on_each_volume(edition=_edition, operation=_operation)
 
-        txt = "dummy"
-        result = EditionResult()
-        result.write(txt)
-        result.seek(0)
-        return result
+        return EditionResult(
+            file_paths=[file_path for volume in _edition.volumes for file_path in volume.output_file_paths]
+        )

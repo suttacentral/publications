@@ -6,4 +6,5 @@ log = logging.getLogger(__name__)
 
 
 def publish(result: EditionResult) -> None:
-    log.info("Publishing results: %s", result.read()[:100])
+    log.info("Publishing results: %s", result.file_paths)
+

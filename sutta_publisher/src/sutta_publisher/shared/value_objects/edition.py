@@ -9,6 +9,11 @@ from .base import StrEnum
 class EditionResult(BaseModel):
     file_paths: list[Path]
 
+    creator_uid: str
+    publication_type: str
+    text_uid: str
+    translation_lang_iso: str
+
 
 class EditionType(StrEnum):
     """Edition types that we can create publication for."""

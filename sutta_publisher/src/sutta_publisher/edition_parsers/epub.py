@@ -218,7 +218,7 @@ class EpubEdition(LatexParser):
         _path = (self.TEMP_DIR / volume.filename).with_suffix(".epub")
         write_epub(name=_path, book=book, options={})
 
-        volume.output_file_paths.append(_path)
+        self.append_volume_file_path(volume=volume, paths=[_path])
 
     def generate_cover(self, volume: Volume) -> None:
         log.debug("Generating cover...")
@@ -229,9 +229,7 @@ class EpubEdition(LatexParser):
         log.debug("Generating pdf...")
         doc.generate_pdf(filepath=str(_path), clean_tex=False, compiler="latexmk", compiler_args=["-lualatex"])
 
-        volume.output_file_paths.extend(
-            (_path.with_suffix(".tex"), _path.with_suffix(".pdf")),
-        )
+        self.append_volume_file_path(volume=volume, paths=[_path.with_suffix(".tex"), _path.with_suffix(".pdf")])
 
     def convert_cover_to_jpg(self, volume: Volume) -> None:
         log.debug("Converting pdf to jpg...")
@@ -242,7 +240,7 @@ class EpubEdition(LatexParser):
             img.compression_quality = self.JPG_QUALITY
             img.save(filename=_path.with_suffix(".jpg"))
 
-        volume.output_file_paths.append(_path.with_suffix(".jpg"))
+        self.append_volume_file_path(volume=volume, paths=[_path.with_suffix(".jpg")])
 
     def collect_all(self) -> EditionResult:
         _edition: Edition = super().collect_all()
@@ -257,5 +255,9 @@ class EpubEdition(LatexParser):
             EditionParser.on_each_volume(edition=_edition, operation=_operation)
 
         return EditionResult(
-            file_paths=[file_path for volume in _edition.volumes for file_path in volume.output_file_paths]
+            file_paths=[file_path for volume in _edition.volumes for file_path in volume.file_paths],
+            creator_uid=_edition.volumes[0].creator_uid,
+            text_uid=_edition.volumes[0].text_uid,
+            publication_type=_edition.volumes[0].publication_type,
+            translation_lang_iso=_edition.volumes[0].translation_lang_iso,
         )

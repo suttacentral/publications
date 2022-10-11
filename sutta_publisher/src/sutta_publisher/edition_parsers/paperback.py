@@ -26,9 +26,7 @@ class PaperbackEdition(LatexParser):
         log.debug("Generating pdf...")
         doc.generate_pdf(filepath=str(_path), clean_tex=False, compiler="latexmk", compiler_args=["-lualatex"])
 
-        volume.output_file_paths.extend(
-            (_path.with_suffix(".tex"), _path.with_suffix(".pdf")),
-        )
+        self.append_volume_file_path(volume=volume, paths=[_path.with_suffix(".tex"), _path.with_suffix(".pdf")])
 
     def calculate_spine_width(self, volume: Volume) -> None:
         _pdf_file_path = self.TEMP_DIR / f"{volume.filename}.pdf"
@@ -51,13 +49,7 @@ class PaperbackEdition(LatexParser):
         log.debug("Generating pdf...")
         doc.generate_pdf(filepath=str(_path), clean_tex=False, compiler="latexmk", compiler_args=["-lualatex"])
 
-        volume.output_file_paths.extend(
-            (
-                _path.with_suffix(".tex"),
-                _path.with_suffix(".pdf"),
-                _path.with_suffix(".xmpdata"),
-            ),
-        )
+        self.append_volume_file_path(volume=volume, paths=[_path.with_suffix(".tex"), _path.with_suffix(".pdf")])
 
     def collect_all(self) -> EditionResult:
         _edition: Edition = super().collect_all()
@@ -72,5 +64,9 @@ class PaperbackEdition(LatexParser):
             EditionParser.on_each_volume(edition=_edition, operation=_operation)
 
         return EditionResult(
-            file_paths=[file_path for volume in _edition.volumes for file_path in volume.output_file_paths]
+            file_paths=[file_path for volume in _edition.volumes for file_path in volume.file_paths],
+            creator_uid=self.config.publication.creator_uid,
+            text_uid=self.config.edition.text_uid,
+            publication_type=self.config.edition.publication_type,
+            translation_lang_iso=self.config.publication.translation_lang_iso,
         )

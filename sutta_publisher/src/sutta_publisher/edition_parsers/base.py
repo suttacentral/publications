@@ -110,6 +110,7 @@ class EditionParser(ABC):
             "source_url": self.config.publication.source_url,
             "text_description": self.config.publication.text_description,
             "text_uid": self.config.edition.text_uid,
+            "translation_lang_iso": self.config.publication.translation_lang_iso,
             "translation_lang_name": self.config.publication.translation_lang_name,
             "translation_subtitle": self.config.publication.translation_subtitle,
             "translation_title": self.config.publication.translation_title,
@@ -145,6 +146,10 @@ class EditionParser(ABC):
         """Returns publication url: {suttacentral_url}/editions/{UID}/{ISO}/{author}"""
         return f"{SUTTACENTRAL_URL}editions/{self.config.edition.text_uid}/{self.config.publication.translation_lang_iso}/{self.config.publication.creator_uid}"
 
+    def append_volume_file_path(self, volume: Volume, paths: list) -> None:
+        for path in paths:
+            volume.file_paths.append(path)
+
     def set_metadata(self, volume: Volume) -> None:
         """Set attributes with metadata for a volume. If attribute name is unknown
         (no such field in `Volume` definition) skip it."""
@@ -159,9 +164,11 @@ class EditionParser(ABC):
     def set_filenames(self, volume: Volume) -> None:
         """Generate and assign a proper name for output files to a volume"""
         _translation_title: str = volume.translation_title.replace(" ", "-")
-        _volume_number: str = f"-{volume.volume_number}" if volume.volume_number else ""
+        _date: str = volume.updated if volume.updated else volume.created
+        _date = _date[:10]
+        _volume_number: str = f"-vol{volume.volume_number}" if volume.volume_number else ""
 
-        volume.filename = f"{_translation_title}-{volume.creator_uid}{_volume_number}"
+        volume.filename = f"{_translation_title}-{volume.creator_uid}-{_date}{_volume_number}"
         volume.cover_filename = f"{volume.filename}-cover"
 
     # --- operations on mainmatter

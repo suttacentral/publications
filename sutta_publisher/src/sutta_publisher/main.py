@@ -36,8 +36,8 @@ def run(editions: EditionsConfigs) -> None:
             log.debug(edition)
 
             try:
-                output_file_paths = edition.collect_all()
-                publish(output_file_paths)
+                _edition_result = edition.collect_all()
+                publish(_edition_result)
             except Exception as e:
                 log.exception(e)
 

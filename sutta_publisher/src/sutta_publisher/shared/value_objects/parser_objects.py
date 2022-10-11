@@ -75,7 +75,8 @@ class Volume(BaseModel):
     they will be passed in as a dictionary to the templates and all non-matching keys will simply be ignored.
     """
 
-    output_file_paths: list[Path] = []
+    # List of result file paths
+    file_paths: list[Path] = []
 
     # Per volume metadata
     filename: str = ""
@@ -123,6 +124,7 @@ class Volume(BaseModel):
     source_url: str = ""
     text_description: str = ""
     text_uid: str = ""
+    translation_lang_iso: str = ""
     translation_lang_name: str = ""
     translation_subtitle: str = ""
     translation_title: str = ""

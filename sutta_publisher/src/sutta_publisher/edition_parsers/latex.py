@@ -638,7 +638,7 @@ class LatexParser(EditionParser):
     def _set_xmpdata(self, volume: Volume) -> None:
         _template: Template = LatexParser._get_shared_template(name="metadata")
         _output = _template.render(**volume.dict(exclude_none=True, exclude_unset=True))
-        _path = self.TEMP_DIR / f"{volume.filename}.xmpdata"
+        _path = (self.TEMP_DIR / volume.filename).with_suffix(".xmpdata")
 
         with open(file=_path, mode="wt") as f:
             f.write(_output)

@@ -3,7 +3,6 @@ import logging
 import re
 from base64 import b64encode
 from pathlib import Path
-from typing import cast
 
 import requests
 
@@ -46,6 +45,24 @@ def __get_request_body(file_path: Path, repo_url: str) -> dict[str, str]:
     }
 
 
+def __match_file(filename: str, content: list[dict]) -> dict:
+    """Return a dict with existing file details. Return empty dict if file not found.
+
+    Parameters:
+        filename: name of the file to be uploaded
+        content: list of repo contents
+    """
+    _PATTERN = r"([A-Za-z-]+-)(?:\d+-\d+-+\d+)(-\d+)?(.zip)"
+    _source_match = re.search(_PATTERN, filename)
+
+    for file in content:
+        _target_match = re.search(_PATTERN, file.get("name", ""))
+        if _source_match and _target_match and _target_match.groups() == _source_match.groups():
+            return file
+
+    return {}
+
+
 def __get_file_sha(filename: str, repo_url: str) -> str:
     """Return sha for existing file. If file does not exist returns empty string.
 
@@ -55,14 +72,8 @@ def __get_file_sha(filename: str, repo_url: str) -> str:
     """
 
     response = requests.get(repo_url, headers={"Accept": "application/vnd.github+json"})
+    if response.status_code != 200:
+        return ""
 
-    if response.status_code == 200:
-        pattern = r"([A-Za-z-]+-)(?:\d+-\d+-+\d+)(-\d+)?(.zip)"
-        _source_match = re.search(pattern, filename)
-
-        for _file in response.json():
-            _target_match = re.search(pattern, _file.get("name"))
-            if _source_match and _target_match and _target_match.groups() == _source_match.groups():
-                return cast(str, _file.get("sha", ""))
-
-    return ""
+    file = __match_file(filename, response.json())
+    return file.get("sha", "")

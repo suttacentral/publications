@@ -166,7 +166,7 @@ class EditionParser(ABC):
         _translation_title: str = volume.translation_title.replace(" ", "-")
         _date: str = volume.updated if volume.updated else volume.created
         _date = _date[:10]
-        _volume_number: str = f"-vol{volume.volume_number}" if volume.volume_number else ""
+        _volume_number: str = f"-{volume.volume_number}" if volume.volume_number else ""
 
         volume.filename = f"{_translation_title}-{volume.creator_uid}-{_date}{_volume_number}"
         volume.cover_filename = f"{volume.filename}-cover"
@@ -719,10 +719,6 @@ class EditionParser(ABC):
             EditionParser.on_each_volume(edition=edition, operation=_operation)
 
         return edition
-
-        # return EditionResult(
-        #     file_paths=[file_path for volume in _edition.volumes for file_path in volume.output_file_paths]
-        # )
 
     @classmethod
     def get_edition_mapping(cls, mapping: dict) -> None:

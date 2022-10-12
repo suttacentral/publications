@@ -255,9 +255,9 @@ class EpubEdition(LatexParser):
             EditionParser.on_each_volume(edition=_edition, operation=_operation)
 
         return EditionResult(
-            file_paths=[file_path for volume in _edition.volumes for file_path in volume.file_paths],
-            creator_uid=_edition.volumes[0].creator_uid,
-            text_uid=_edition.volumes[0].text_uid,
-            publication_type=_edition.volumes[0].publication_type,
-            translation_lang_iso=_edition.volumes[0].translation_lang_iso,
+            volumes=[volume.file_paths for volume in _edition.volumes],
+            creator_uid=self.config.publication.creator_uid,
+            text_uid=self.config.edition.text_uid,
+            publication_type=self.config.edition.publication_type,
+            translation_lang_iso=self.config.publication.translation_lang_iso,
         )

@@ -28,18 +28,21 @@ def _get_api_key() -> str:
 
 
 def publish(result: EditionResult) -> None:
-    log.info("Publishing results: %s", ", ".join(map(str, result.file_paths)))
     api_key: str = _get_api_key()
-    repo_url_pattern: str = _get_repo_url_pattern()
-
+    repo_url: str = _get_repo_url_pattern().format(**result.dict())
     temp_dir = Path(tempfile.gettempdir())
-    filename = result.file_paths[0].stem.strip("-cover")
-    zip_path = (temp_dir / filename).with_suffix(".zip")
 
-    repo_url = repo_url_pattern.format(filename=zip_path.name, **result.dict())
+    for volume in result.volumes:
+        filename = volume[0].stem.strip("-cover")
+        zip_path = (temp_dir / filename).with_suffix(".zip")
 
-    with ZipFile(zip_path, "w") as zip_file:
-        for _file_path in result.file_paths:
-            zip_file.write(filename=_file_path, arcname=_file_path.name)
+        with ZipFile(zip_path, "w") as zip_file:
+            for _path in volume:
+                zip_file.write(filename=_path, arcname=_path.name)
 
-    upload_file_to_repo(zip_path, repo_url, api_key)
+        log.info(f"Publishing results: {', '.join(_path.name for _path in volume)}.")
+
+        upload_file_to_repo(zip_path, repo_url, api_key)
+
+    log.info("** Publication uploaded to repo **")
+

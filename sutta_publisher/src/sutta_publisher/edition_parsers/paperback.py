@@ -64,7 +64,7 @@ class PaperbackEdition(LatexParser):
             EditionParser.on_each_volume(edition=_edition, operation=_operation)
 
         return EditionResult(
-            file_paths=[file_path for volume in _edition.volumes for file_path in volume.file_paths],
+            volumes=[volume.file_paths for volume in _edition.volumes],
             creator_uid=self.config.publication.creator_uid,
             text_uid=self.config.edition.text_uid,
             publication_type=self.config.edition.publication_type,

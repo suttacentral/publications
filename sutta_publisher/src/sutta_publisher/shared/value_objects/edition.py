@@ -7,7 +7,8 @@ from .base import StrEnum
 
 
 class EditionResult(BaseModel):
-    file_paths: list[Path]
+    # List of result file paths for each volume
+    volumes: list[list[Path]]
 
     creator_uid: str
     publication_type: str

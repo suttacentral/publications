@@ -45,4 +45,3 @@ def publish(result: EditionResult) -> None:
         upload_file_to_repo(zip_path, repo_url, api_key)
 
     log.info("** Publication uploaded to repo **")
-

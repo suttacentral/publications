@@ -28,10 +28,7 @@ def upload_file_to_repo(file_path: Path, repo_url: str, api_key: str) -> None:
 def __get_request_headers(api_key: str) -> dict[str, str]:
     """Creates request headers for GitHub API."""
 
-    return {
-        "Accept": "application/vnd.github+json",
-        "Authorization": f"token {api_key}"
-    }
+    return {"Accept": "application/vnd.github+json", "Authorization": f"token {api_key}"}
 
 
 def __get_request_body(file_path: Path, repo_url: str) -> dict[str, str]:

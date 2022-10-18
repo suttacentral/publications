@@ -14,6 +14,7 @@ class EditionResult(BaseModel):
     publication_type: str
     text_uid: str
     translation_lang_iso: str
+    translation_title: str
 
 
 class EditionType(StrEnum):

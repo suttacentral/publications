@@ -260,4 +260,5 @@ class EpubEdition(LatexParser):
             text_uid=self.config.edition.text_uid,
             publication_type=self.config.edition.publication_type,
             translation_lang_iso=self.config.publication.translation_lang_iso,
+            translation_title=self.config.publication.translation_title,
         )

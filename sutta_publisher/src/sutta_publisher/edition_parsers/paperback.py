@@ -26,7 +26,9 @@ class PaperbackEdition(LatexParser):
         log.debug("Generating pdf...")
         doc.generate_pdf(filepath=str(_path), clean_tex=False, compiler="latexmk", compiler_args=["-lualatex"])
 
-        self.append_volume_file_path(volume=volume, paths=[_path.with_suffix(".tex"), _path.with_suffix(".pdf")])
+        self.append_volume_file_path(
+            volume=volume, paths=[_path.with_suffix(".tex"), _path.with_suffix(".pdf"), _path.with_suffix(".xmpdata")]
+        )
 
     def calculate_spine_width(self, volume: Volume) -> None:
         _pdf_file_path = self.TEMP_DIR / f"{volume.filename}.pdf"
@@ -69,4 +71,5 @@ class PaperbackEdition(LatexParser):
             text_uid=self.config.edition.text_uid,
             publication_type=self.config.edition.publication_type,
             translation_lang_iso=self.config.publication.translation_lang_iso,
+            translation_title=self.config.publication.translation_title,
         )

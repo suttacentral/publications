@@ -15,7 +15,7 @@ def doc():
 @pytest.fixture()
 @mock.patch("sutta_publisher.shared.value_objects.edition_config.EditionConfig.__init__", return_value=None)
 @mock.patch("sutta_publisher.shared.value_objects.edition_data.EditionData.__init__", return_value=None)
-def latex_edition(config, data):
+def latex_edition(data, config):
     return LatexParser(config, data)
 
 

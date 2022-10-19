@@ -19,7 +19,7 @@ def worker(queue: dict | list[dict], api_key: str, silent: bool = False) -> list
 
     _queue: list[tuple[int, dict]] = [(_i, _t) for _i, _t in enumerate(queue)]
     _errors = 0
-    finished: list[tuple[int, Response]] = []
+    _finished: list[tuple[int, Response]] = []
 
     while _queue and _errors < 3:
         _id, _task = _queue.pop(0)
@@ -36,12 +36,12 @@ def worker(queue: dict | list[dict], api_key: str, silent: bool = False) -> list
             sleep(1)
         else:
             _errors = 0
-            finished.append((_id, _response))
+            _finished.append((_id, _response))
 
     if _errors and not silent:
         raise SystemExit(f"Error while executing HTTP requests: {_queue[0][1].get('type')}")
 
-    return [_res for _, _res in sorted(finished)]
+    return [_res for _, _res in sorted(_finished)]
 
 
 def _get_last_commit_sha(repo_url: str, api_key: str) -> str:
@@ -74,7 +74,7 @@ def _get_blob_shas(file_paths: list[Path], repo_url: str, api_key: str) -> list[
     return shas
 
 
-def __match_file(filename: str, content: list[dict]) -> dict:
+def _match_file(filename: str, content: list[dict]) -> dict:
     """Return a dict with matching file details. Return empty dict if file not found."""
 
     _PATTERN = r"([A-Za-z-]+-)(?:\d+-\d+-+\d+)(-\d+)?(-cover)?(.[a-z]+)"
@@ -104,7 +104,7 @@ def _get_old_files_shas(file_paths: list[Path], repo_url: str, repo_path: str, a
     _content = _responses[0].json()
 
     for file in file_paths:
-        remote_file = __match_file(file.name, _content)
+        remote_file = _match_file(file.name, _content)
         if remote_file:
             old_files_shas.append(remote_file["sha"])
 

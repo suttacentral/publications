@@ -7,6 +7,7 @@ Therefore if we wrap all the parsed data (the output of parsers) into objects ju
 in pydantic objects, they will be more manageable and would have better control over chain of operations executed
 on an object.
 """
+from pathlib import Path
 from typing import Any
 
 from bs4 import Tag
@@ -74,8 +75,12 @@ class Volume(BaseModel):
     they will be passed in as a dictionary to the templates and all non-matching keys will simply be ignored.
     """
 
+    # List of result file paths
+    file_paths: list[Path] = []
+
     # Per volume metadata
     filename: str = ""
+    cover_filename: str = ""
     volume_acronym: str = ""
     volume_isbn: str = ""
     volume_number: int | None = None
@@ -119,6 +124,7 @@ class Volume(BaseModel):
     source_url: str = ""
     text_description: str = ""
     text_uid: str = ""
+    translation_lang_iso: str = ""
     translation_lang_name: str = ""
     translation_subtitle: str = ""
     translation_title: str = ""

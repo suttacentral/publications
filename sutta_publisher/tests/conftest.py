@@ -1,5 +1,5 @@
 import sys
-from io import BytesIO
+from pathlib import Path
 
 import pytest
 
@@ -7,13 +7,8 @@ sys.path.insert(0, "/app")
 
 
 @pytest.fixture
-def file_like_edition() -> BytesIO:
-    return BytesIO(b"Some very wise text to print")
-
-
-@pytest.fixture
-def edition_path_in_repo() -> str:
-    return "path/in/repo/file.html"
+def file_path() -> Path:
+    return Path("path/in/repo/file.html")
 
 
 @pytest.fixture

@@ -110,6 +110,7 @@ class EditionParser(ABC):
             "source_url": self.config.publication.source_url,
             "text_description": self.config.publication.text_description,
             "text_uid": self.config.edition.text_uid,
+            "translation_lang_iso": self.config.publication.translation_lang_iso,
             "translation_lang_name": self.config.publication.translation_lang_name,
             "translation_subtitle": self.config.publication.translation_subtitle,
             "translation_title": self.config.publication.translation_title,
@@ -145,6 +146,10 @@ class EditionParser(ABC):
         """Returns publication url: {suttacentral_url}/editions/{UID}/{ISO}/{author}"""
         return f"{SUTTACENTRAL_URL}editions/{self.config.edition.text_uid}/{self.config.publication.translation_lang_iso}/{self.config.publication.creator_uid}"
 
+    def append_volume_file_path(self, volume: Volume, paths: list) -> None:
+        for path in paths:
+            volume.file_paths.append(path)
+
     def set_metadata(self, volume: Volume) -> None:
         """Set attributes with metadata for a volume. If attribute name is unknown
         (no such field in `Volume` definition) skip it."""
@@ -156,15 +161,15 @@ class EditionParser(ABC):
             except ValueError:
                 continue
 
-    def set_filename(self, volume: Volume) -> None:
-        """Generate and assigns a proper name for output file to a volume"""
+    def set_filenames(self, volume: Volume) -> None:
+        """Generate and assign a proper name for output files to a volume"""
         _translation_title: str = volume.translation_title.replace(" ", "-")
         _date: str = volume.updated if volume.updated else volume.created
         _date = _date[:10]
         _volume_number: str = f"-{volume.volume_number}" if volume.volume_number else ""
-        _file_extension: str = self.edition_type.name
 
         volume.filename = f"{_translation_title}-{volume.creator_uid}-{_date}{_volume_number}"
+        volume.cover_filename = f"{volume.filename}-cover"
 
     # --- operations on mainmatter
     def _generate_mainmatter(self, volume: Volume) -> str:
@@ -699,7 +704,7 @@ class EditionParser(ABC):
         edition: Edition = self._create_edition_skeleton()
         _operations: list[Callable] = [
             self.set_metadata,
-            self.set_filename,
+            self.set_filenames,
             self.set_mainmatter,
             self.set_main_toc,
             self.set_secondary_toc,
@@ -714,17 +719,6 @@ class EditionParser(ABC):
             EditionParser.on_each_volume(edition=edition, operation=_operation)
 
         return edition
-
-        # self.__generate_mainmatter()    # 1.
-        # self.__mainmatter_postprocess() # 2.
-        # self.__generate_frontmatter()   # 3.
-        # self.__generate_backmatter()    # 3.
-        # self.__generate_covers()        # 3.
-        # txt = "dummy"
-        # result = EditionResult()
-        # result.write(txt)
-        # result.seek(0)
-        # return result
 
     @classmethod
     def get_edition_mapping(cls, mapping: dict) -> None:

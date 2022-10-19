@@ -36,8 +36,8 @@ def run(editions: EditionsConfigs) -> None:
             log.debug(edition)
 
             try:
-                file_like_obj = edition.collect_all()
-                publish(file_like_obj)
+                _edition_result = edition.collect_all()
+                publish(_edition_result)
             except Exception as e:
                 log.exception(e)
 

@@ -1,11 +1,20 @@
 from enum import auto
-from io import StringIO
+from pathlib import Path
+
+from pydantic import BaseModel
 
 from .base import StrEnum
 
 
-class EditionResult(StringIO):
-    pass
+class EditionResult(BaseModel):
+    # List of result file paths for each volume
+    volumes: list[list[Path]]
+
+    creator_uid: str
+    publication_type: str
+    text_uid: str
+    translation_lang_iso: str
+    translation_title: str
 
 
 class EditionType(StrEnum):

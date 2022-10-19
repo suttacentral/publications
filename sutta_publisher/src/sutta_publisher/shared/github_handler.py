@@ -1,62 +1,170 @@
 import json
 import logging
+import re
 from base64 import b64encode
-from io import BytesIO
+from pathlib import Path
 
 import requests
+
+from sutta_publisher.shared.value_objects.edition import EditionResult
 
 log = logging.getLogger(__name__)
 
 
-def upload_file_to_repo(file_path: str, file: BytesIO, repo_url: str, api_key: str) -> None:
-    """Uploads given file to `SuttaCentral`'s editions repository.
+def _get_last_commit_sha(repo_url: str, api_key: str) -> str:
+    """Get SHA of the last commit"""
+    _response = requests.get(
+        f"{repo_url}/branches/main",
+        headers={"Accept": "application/vnd.github+json", "Authorization": f"Token {api_key}"},
+    )
+    _response.raise_for_status()
 
-    Parameters:
-        file_path: path where file is to be uploaded (e.g. /folder1/folder2/file.html)
-        file: File-like object
-        repo_url: url of SuttaCentral editions repo
-        api_key: personal token of bot gh account
-    """
-    headers = __get_request_headers(api_key)
-    body = __get_request_body(file, file_path, repo_url)
-
-    request = requests.put(repo_url.format(file_name=file_path), data=json.dumps(body), headers=headers)
-    request.raise_for_status()
-
-    log.info("** Publication uploaded to repo")
+    sha: str = _response.json()["commit"]["sha"]
+    return sha
 
 
-def __get_request_headers(api_key: str) -> dict[str, str]:
-    """Creates request headers for GitHub API."""
+def _get_blob_shas(file_paths: list[Path], repo_url: str, api_key: str) -> list[str]:
+    """Upload blobs of new files and return list of their SHAs"""
+    shas: list[str] = []
+    for _file in file_paths:
+        try:
+            _response = requests.post(
+                f"{repo_url}/git/blobs",
+                json.dumps({"content": b64encode(_file.read_bytes()).decode("ascii"), "encoding": "base64"}),
+                headers={"Accept": "application/vnd.github+json", "Authorization": f"Token {api_key}"},
+            )
+            shas.append(_response.json()["sha"])
 
-    return {"Authorization": f"token {api_key}"}
+        except requests.HTTPError:
+            log.error(f"Could not upload file: {_file.name}.")
 
-
-def __get_request_body(file: BytesIO, file_path: str, repo_url: str) -> dict[str, str]:
-    """Creates request body for GitHub API.
-
-    Parameters:
-        file_path: path where file is to be uploaded (e.g. /folder1/folder2/file.html)
-        file: File-like object
-        repo_url: url of SuttaCentral editions repo
-    """
-
-    return {
-        "message": f"Uploading {file_path}",
-        "content": b64encode(file.read()).decode("ascii"),
-        "sha": __get_file_sha(file_path, repo_url),
-    }
+    return shas
 
 
-def __get_file_sha(file_path: str, repo_url: str) -> str:
-    """Return sha for existing file. If file does not exist returns empty string.
+def __match_file(filename: str, content: list[dict]) -> dict:
+    """Return a dict with matching file details. Return empty dict if file not found."""
 
-    Parameters:
-        file_path: path where file is to be uploaded (e.g. /folder1/folder2/file.html)
-        repo_url: url of SuttaCentral editions repo
-    """
+    _PATTERN = r"([A-Za-z-]+-)(?:\d+-\d+-+\d+)(-\d+)?(-cover)?(.[a-z]+)"
+    _new_file_match = re.search(_PATTERN, filename)
 
-    response = requests.get(repo_url.format(file_name=file_path))
-    sha_val = response.json().get("sha") or ""
+    for _file in content:
+        _old_file_match = re.search(_PATTERN, _file.get("name", ""))
+        if _new_file_match and _old_file_match and _new_file_match.groups() == _old_file_match.groups():
+            return _file
 
-    return sha_val
+    return {}
+
+
+def _get_old_files_shas(file_paths: list[Path], repo_url: str, repo_path: str, api_key: str) -> list[str]:
+    """Get SHAs of current files to be updated in repo"""
+    try:
+        _response = requests.get(
+            f"{repo_url}/contents/{repo_path}",
+            headers={"Accept": "application/vnd.github+json", "Authorization": f"token {api_key}"},
+        )
+        _response.raise_for_status()
+    except requests.HTTPError:
+        return []
+
+    old_files_shas: list[str] = []
+    _content = _response.json()
+
+    for file in file_paths:
+        remote_file = __match_file(file.name, _content)
+        if remote_file:
+            old_files_shas.append(remote_file["sha"])
+
+    return old_files_shas
+
+
+def _create_new_tree(
+    file_paths: list[Path],
+    repo_url: str,
+    repo_path: str,
+    api_key: str,
+    last_commit_sha: str,
+    blob_shas: list[str],
+    old_files_shas: list[str],
+) -> list[dict]:
+    """Create new Git tree with updated files"""
+    _response = requests.get(
+        f"{repo_url}/git/trees/{last_commit_sha}?recursive=1",
+        headers={"Accept": "application/vnd.github+json", "Authorization": f"Token {api_key}"},
+    )
+    _old_tree = _response.json().get("tree", [])
+
+    new_tree: list[dict] = [
+        _item for _item in _old_tree if _item.get("type") == "blob" and not _item.get("sha") in old_files_shas
+    ]
+    new_tree.extend(
+        [
+            {"path": f"{repo_path}/{_file.name}", "mode": "100644", "type": "blob", "sha": _sha}
+            for _file, _sha in zip(file_paths, blob_shas)
+        ]
+    )
+    return new_tree
+
+
+def _get_tree_sha(repo_url: str, api_key: str, tree: list[dict]) -> str:
+    """Post a new tree and return its SHA"""
+    _response = requests.post(
+        f"{repo_url}/git/trees",
+        json.dumps({"tree": tree}),
+        headers={"Accept": "application/vnd.github+json", "Authorization": f"Token {api_key}"},
+    )
+    _response.raise_for_status()
+
+    sha: str = _response.json()["sha"]
+    return sha
+
+
+def _get_new_commit_sha(
+    edition: EditionResult, repo_url: str, api_key: str, last_commit_sha: str, tree_sha: str
+) -> str:
+    """Return SHA of new commit"""
+    _response = requests.post(
+        f"{repo_url}/git/commits",
+        json.dumps(
+            {
+                "message": f"Update {edition.translation_title} ({edition.publication_type})",
+                "parents": [last_commit_sha],
+                "tree": tree_sha
+            }
+        ),
+        headers={"Accept": "application/vnd.github+json", "Authorization": f"Token {api_key}"},
+    )
+    _response.raise_for_status()
+
+    sha: str = _response.json()["sha"]
+    return sha
+
+
+def _update_head(repo_url: str, api_key: str, new_commit_sha: str) -> None:
+    """Update HEAD ref"""
+    _response = requests.post(
+        f"{repo_url}/git/refs/heads/main",
+        json.dumps({"ref": "refs/heads/main", "sha": new_commit_sha}),
+        headers={"Accept": "application/vnd.github+json", "Authorization": f"Token {api_key}"},
+    )
+    _response.raise_for_status()
+
+
+def upload_files_to_repo(
+    edition: EditionResult, file_paths: list[Path], repo_url: str, repo_path: str, api_key: str
+) -> None:
+
+    last_commit_sha: str = _get_last_commit_sha(repo_url, api_key)
+
+    blob_shas: list[str] = _get_blob_shas(file_paths, repo_url, api_key)
+
+    old_files_shas: list[str] = _get_old_files_shas(file_paths, repo_url, repo_path, api_key)
+
+    new_tree: list[dict] = _create_new_tree(
+        file_paths, repo_url, repo_path, api_key, last_commit_sha, blob_shas, old_files_shas
+    )
+
+    tree_sha: str = _get_tree_sha(repo_url, api_key, new_tree)
+
+    new_commit_sha: str = _get_new_commit_sha(edition, repo_url, api_key, last_commit_sha, tree_sha)
+
+    _update_head(repo_url, api_key, new_commit_sha)

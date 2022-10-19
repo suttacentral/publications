@@ -46,8 +46,13 @@ class EpubEdition(LatexParser):
         book.add_author(self.config.publication.creator_name)
 
     def _set_cover(self, book: EpubBook, volume: Volume) -> None:
-        with open(self.TEMP_DIR / f"{volume.filename}-epub.jpg", "rb") as img:
-            book.set_cover(file_name=f"cover.jpg", content=img.read())
+        _img_path = (self.TEMP_DIR / volume.cover_filename).with_suffix(".jpg")
+
+        try:
+            with open(_img_path, "rb") as img:
+                book.set_cover(file_name=f"cover.jpg", content=img.read())
+        except FileNotFoundError:
+            log.warning(f"File '{str(_img_path)}' not found. Skipping.")
 
     def _set_default_style(self) -> EpubItem:
         with open(file=self.CSS_PATH) as f:
@@ -210,28 +215,32 @@ class EpubEdition(LatexParser):
         book.add_item(EpubNav())
 
         # create epub file
-        _path = self.TEMP_DIR / f"{volume.filename}.epub"
+        _path = (self.TEMP_DIR / volume.filename).with_suffix(".epub")
         write_epub(name=_path, book=book, options={})
+
+        self.append_volume_file_path(volume=volume, paths=[_path])
 
     def generate_cover(self, volume: Volume) -> None:
         log.debug("Generating cover...")
 
-        # TODO: Change cover file name when output dir structure is ready
-        _path = self.TEMP_DIR / f"{volume.filename}-epub"
+        _path = self.TEMP_DIR / volume.cover_filename
         doc = self._generate_cover(volume=volume)
         # doc.generate_tex(filepath=str(_path))  # dev
         log.debug("Generating pdf...")
         doc.generate_pdf(filepath=str(_path), clean_tex=False, compiler="latexmk", compiler_args=["-lualatex"])
 
+        self.append_volume_file_path(volume=volume, paths=[_path.with_suffix(".tex"), _path.with_suffix(".pdf")])
+
     def convert_cover_to_jpg(self, volume: Volume) -> None:
         log.debug("Converting pdf to jpg...")
 
-        # TODO: Change cover file name when output dir structure is ready
-        _path = self.TEMP_DIR / f"{volume.filename}-epub"
-        with Image(filename=f"pdf:{_path}.pdf", resolution=self.JPG_DENSITY) as img:
+        _path = self.TEMP_DIR / volume.cover_filename
+        with Image(filename=f"pdf:{_path.with_suffix('.pdf')}", resolution=self.JPG_DENSITY) as img:
             img.format = "jpeg"
             img.compression_quality = self.JPG_QUALITY
-            img.save(filename=f"{_path}.jpg")
+            img.save(filename=_path.with_suffix(".jpg"))
+
+        self.append_volume_file_path(volume=volume, paths=[_path.with_suffix(".jpg")])
 
     def collect_all(self) -> EditionResult:
         _edition: Edition = super().collect_all()
@@ -245,8 +254,11 @@ class EpubEdition(LatexParser):
         for _operation in _operations:
             EditionParser.on_each_volume(edition=_edition, operation=_operation)
 
-        txt = "dummy"
-        result = EditionResult()
-        result.write(txt)
-        result.seek(0)
-        return result
+        return EditionResult(
+            volumes=[volume.file_paths for volume in _edition.volumes],
+            creator_uid=self.config.publication.creator_uid,
+            text_uid=self.config.edition.text_uid,
+            publication_type=self.config.edition.publication_type,
+            translation_lang_iso=self.config.publication.translation_lang_iso,
+            translation_title=self.config.publication.translation_title,
+        )

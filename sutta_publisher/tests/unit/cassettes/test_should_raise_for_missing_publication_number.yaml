@@ -9,24 +9,30 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - python-requests/2.27.1
+      - python-requests/2.28.1
     method: GET
-    uri: http://localhost/api/publication/editions
+    uri: http://suttacentral.net/api/publication/editions
   response:
     body:
       string: !!binary |
-        H4sIAAAAAAAEA7WY3WqDQBBGXyV4nYWs+aWvUkpYXVtt1Yg/6UXpu3eT3OlIe6Z4FwKeb5k5M9n4
-        /BVlvuiLS30ufPS0ilxtstp0w7vrL+cubYZkbzIfmyx8OsebODab2NhNtF5F4ZuySN394Xqokqy9
-        AR7PRN/r1d/QB5P3VbkIemca/7oIeW8a12Rt4tKPRfjWfGbLlHtrctf69HLN2n+e3E9MCZZ4ePJY
-        EkUmUwcBGooCyNRugFZ1EvBVjov8sF/GS8UeFFvFHiRb5ui09Iyuqj6LUDWARUDxGRyuAhne58Xb
-        WJ6bO6riiP7MJag6jBJg9REbFh+x6SZGcDq2M3A3scYGa1Q9tdLW6XM5gR4fwWFTEZs2FcGh6Yit
-        2gRiwuDHm8aeND9TJ0mYGbjOSJKgqw9JwM4TOFWHsOk8iWyfN2NtjsEaeO6j5MwMmtabsFU+kgBY
-        c4KmK4ywVVMkBnT1xBerEMYiuKqtLEJVIRZBxWd0aCaDUzdlejX5z70Nq4aWZSvtGhkNawLIKiMB
-        H+5fQKatBGjVDIn8bmLKTnv/3Um6yHyoCyDDdgIybSdA08EEaJUpIr8pC9NfzfX+jiZpXV65sni8
-        +r3dflVB4kXplyDYYU0E1FMTQVuuyVCtTk0QHY2Q8fIDW0auvlIYAAA=
+        H4sIAAAAAAAEA7WYy26DMBBFfyViHUsxeaq/UlWRwW6hBYJ4pIuq/15IdjBRe6ZiH861rs+MrDx/
+        RcHnXX6pzrmPnlaRq0yoTNu/u+5ybtO6T/Ym+L2pXR2axKUf53gTx2YTG7uJ1qto+EGRp+5GqPoy
+        Cc1IuX8Yfa9Xf+PvTO1fFyHHJgxHXARtzWdYhrw1mWt8ermGZpGTH0zWlcU/0X5mytC1p33HkiQy
+        GvYNyCq9AR/qDcgqUwCfmiKiy5kp28EUeJ1bSRSZTA8N0Kq+AR+aAsgqxwGfDr6Ibmem7AZTYCk7
+        yRSZrLpOwFeVDvhwhgCZzhBAU1NEdJflb9OXykH7UjlIxjxKUDmDEqDviA2NQWx6sQhOhRThw0t3
+        Ko0drYGNWwSHlTO4ykYWQZtndNWKZBHUS5neZW62cax241h548gJVCDCxt0QuE5OkkAHl7Cx9xLc
+        Z/V04xz5wjkCtGqgSIDqVkkA9J2gqe6ETX0R2b2f6mJP6iVzkrR5kEBPbwmc1o7gKh9RAhQSsekG
+        E2tvq9mWseOawZcqOvmITmtBcNoLgqt2pEUROitRBJ4qkV4Xuemu5np7GSeNy0pX5Pe/fsfNQ0NE
+        P3/JUHWlCVLduyaIDp4mA06IJgJO+BDx8gNEe9rdUhgAAA==
     headers:
       Access-Control-Allow-Origin:
       - '*'
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-RAY:
+      - 75d033d528631642-WAW
+      Cache-Control:
+      - private, max-age=86400
       Connection:
       - keep-alive
       Content-Encoding:
@@ -34,15 +40,21 @@ interactions:
       Content-Type:
       - application/json
       Date:
-      - Fri, 24 Jun 2022 09:56:07 GMT
+      - Thu, 20 Oct 2022 07:57:24 GMT
       ETag:
-      - W/"4fe57941d651ec0725296dacce1a6b2e"
-      Keep-Alive:
-      - timeout=5
+      - W/"4f6a5b2f7c08fb9cb5072fc899f9de09"
+      NEL:
+      - '{"success_fraction":0,"report_to":"cf-nel","max_age":604800}'
+      Report-To:
+      - '{"endpoints":[{"url":"https:\/\/a.nel.cloudflare.com\/report\/v3?s=H1LBGXMAXbhUCHMOEZN3kfESWLiSnaUOEmFYl8trhA%2FWw37zW6zfni8jn7tBp2PQ%2BBjeO0t5Hs%2FXbQCT1yAIJXhhRpgp3gJiew2hGnsPCk1wyqIqoaxsNp70o%2Bf5gxFnl84%3D"}],"group":"cf-nel","max_age":604800}'
       Server:
-      - nginx/1.21.1
+      - cloudflare
+      Server-Timing:
+      - cf-q-config;dur=7.0000023697503e-06
       Transfer-Encoding:
       - chunked
+      alt-svc:
+      - h3=":443"; ma=86400, h3-29=":443"; ma=86400
     status:
       code: 200
       message: OK

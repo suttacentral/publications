@@ -3,13 +3,13 @@ name: Generate and publish edition
 on:
   workflow_dispatch:
     inputs:
-      publication_ids:
+      publication_id:
         description: 'IDs of publications'
         required: true
 
 env:
   BOT_API_KEY: ${{ secrets.SC_BOT_KEY }}
-  PUBLICATION_IDS: ${{ github.event.inputs.publication_ids }}
+  PUBLICATION_ID: ${{ github.event.inputs.publication_id }}
 
 jobs:
   generate_and_publish:
@@ -21,4 +21,4 @@ jobs:
         with:
           python-version: "3.10"
       - name: Run SuttaPublisher
-        run: make run $PUBLICATION_IDS $BOT_API_KEY
+        run: make run $PUBLICATION_ID $BOT_API_KEY

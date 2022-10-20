@@ -12,6 +12,8 @@ from sutta_publisher.shared.value_objects.edition import EditionResult
 
 log = logging.getLogger(__name__)
 
+MAX_GITHUB_REQUEST_ERRORS = 3
+
 
 def worker(queue: dict | list[dict], api_key: str, silent: bool = False) -> list[Response]:
     if isinstance(queue, dict):
@@ -21,7 +23,7 @@ def worker(queue: dict | list[dict], api_key: str, silent: bool = False) -> list
     _errors = 0
     _finished: list[tuple[int, Response]] = []
 
-    while _queue and _errors < 3:
+    while _queue and _errors < MAX_GITHUB_REQUEST_ERRORS:
         _id, _task = _queue.pop(0)
         try:
             _response: Response = getattr(requests, _task["method"])(

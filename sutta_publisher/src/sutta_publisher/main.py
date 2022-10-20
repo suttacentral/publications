@@ -15,7 +15,7 @@ logging.basicConfig(encoding="utf-8", level=logging.getLevelName(os.environ.get(
 log = logging.getLogger(__name__)
 
 
-def run(editions: EditionsConfigs) -> None:
+def run(editions: EditionsConfigs, token: str) -> None:
     """Run the script engine. Configuration should be already done via the setup functions."""
     edition_list = []
     edition_class_mapping: dict[EditionType, Type[EditionParser]] = {}
@@ -37,7 +37,7 @@ def run(editions: EditionsConfigs) -> None:
 
             try:
                 _edition_result = edition.collect_all()
-                publish(_edition_result)
+                publish(_edition_result, token)
             except Exception as e:
                 log.exception(e)
 
@@ -45,15 +45,15 @@ def run(editions: EditionsConfigs) -> None:
 
 
 @click.command()
-@click.argument("publication_number_list", default="noop_number")
+@click.argument("publication_number", default="noop_number")
 @click.argument("token", default=None)
-def setup_and_run(publication_number_list: str, token: str) -> None:
+def setup_and_run(publication_number: str, token: str) -> None:
     """Setup and run the engine. It's entrypoint of the script."""
 
     try:
         setup_logging()
-        editions = get_editions_configs(publication_number=publication_number_list)
-        run(editions=editions)
+        editions = get_editions_configs(publication_number=publication_number)
+        run(editions=editions, token=token)
     except Exception as e:
         log.exception(e)
         raise

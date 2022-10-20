@@ -128,7 +128,7 @@ def _get_new_commit_sha(
             {
                 "message": f"Update {edition.translation_title} ({edition.publication_type})",
                 "parents": [last_commit_sha],
-                "tree": tree_sha
+                "tree": tree_sha,
             }
         ),
         headers={"Accept": "application/vnd.github+json", "Authorization": f"Token {api_key}"},

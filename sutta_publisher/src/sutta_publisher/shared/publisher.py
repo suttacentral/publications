@@ -27,15 +27,7 @@ def _get_repo_path_pattern() -> str:
     return repo_path_pattern
 
 
-def _get_api_key() -> str:
-    api_key = os.getenv("BOT_API_KEY")
-    if not api_key:
-        raise EnvironmentError("Missing repository secret environmental variable BOT_API_KEY.")
-    return api_key
-
-
-def publish(result: EditionResult) -> None:
-    api_key: str = _get_api_key()
+def publish(result: EditionResult, api_key: str) -> None:
     repo_url: str = _get_repo_url()
     repo_path: str = _get_repo_path_pattern().format(**result.dict())
 

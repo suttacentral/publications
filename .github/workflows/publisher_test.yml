@@ -1,4 +1,4 @@
-name: Sutta Publisher pipeline
+name: SuttaPublisher Pipeline
 
 on: [push]
 
@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python 3.10
+      - name: Setup Python 3.10
         uses: actions/setup-python@v2
         with:
           python-version: "3.10"

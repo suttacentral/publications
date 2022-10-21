@@ -1,23 +1,24 @@
-name: Generate and publish edition
+name: Generate and Push Publication
 
 on:
   workflow_dispatch:
     inputs:
       publication_id:
-        description: 'IDs of publications'
+        description: 'Publication ID'
         required: true
 
 env:
   PUBLICATION_ID: ${{ github.event.inputs.publication_id }}
+  API_TOKEN: ${{ secrets.API_TOKEN }}
 
 jobs:
   generate_and_publish:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python 3.10
+      - name: Setup Python 3.10
         uses: actions/setup-python@v2
         with:
           python-version: "3.10"
       - name: Run SuttaPublisher
-        run: make run $PUBLICATION_ID ${{ secrets.GITHUB_TOKEN }}
+        run: make run $PUBLICATION_ID $API_TOKEN

@@ -25,16 +25,18 @@ def worker(queue: dict | list[dict], api_key: str, silent: bool = False) -> list
 
     while _queue and _errors < MAX_GITHUB_REQUEST_ERRORS:
         _id, _task = _queue.pop(0)
+        _response: Response = getattr(requests, _task["method"])(
+            url=_task.get("url"),
+            headers={"Accept": "application/vnd.github+json", "Authorization": f"Token {api_key}"},
+            data=_task.get("body"),
+        )
+
         try:
-            _response: Response = getattr(requests, _task["method"])(
-                url=_task.get("url"),
-                headers={"Accept": "application/vnd.github+json", "Authorization": f"Token {api_key}"},
-                data=_task.get("body"),
-            )
             _response.raise_for_status()
         except requests.HTTPError:
             _errors += 1
             _queue.append((_id, _task))
+            log.error(_response.json().get("message"))
             sleep(1)
         else:
             _errors = 0

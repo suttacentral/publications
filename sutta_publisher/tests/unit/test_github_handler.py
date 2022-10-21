@@ -63,6 +63,7 @@ def test_match_file(filename: str, content: list[dict], expected: dict) -> None:
 def test_worker_success(mock_get) -> None:
     mock_response = Response()
     mock_response.status_code = 200
+    mock_response.json = lambda: {}
     mock_get.return_value = mock_response
 
     request = {
@@ -86,6 +87,7 @@ def test_worker_success_with_one_fail(mock_sleep, mock_get: mock.Mock) -> None:
     for i in range(3):
         mock_response = Response()
         mock_response.status_code = 404 if i < 2 else 200
+        mock_response.json = lambda: {}
         mock_responses.append(mock_response)
 
     mock_get.side_effect = mock_responses
@@ -110,6 +112,7 @@ def test_worker_success_with_one_fail(mock_sleep, mock_get: mock.Mock) -> None:
 def test_worker_raises(mock_sleep, mock_get) -> None:
     mock_response = Response()
     mock_response.status_code = 404
+    mock_response.json = lambda: {}
     mock_get.return_value = mock_response
 
     request = {
@@ -128,6 +131,7 @@ def test_worker_raises(mock_sleep, mock_get) -> None:
 def test_worker_silent(mock_sleep, mock_get) -> None:
     mock_response = Response()
     mock_response.status_code = 404
+    mock_response.json = lambda: {}
     mock_get.return_value = mock_response
 
     request = {
@@ -158,6 +162,7 @@ def test_worker_return_is_sorted(mock_sleep, mock_get: mock.Mock) -> None:
     for _status_code, _task_index in test_data:
         mock_response = Response()
         mock_response.status_code = _status_code
+        mock_response.json = lambda: {}
         mock_response.task_index = _task_index
         mock_responses.append(mock_response)
 

@@ -586,7 +586,7 @@ class LatexParser(EditionParser):
                 _template: Template = LatexParser._get_shared_template(name=name)
                 tex = _template.render(
                     **volume.dict(exclude_none=True, exclude_unset=True),
-                    images_directory=os.path.join(EditionParser.IMAGES_DIR, "")  # add a trailing slash
+                    images_directory=os.path.join(EditionParser.IMAGES_DIR, ""),  # add a trailing slash
                 )
                 return cast(str, NoEscape(tex))
             else:

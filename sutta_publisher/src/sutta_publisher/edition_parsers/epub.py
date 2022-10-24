@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Callable, no_type_check
 
 from bs4 import BeautifulSoup, Tag
-from ebooklib.epub import EpubBook, EpubHtml, EpubItem, EpubNav, EpubNcx, Link, Section, write_epub, EpubImage
+from ebooklib.epub import EpubBook, EpubHtml, EpubItem, EpubNav, EpubNcx, Link, Section, write_epub
 from wand.image import Image
 
 from sutta_publisher.edition_parsers.helper_functions import (
@@ -61,7 +61,7 @@ class EpubEdition(LatexParser):
                     uid=file_path.stem,
                     file_name=f"images/{file_path.name}",
                     media_type=f"image/{file_path.suffix[1:]}",
-                    content=_img.read()
+                    content=_img.read(),
                 )
                 book.add_item(_img)
         except FileNotFoundError:

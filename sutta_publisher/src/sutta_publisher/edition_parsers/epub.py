@@ -54,6 +54,19 @@ class EpubEdition(LatexParser):
         except FileNotFoundError:
             log.warning(f"File '{str(_img_path)}' not found. Skipping.")
 
+    def _add_image(self, book: EpubBook, file_path: Path) -> None:
+        try:
+            with open(file_path, "rb") as _img:
+                _img = EpubItem(
+                    uid=file_path.stem,
+                    file_name=f"images/{file_path.name}",
+                    media_type=f"image/{file_path.suffix[1:]}",
+                    content=_img.read(),
+                )
+                book.add_item(_img)
+        except FileNotFoundError:
+            log.warning(f"File '{str(_img)}' not found. Skipping.")
+
     def _set_default_style(self) -> EpubItem:
         with open(file=self.CSS_PATH) as f:
             EPUB_CSS = f.read()
@@ -189,6 +202,9 @@ class EpubEdition(LatexParser):
         # set style
         self.default_style = self._set_default_style()
         book.add_item(self.default_style)
+
+        # add halftitle page image
+        self._add_image(book=book, file_path=self.IMAGES_DIR / "sclogo.png")
 
         # divide mainmatter into separate chapters
         self.volume_mainmatter = self._split_mainmatter(mainmatter=volume.mainmatter)

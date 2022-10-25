@@ -34,6 +34,7 @@ def publish(result: EditionResult, api_key: str) -> None:
     for volume in result.volumes:
         log.info(f"Publishing results: {', '.join(_path.name for _path in volume)}.")
 
-        upload_files_to_repo(result, volume, repo_url, repo_path, api_key)
+        if not os.getenv("PYTHONDEBUG", ""):
+            upload_files_to_repo(result, volume, repo_url, repo_path, api_key)
 
     log.info("** Publication uploaded to repo **")

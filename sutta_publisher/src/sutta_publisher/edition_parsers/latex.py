@@ -52,7 +52,6 @@ class LatexParser(EditionParser):
     LATEX_DOCUMENT_CONFIG: dict[str, str | tuple[str]] = ast.literal_eval(os.getenv("LATEX_DOCUMENT_CONFIG", ""))
     LATEX_COVER_CONFIG: dict[str, str | tuple[str]] = ast.literal_eval(os.getenv("LATEX_COVER_CONFIG", ""))
 
-    IMAGES_DIR = os.path.join(Path(__file__).parent.parent / "images", "")  # os.path.join -> add a trailing slash
     TEX_TEMPLATES_DIR = Path(__file__).parent.parent / "templates" / "tex"
     INDIVIDUAL_TEMPLATES_SUBDIR = "individual"
     SHARED_TEMPLATES_SUBDIR = "shared"
@@ -586,7 +585,8 @@ class LatexParser(EditionParser):
             if volume and (name := LatexParser._get_matter_name(element)) in MATTERS_WITH_TEX_TEMPLATES:
                 _template: Template = LatexParser._get_shared_template(name=name)
                 tex = _template.render(
-                    **volume.dict(exclude_none=True, exclude_unset=True), images_directory=LatexParser.IMAGES_DIR
+                    **volume.dict(exclude_none=True, exclude_unset=True),
+                    images_directory=os.path.join(EditionParser.IMAGES_DIR, ""),  # add a trailing slash
                 )
                 return cast(str, NoEscape(tex))
             else:
@@ -716,7 +716,7 @@ class LatexParser(EditionParser):
         )
         _preamble = _preamble_template.render(
             **volume.dict(exclude_none=True, exclude_unset=True),
-            individual_cover_template=_individual_template.render(images_directory=self.IMAGES_DIR),
+            individual_cover_template=_individual_template.render(images_directory=os.path.join(self.IMAGES_DIR, "")),
         )
         doc.preamble.append(NoEscape(_preamble))
 

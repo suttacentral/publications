@@ -52,6 +52,7 @@ SUTTACENTRAL_URL = os.getenv("SUTTACENTRAL_URL", "/")
 
 class EditionParser(ABC):
     HTML_TEMPLATES_DIR = Path(__file__).parent.parent / "templates" / "html"
+    IMAGES_DIR = Path(__file__).parent.parent / "images"
     TEMP_DIR = Path(tempfile.gettempdir())
     config: EditionConfig
     raw_data: EditionData

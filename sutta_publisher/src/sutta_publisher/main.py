@@ -4,7 +4,7 @@ from typing import Type
 
 import click
 from edition_parsers.base import EditionParser
-from shared.config import get_editions_configs, setup_logging
+from shared.config import get_edition_configs, setup_logging
 from shared.data import get_edition_data
 from shared.publisher import publish
 from shared.value_objects.edition_config import EditionsConfigs
@@ -31,7 +31,7 @@ def run(editions: EditionsConfigs, token: str) -> None:
             log.exception("Can't parse publication_type='%s'. Error: %s", edition_config.edition.publication_type, e)
 
     for edition in edition_list:  # type: EditionParser
-        # if edition.edition_type in ("paperback"):  # dev
+        # if edition.edition_type in ("html"):  # dev
         if edition.edition_type in ("html", "epub", "paperback"):
             log.debug(edition)
 
@@ -45,14 +45,17 @@ def run(editions: EditionsConfigs, token: str) -> None:
 
 
 @click.command()
-@click.argument("publication_number", default="noop_number")
 @click.argument("token", default=None)
-def setup_and_run(publication_number: str, token: str) -> None:
+@click.argument("publication_numbers", default=None, required=False)
+def setup_and_run(
+    token: str,
+    publication_numbers: str,
+) -> None:
     """Setup and run the engine. It's entrypoint of the script."""
 
     try:
         setup_logging()
-        editions = get_editions_configs(publication_number=publication_number)
+        editions = get_edition_configs(publication_numbers=publication_numbers)
         run(editions=editions, token=token)
     except Exception as e:
         log.exception(e)

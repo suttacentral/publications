@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import re
 from base64 import b64encode
 from pathlib import Path
@@ -15,7 +16,7 @@ log = logging.getLogger(__name__)
 MAX_GITHUB_REQUEST_ERRORS = 3
 
 
-def worker(queue: dict | list[dict], api_key: str, silent: bool = False) -> list[Response]:
+def worker(queue: dict | list[dict], api_key: str = None, silent: bool = False) -> list[Response]:
     if isinstance(queue, dict):
         queue = [queue]
 
@@ -23,11 +24,15 @@ def worker(queue: dict | list[dict], api_key: str, silent: bool = False) -> list
     _errors = 0
     _finished: list[tuple[int, Response]] = []
 
+    _headers = {"Accept": "application/vnd.github+json"}
+    if api_key:
+        _headers["Authorization"] = f"Token {api_key}"
+
     while _queue and _errors < MAX_GITHUB_REQUEST_ERRORS:
         _id, _task = _queue.pop(0)
         _response: Response = getattr(requests, _task["method"])(
             url=_task.get("url"),
-            headers={"Accept": "application/vnd.github+json", "Authorization": f"Token {api_key}"},
+            headers=_headers,
             data=_task.get("body"),
         )
 
@@ -48,20 +53,20 @@ def worker(queue: dict | list[dict], api_key: str, silent: bool = False) -> list
     return [_res for _, _res in sorted(_finished)]
 
 
-def _get_last_commit_sha(repo_url: str, api_key: str) -> str:
+def get_last_commit_sha(repo_url: str, branch: str) -> str:
     """Get SHA of the last commit"""
     _request = {
         "method": "get",
-        "url": f"{repo_url}/branches/main",
+        "url": f"{repo_url}/branches/{branch}",
         "type": "get last commit sha",
     }
-    _responses = worker(_request, api_key)
+    _responses = worker(queue=_request)
 
     sha: str = _responses[0].json()["commit"]["sha"]
     return sha
 
 
-def _get_blob_shas(file_paths: list[Path], repo_url: str, api_key: str) -> list[str]:
+def get_blob_shas(file_paths: list[Path], repo_url: str, api_key: str) -> list[str]:
     """Upload blobs of new files and return list of their SHAs"""
     _requests: list[dict] = [
         {
@@ -72,13 +77,13 @@ def _get_blob_shas(file_paths: list[Path], repo_url: str, api_key: str) -> list[
         }
         for _file in file_paths
     ]
-    _responses = worker(_requests, api_key)
+    _responses = worker(queue=_requests, api_key=api_key)
 
     shas: list[str] = [_response.json()["sha"] for _response in _responses]
     return shas
 
 
-def _match_file(filename: str, content: list[dict]) -> dict:
+def match_file(filename: str, content: list[dict]) -> dict:
     """Return a dict with matching file details. Return empty dict if file not found."""
 
     _PATTERN = r"([A-Za-z-]+-)(?:\d+-\d+-+\d+)(-\d+)?(-cover)?(.[a-z]+)"
@@ -92,14 +97,14 @@ def _match_file(filename: str, content: list[dict]) -> dict:
     return {}
 
 
-def _get_old_files_shas(file_paths: list[Path], repo_url: str, repo_path: str, api_key: str) -> list[str]:
+def get_old_files_shas(file_paths: list[Path], repo_url: str, repo_path: str) -> list[str]:
     """Get SHAs of current files to be updated in repo"""
     _request = {
         "method": "get",
         "url": f"{repo_url}/contents/{repo_path}",
         "type": "get old files shas",
     }
-    _responses = worker(_request, api_key, silent=True)
+    _responses = worker(queue=_request, silent=True)
 
     if not _responses:
         return []
@@ -108,18 +113,17 @@ def _get_old_files_shas(file_paths: list[Path], repo_url: str, repo_path: str, a
     _content = _responses[0].json()
 
     for file in file_paths:
-        remote_file = _match_file(file.name, _content)
+        remote_file = match_file(file.name, _content)
         if remote_file:
             old_files_shas.append(remote_file["sha"])
 
     return old_files_shas
 
 
-def _create_new_tree(
+def create_new_tree(
     file_paths: list[Path],
     repo_url: str,
     repo_path: str,
-    api_key: str,
     last_commit_sha: str,
     blob_shas: list[str],
     old_files_shas: list[str],
@@ -130,7 +134,7 @@ def _create_new_tree(
         "url": f"{repo_url}/git/trees/{last_commit_sha}?recursive=1",
         "type": "create new tree",
     }
-    _responses = worker(_request, api_key, silent=True)
+    _responses = worker(queue=_request, silent=True)
 
     _old_tree = _responses[0].json().get("tree", []) if _responses else []
 
@@ -146,7 +150,7 @@ def _create_new_tree(
     return new_tree
 
 
-def _get_tree_sha(repo_url: str, api_key: str, tree: list[dict]) -> str:
+def get_tree_sha(repo_url: str, api_key: str, tree: list[dict]) -> str:
     """Post a new tree and return its SHA"""
     _request = {
         "method": "post",
@@ -154,15 +158,13 @@ def _get_tree_sha(repo_url: str, api_key: str, tree: list[dict]) -> str:
         "body": json.dumps({"tree": tree}),
         "type": "create new tree",
     }
-    _responses = worker(_request, api_key)
+    _responses = worker(queue=_request, api_key=api_key)
 
     sha: str = _responses[0].json()["sha"]
     return sha
 
 
-def _get_new_commit_sha(
-    edition: EditionResult, repo_url: str, api_key: str, last_commit_sha: str, tree_sha: str
-) -> str:
+def get_new_commit_sha(edition: EditionResult, repo_url: str, api_key: str, last_commit_sha: str, tree_sha: str) -> str:
     """Return SHA of new commit"""
     _request = {
         "method": "post",
@@ -176,13 +178,13 @@ def _get_new_commit_sha(
         ),
         "type": "create new commit",
     }
-    _responses = worker(_request, api_key)
+    _responses = worker(queue=_request, api_key=api_key)
 
     sha: str = _responses[0].json()["sha"]
     return sha
 
 
-def _update_head(repo_url: str, api_key: str, new_commit_sha: str) -> None:
+def update_head(repo_url: str, api_key: str, new_commit_sha: str) -> None:
     """Update HEAD ref"""
     _request = {
         "method": "post",
@@ -190,25 +192,70 @@ def _update_head(repo_url: str, api_key: str, new_commit_sha: str) -> None:
         "body": json.dumps({"ref": "refs/heads/main", "sha": new_commit_sha}),
         "type": "update HEAD ref",
     }
-    worker(_request, api_key)
+    worker(queue=_request, api_key=api_key)
 
 
 def upload_files_to_repo(
     edition: EditionResult, file_paths: list[Path], repo_url: str, repo_path: str, api_key: str
 ) -> None:
 
-    last_commit_sha: str = _get_last_commit_sha(repo_url, api_key)
+    last_commit_sha: str = get_last_commit_sha(repo_url, "main")
 
-    blob_shas: list[str] = _get_blob_shas(file_paths, repo_url, api_key)
+    blob_shas: list[str] = get_blob_shas(file_paths, repo_url, api_key)
 
-    old_files_shas: list[str] = _get_old_files_shas(file_paths, repo_url, repo_path, api_key)
+    old_files_shas: list[str] = get_old_files_shas(file_paths, repo_url, repo_path)
 
-    new_tree: list[dict] = _create_new_tree(
-        file_paths, repo_url, repo_path, api_key, last_commit_sha, blob_shas, old_files_shas
+    new_tree: list[dict] = create_new_tree(file_paths, repo_url, repo_path, last_commit_sha, blob_shas, old_files_shas)
+
+    tree_sha: str = get_tree_sha(repo_url, api_key, new_tree)
+
+    new_commit_sha: str = get_new_commit_sha(edition, repo_url, api_key, last_commit_sha, tree_sha)
+
+    update_head(repo_url, api_key, new_commit_sha)
+
+    last_sha_filename: str = os.getenv("LAST_RUN_SHA_FILE_URL").split("/")[-1]  # type: ignore
+    update_file(
+        repo_url=repo_url,
+        filename=last_sha_filename,
+        content=last_commit_sha.encode(),
+        api_key=api_key,
     )
 
-    tree_sha: str = _get_tree_sha(repo_url, api_key, new_tree)
 
-    new_commit_sha: str = _get_new_commit_sha(edition, repo_url, api_key, last_commit_sha, tree_sha)
+def get_modified_filenames(repo_url: str, last_run_sha: str, last_commit_sha: str) -> list[str]:
+    _request = {
+        "method": "get",
+        "url": f"{repo_url}/compare/{last_run_sha}...{last_commit_sha}",
+        "type": "get last commit sha",
+    }
+    _responses = worker(queue=_request)
 
-    _update_head(repo_url, api_key, new_commit_sha)
+    _files = _responses[0].json().get("files")
+
+    filenames: list[str] = [_file.get("filename") for _file in _files]
+    return filenames
+
+
+def update_file(repo_url: str, filename: str, content: bytes, api_key: str) -> None:
+    _sha_request = {
+        "method": "get",
+        "url": f"{repo_url}/contents/{filename}",
+        "type": f"get {filename}",
+    }
+    _sha_responses = worker(queue=_sha_request)
+    _sha = _sha_responses[0].json().get("sha", "")
+
+    _request = {
+        "method": "put",
+        "url": f"{repo_url}/contents/{filename}",
+        "body": json.dumps(
+            {
+                "message": f"Updating {filename}",
+                "content": b64encode(content).decode("ascii"),
+                "encoding": "base64",
+                "sha": _sha,
+            }
+        ),
+        "type": f"update {filename}",
+    }
+    worker(queue=_request, api_key=api_key)

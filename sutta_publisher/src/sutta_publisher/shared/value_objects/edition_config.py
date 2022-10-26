@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import datetime
+import os
 from typing import Iterator, Literal, Optional
 
+import requests
 from pydantic import BaseModel, validator
 
+from ..github_handler import get_last_commit_sha, get_modified_filenames
 from .edition import EditionType
 
 
@@ -106,18 +109,50 @@ class EditionMappingList(BaseModel):
 
     __root__: list[dict[str, str]]
 
-    def get_editions_id(self, publication_number: str) -> list[str]:
+    def get_edition_ids(self, publication_numbers: list[str]) -> list[str]:
         """
-        Get editions id for a given publication.
-        Raise `ValueError` when there are no editions for that publication.
+        Get edition ids for given publications.
+        Raise `ValueError` when there are no editions for these publications.
         """
-        editions_ids = (
-            entry["edition_id"] for entry in self.__root__ if entry["publication_number"] == publication_number
+        edition_ids = (
+            entry["edition_id"] for entry in self.__root__ if entry["publication_number"] in publication_numbers
         )
-        editions: list[str] = sorted(editions_ids)
+        editions: list[str] = sorted(edition_ids)
         if not editions:
-            raise ValueError(f"No editions found for {publication_number=}.")
+            raise ValueError(f"No editions found for {publication_numbers=}.")
         return editions
+
+    def find_edition_ids(self) -> list[str]:
+        scdata_repo_url = os.getenv("SCDATA_REPO_URL", "")
+        last_run_sha_file_url = os.getenv("LAST_RUN_SHA_FILE_URL", "")
+
+        _response = requests.get(last_run_sha_file_url)
+        _response.raise_for_status()
+        last_run_sha: str = str(_response.content)
+
+        last_commit_sha: str = get_last_commit_sha(repo_url=scdata_repo_url, branch="master")
+
+        filenames: list[str] = get_modified_filenames(
+            repo_url=scdata_repo_url, last_run_sha=last_run_sha, last_commit_sha=last_commit_sha
+        )
+
+        _mapping = []
+
+        for _entry in self.__root__:
+            publication_number = _entry["publication_number"]
+            _temp = _entry["edition_id"].split("_")[0].split("-")
+            text_uid, lang_iso, creator = "-".join(_temp[:-2]), _temp[-2], _temp[-1]
+            _mapping.append((publication_number, text_uid, lang_iso, creator))
+
+        _mapping_set = set(_mapping)
+
+        edition_ids = []
+        for _filename in filenames:
+            for _publication in _mapping_set:
+                if all([f"/{_data}/" in _filename for _data in _publication[1:]]):
+                    edition_ids.append(_publication[0])
+
+        return list(set(edition_ids))
 
 
 class EditionsConfigs(list[EditionConfig]):

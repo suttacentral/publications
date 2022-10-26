@@ -7,12 +7,12 @@ from sutta_publisher.shared.value_objects.edition import EditionResult
 log = logging.getLogger(__name__)
 
 
-def _get_repo_url() -> str:
-    repo_url = os.getenv("REPO_URL")
+def _get_editions_repo_url() -> str:
+    repo_url = os.getenv("EDITIONS_REPO_URL")
     if not repo_url:
         raise EnvironmentError(
-            "Missing .env_public file or the file lacks variable REPO_URL. Example:\n"
-            'REPO_URL = "https://api.github.com/repos/suttacentral/editions"'
+            "Missing .env_public file or the file lacks variable EDITIONS_REPO_URL. Example:\n"
+            'EDITIONS_REPO_URL = "https://api.github.com/repos/suttacentral/editions"'
         )
     return repo_url
 
@@ -28,7 +28,7 @@ def _get_repo_path_pattern() -> str:
 
 
 def publish(result: EditionResult, api_key: str) -> None:
-    repo_url: str = _get_repo_url()
+    repo_url: str = _get_editions_repo_url()
     repo_path: str = _get_repo_path_pattern().format(**result.dict())
 
     for volume in result.volumes:

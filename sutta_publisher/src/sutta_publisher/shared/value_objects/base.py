@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import enum
+import os
 from typing import Any, Union
 
 
@@ -28,3 +29,10 @@ class StrEnum(str, enum.Enum):
 
     def _generate_next_value_(name: str, *_a: Any, **_kw: Any) -> Any:  # type: ignore
         return name
+
+
+def get_from_env(name: str, example: str) -> str:
+    env_var = os.getenv(name)
+    if not env_var:
+        raise EnvironmentError(f"Missing .env_public file or the file lacks variable {name}. Example:\n{example}")
+    return env_var

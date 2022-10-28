@@ -26,7 +26,7 @@ def get_edition_ids(publication_numbers: str) -> list[str]:
         _publication_numbers = publication_numbers.split(",")
         edition_ids: list[str] = editions.get_edition_ids(publication_numbers=_publication_numbers)
     else:
-        edition_ids = editions.find_edition_ids()
+        edition_ids = editions.auto_find_edition_ids()
 
     return edition_ids
 

@@ -55,7 +55,7 @@ from sutta_publisher.shared import github_handler
     ],
 )
 def test_match_file(filename: str, content: list[dict], expected: dict) -> None:
-    result = github_handler._match_file(filename, content)
+    result = github_handler.match_file(filename, content)
     assert result == expected
 
 

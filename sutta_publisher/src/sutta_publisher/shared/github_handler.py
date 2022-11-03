@@ -16,21 +16,23 @@ log = logging.getLogger(__name__)
 MAX_GITHUB_REQUEST_ERRORS = 3
 
 
-def worker(queue: dict | list[dict], api_key: str = None, silent: bool = False) -> list[Response]:
-    if isinstance(queue, dict):
-        queue = [queue]
+def worker(queue: list[dict], api_key: str = None, silent: bool = False) -> list[Response]:
 
     _queue: list[tuple[int, dict]] = [(_i, _t) for _i, _t in enumerate(queue)]
-    _errors = 0
-    _finished: list[tuple[int, Response]] = []
+    errors = 0
+    finished: list[tuple[int, Response]] = []
 
-    _headers = {"Accept": "application/vnd.github+json"}
-    if api_key:
-        _headers["Authorization"] = f"Token {api_key}"
-
-    while _queue and _errors < MAX_GITHUB_REQUEST_ERRORS:
+    while _queue and errors < MAX_GITHUB_REQUEST_ERRORS:
         _id, _task = _queue.pop(0)
-        _response: Response = getattr(requests, _task["method"])(
+
+        if not (_method := _task.get("method")):
+            raise SystemExit("Requests worker error: Request method not provided.")
+        if not (_headers := _task.get("headers")):
+            _headers = {"Accept": "application/vnd.github+json"}
+        if api_key:
+            _headers["Authorization"] = f"Token {api_key}"
+
+        _response: Response = getattr(requests, _method)(
             url=_task.get("url"),
             headers=_headers,
             data=_task.get("body"),
@@ -39,18 +41,18 @@ def worker(queue: dict | list[dict], api_key: str = None, silent: bool = False) 
         try:
             _response.raise_for_status()
         except requests.HTTPError:
-            _errors += 1
+            errors += 1
             _queue.append((_id, _task))
             log.error(_response.json().get("message"))
             sleep(1)
         else:
-            _errors = 0
-            _finished.append((_id, _response))
+            errors = 0
+            finished.append((_id, _response))
 
-    if _errors and not silent:
-        raise SystemExit(f"Error while executing HTTP requests: {_queue[0][1].get('type')}")
+    if errors and not silent:
+        raise SystemExit(f"Error while executing HTTP requests: {_queue[0][1].get('help_text')}")
 
-    return [_res for _, _res in sorted(_finished)]
+    return [_res for _, _res in sorted(finished)] if finished else []
 
 
 def get_last_commit_sha(repo_url: str, branch: str) -> str:
@@ -58,11 +60,11 @@ def get_last_commit_sha(repo_url: str, branch: str) -> str:
     _request = {
         "method": "get",
         "url": f"{repo_url}/branches/{branch}",
-        "type": "get last commit sha",
+        "help_text": "get last commit sha",
     }
-    _responses = worker(queue=_request)
+    _response: Response = worker(queue=[_request])[0]
 
-    sha: str = _responses[0].json()["commit"]["sha"]
+    sha: str = _response.json()["commit"]["sha"]
     return sha
 
 
@@ -73,11 +75,11 @@ def get_blob_shas(file_paths: list[Path], repo_url: str, api_key: str) -> list[s
             "method": "post",
             "url": f"{repo_url}/git/blobs",
             "body": json.dumps({"content": b64encode(_file.read_bytes()).decode("ascii"), "encoding": "base64"}),
-            "type": "get blob shas",
+            "help_text": "get blob shas",
         }
         for _file in file_paths
     ]
-    _responses = worker(queue=_requests, api_key=api_key)
+    _responses: list[Response] = worker(queue=_requests, api_key=api_key)
 
     shas: list[str] = [_response.json()["sha"] for _response in _responses]
     return shas
@@ -102,9 +104,9 @@ def get_old_files_shas(file_paths: list[Path], repo_url: str, repo_path: str) ->
     _request = {
         "method": "get",
         "url": f"{repo_url}/contents/{repo_path}",
-        "type": "get old files shas",
+        "help_text": "get old files shas",
     }
-    _responses = worker(queue=_request, silent=True)
+    _responses: list[Response] = worker(queue=[_request], silent=True)
 
     if not _responses:
         return []
@@ -132,9 +134,9 @@ def create_new_tree(
     _request = {
         "method": "get",
         "url": f"{repo_url}/git/trees/{last_commit_sha}?recursive=1",
-        "type": "create new tree",
+        "help_text": "create new tree",
     }
-    _responses = worker(queue=_request, silent=True)
+    _responses: list[Response] = worker(queue=[_request], silent=True)
 
     _old_tree = _responses[0].json().get("tree", []) if _responses else []
 
@@ -156,11 +158,11 @@ def get_tree_sha(repo_url: str, api_key: str, tree: list[dict]) -> str:
         "method": "post",
         "url": f"{repo_url}/git/trees",
         "body": json.dumps({"tree": tree}),
-        "type": "create new tree",
+        "help_text": "create new tree",
     }
-    _responses = worker(queue=_request, api_key=api_key)
+    _response: Response = worker(queue=[_request], api_key=api_key)[0]
 
-    sha: str = _responses[0].json()["sha"]
+    sha: str = _response.json()["sha"]
     return sha
 
 
@@ -176,11 +178,11 @@ def get_new_commit_sha(edition: EditionResult, repo_url: str, api_key: str, last
                 "tree": tree_sha,
             }
         ),
-        "type": "create new commit",
+        "help_text": "create new commit",
     }
-    _responses = worker(queue=_request, api_key=api_key)
+    _response: Response = worker(queue=[_request], api_key=api_key)[0]
 
-    sha: str = _responses[0].json()["sha"]
+    sha: str = _response.json()["sha"]
     return sha
 
 
@@ -190,9 +192,9 @@ def update_head(repo_url: str, api_key: str, new_commit_sha: str) -> None:
         "method": "post",
         "url": f"{repo_url}/git/refs/heads/main",
         "body": json.dumps({"ref": "refs/heads/main", "sha": new_commit_sha}),
-        "type": "update HEAD ref",
+        "help_text": "update HEAD ref",
     }
-    worker(queue=_request, api_key=api_key)
+    worker(queue=[_request], api_key=api_key)
 
 
 def upload_files_to_repo(
@@ -226,13 +228,18 @@ def get_modified_filenames(repo_url: str, last_run_sha: str, last_commit_sha: st
     _request = {
         "method": "get",
         "url": f"{repo_url}/compare/{last_run_sha}...{last_commit_sha}",
-        "type": "get last commit sha",
+        "help_text": "get modified filenames",
+        "headers": {"Accept": "application/vnd.github.v3.diff"},
     }
-    _responses = worker(queue=_request)
+    _response: Response = worker(queue=[_request])[0]
 
-    _files = _responses[0].json().get("files")
+    _diff: str = _response.content.decode()
 
-    filenames: list[str] = [_file.get("filename") for _file in _files]
+    filenames: list[str] = []
+    for _line in _diff.split("\n"):
+        if _line.startswith("diff") and "/sc_bilara_data/" in _line:
+            filenames.append(_line)
+
     return filenames
 
 
@@ -240,10 +247,10 @@ def update_file(repo_url: str, filename: str, content: bytes, api_key: str) -> N
     _sha_request = {
         "method": "get",
         "url": f"{repo_url}/contents/{filename}",
-        "type": f"get {filename}",
+        "help_text": f"get {filename}",
     }
-    _sha_responses = worker(queue=_sha_request)
-    _sha = _sha_responses[0].json().get("sha", "")
+    _sha_response: Response = worker(queue=[_sha_request])[0]
+    _sha = _sha_response.json().get("sha", "")
 
     _request = {
         "method": "put",
@@ -256,6 +263,6 @@ def update_file(repo_url: str, filename: str, content: bytes, api_key: str) -> N
                 "sha": _sha,
             }
         ),
-        "type": f"update {filename}",
+        "help_text": f"update {filename}",
     }
-    worker(queue=_request, api_key=api_key)
+    worker(queue=[_request], api_key=api_key)

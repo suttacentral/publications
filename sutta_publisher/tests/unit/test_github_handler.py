@@ -71,7 +71,7 @@ def test_worker_success(mock_get) -> None:
         "url": "https://example.com/repo_url",
         "type": "test",
     }
-    responses = github_handler.worker(request, "test_key")
+    responses = github_handler.worker([request], "test_key")
     assert len(responses) == 1
     mock_get.assert_called_once_with(
         url="https://example.com/repo_url",
@@ -97,7 +97,7 @@ def test_worker_success_with_one_fail(mock_sleep, mock_get: mock.Mock) -> None:
         "url": "https://example.com/repo_url",
         "type": "test",
     }
-    responses = github_handler.worker(request, "test_key")
+    responses = github_handler.worker([request], "test_key")
     assert len(responses) == 1
     assert mock_get.call_count == 3
     mock_get.assert_called_with(
@@ -122,7 +122,7 @@ def test_worker_raises(mock_sleep, mock_get) -> None:
     }
 
     with pytest.raises(SystemExit):
-        github_handler.worker(request, "test_key")
+        github_handler.worker([request], "test_key")
         assert mock_get.call_count == 3
 
 
@@ -140,9 +140,9 @@ def test_worker_silent(mock_sleep, mock_get) -> None:
         "type": "test",
     }
 
-    ret = github_handler.worker(request, "test_key", silent=True)
+    response = github_handler.worker([request], "test_key", silent=True)
     assert mock_get.call_count == 3
-    assert ret == []
+    assert response == []
 
 
 @mock.patch("sutta_publisher.shared.github_handler.requests.get")

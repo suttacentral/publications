@@ -1,7 +1,7 @@
 import json
 import logging
-import os
 import re
+import tempfile
 from base64 import b64encode
 from pathlib import Path
 from time import sleep
@@ -9,6 +9,7 @@ from time import sleep
 import requests
 from requests import Response
 
+from sutta_publisher.shared import get_from_env
 from sutta_publisher.shared.value_objects.edition import EditionResult
 
 log = logging.getLogger(__name__)
@@ -145,7 +146,12 @@ def create_new_tree(
     ]
     new_tree.extend(
         [
-            {"path": f"{repo_path}/{_file.name}", "mode": "100644", "type": "blob", "sha": _sha}
+            {
+                "path": f"{repo_path}{'/' if repo_path else ''}{_file.name}",
+                "mode": "100644",
+                "type": "blob",
+                "sha": _sha,
+            }
             for _file, _sha in zip(file_paths, blob_shas)
         ]
     )
@@ -166,14 +172,22 @@ def get_tree_sha(repo_url: str, api_key: str, tree: list[dict]) -> str:
     return sha
 
 
-def get_new_commit_sha(edition: EditionResult, repo_url: str, api_key: str, last_commit_sha: str, tree_sha: str) -> str:
+def get_new_commit_sha(
+    edition: EditionResult, file_paths: list[Path], repo_url: str, api_key: str, last_commit_sha: str, tree_sha: str
+) -> str:
     """Return SHA of new commit"""
+    _message = (
+        f"Update {edition.translation_title} ({edition.publication_type})"
+        if edition
+        else f"Update {', '.join(_file.name for _file in file_paths)}"
+    )
+
     _request = {
         "method": "post",
         "url": f"{repo_url}/git/commits",
         "body": json.dumps(
             {
-                "message": f"Update {edition.translation_title} ({edition.publication_type})",
+                "message": _message,
                 "parents": [last_commit_sha],
                 "tree": tree_sha,
             }
@@ -191,14 +205,14 @@ def update_head(repo_url: str, api_key: str, new_commit_sha: str) -> None:
     _request = {
         "method": "post",
         "url": f"{repo_url}/git/refs/heads/main",
-        "body": json.dumps({"ref": "refs/heads/main", "sha": new_commit_sha}),
+        "body": json.dumps({"sha": new_commit_sha}),
         "help_text": "update HEAD ref",
     }
     worker(queue=[_request], api_key=api_key)
 
 
 def upload_files_to_repo(
-    edition: EditionResult, file_paths: list[Path], repo_url: str, repo_path: str, api_key: str
+    file_paths: list[Path], repo_url: str, repo_path: str, api_key: str, edition: EditionResult = None
 ) -> None:
 
     last_commit_sha: str = get_last_commit_sha(repo_url, "main")
@@ -211,17 +225,9 @@ def upload_files_to_repo(
 
     tree_sha: str = get_tree_sha(repo_url, api_key, new_tree)
 
-    new_commit_sha: str = get_new_commit_sha(edition, repo_url, api_key, last_commit_sha, tree_sha)
+    new_commit_sha: str = get_new_commit_sha(edition, file_paths, repo_url, api_key, last_commit_sha, tree_sha)
 
     update_head(repo_url, api_key, new_commit_sha)
-
-    last_sha_filename: str = os.getenv("LAST_RUN_SHA_FILE_URL").split("/")[-1]  # type: ignore
-    update_file(
-        repo_url=repo_url,
-        filename=last_sha_filename,
-        content=last_commit_sha.encode(),
-        api_key=api_key,
-    )
 
 
 def get_modified_filenames(repo_url: str, last_run_sha: str, last_commit_sha: str) -> list[str]:
@@ -243,26 +249,18 @@ def get_modified_filenames(repo_url: str, last_run_sha: str, last_commit_sha: st
     return filenames
 
 
-def update_file(repo_url: str, filename: str, content: bytes, api_key: str) -> None:
-    _sha_request = {
-        "method": "get",
-        "url": f"{repo_url}/contents/{filename}",
-        "help_text": f"get {filename}",
-    }
-    _sha_response: Response = worker(queue=[_sha_request])[0]
-    _sha = _sha_response.json().get("sha", "")
+def update_run_sha(api_key: str) -> None:
+    repo_url: str = get_from_env(name="EDITIONS_REPO_URL")
+    last_sha_filename: str = get_from_env(name="LAST_RUN_SHA_FILE_URL").split("/")[-1]  # type: ignore
+    last_commit_sha = get_last_commit_sha(repo_url=repo_url, branch="main")
 
-    _request = {
-        "method": "put",
-        "url": f"{repo_url}/contents/{filename}",
-        "body": json.dumps(
-            {
-                "message": f"Updating {filename}",
-                "content": b64encode(content).decode("ascii"),
-                "encoding": "base64",
-                "sha": _sha,
-            }
-        ),
-        "help_text": f"update {filename}",
-    }
-    worker(queue=[_request], api_key=api_key)
+    _path = Path(tempfile.gettempdir()) / last_sha_filename
+    with open(file=_path, mode="wt") as f:
+        f.write(last_commit_sha)
+
+    upload_files_to_repo(
+        file_paths=[_path],
+        repo_url=repo_url,
+        repo_path="",
+        api_key=api_key,
+    )

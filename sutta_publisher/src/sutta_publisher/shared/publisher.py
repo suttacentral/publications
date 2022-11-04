@@ -19,7 +19,10 @@ REPO_PATTERN: str = get_from_env(
 
 def publish(result: EditionResult, api_key: str) -> None:
     for volume in result.volumes:
-        log.info(f"Publishing results: {', '.join(_path.name for _path in volume)}.")
+        log.info(
+            f"** Publishing {result.translation_title} ({result.publication_type}) **\n"
+            f"Files: {', '.join(_path.name for _path in volume)}."
+        )
 
         if not os.getenv("PYTHONDEBUG", ""):
             upload_files_to_repo(

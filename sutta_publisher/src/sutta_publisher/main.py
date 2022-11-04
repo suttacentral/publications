@@ -6,16 +6,16 @@ import click
 from edition_parsers.base import EditionParser
 from shared.config import get_edition_configs, setup_logging
 from shared.data import get_edition_data
+from shared.github_handler import update_run_sha
 from shared.publisher import publish
+from shared.value_objects.edition import EditionType
 from shared.value_objects.edition_config import EditionsConfigs
-
-from sutta_publisher.shared.value_objects.edition import EditionType
 
 logging.basicConfig(encoding="utf-8", level=logging.getLevelName(os.environ.get("PYTHONLOGLEVEL", "INFO")))
 log = logging.getLogger(__name__)
 
 
-def run(editions: EditionsConfigs, token: str) -> None:
+def run(editions: EditionsConfigs, token: str, is_manual: bool) -> None:
     """Run the script engine. Configuration should be already done via the setup functions."""
     edition_list = []
     edition_class_mapping: dict[EditionType, Type[EditionParser]] = {}
@@ -41,6 +41,9 @@ def run(editions: EditionsConfigs, token: str) -> None:
             except Exception as e:
                 log.exception(e)
 
+    if not is_manual and not os.getenv("PYTHONDEBUG", ""):
+        update_run_sha(token)
+
     log.debug("*** Script finished ***")
 
 
@@ -56,7 +59,7 @@ def setup_and_run(
     try:
         setup_logging()
         editions = get_edition_configs(publication_numbers=publication_numbers)
-        run(editions=editions, token=token)
+        run(editions=editions, token=token, is_manual=bool(publication_numbers))
     except Exception as e:
         log.exception(e)
         raise

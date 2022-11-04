@@ -5,7 +5,6 @@ from requests import Response
 from sutta_publisher.shared import get_from_env
 from sutta_publisher.shared.github_handler import get_last_commit_sha, get_modified_filenames, worker
 
-
 LAST_RUN_SHA_FILE_URL: str = get_from_env(
     name="LAST_RUN_SHA_FILE_URL",
     example='LAST_RUN_SHA_FILE_URL = "https://raw.githubusercontent.com/suttacentral/editions/main/last_run_sha"',

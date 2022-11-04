@@ -9,7 +9,7 @@ from time import sleep
 import requests
 from requests import Response
 
-from sutta_publisher.shared import get_from_env
+from sutta_publisher.shared import EDITIONS_REPO_URL, LAST_RUN_SHA_FILE_URL
 from sutta_publisher.shared.value_objects.edition import EditionResult
 
 log = logging.getLogger(__name__)
@@ -250,9 +250,8 @@ def get_modified_filenames(repo_url: str, last_run_sha: str, last_commit_sha: st
 
 
 def update_run_sha(api_key: str) -> None:
-    repo_url: str = get_from_env(name="EDITIONS_REPO_URL")
-    last_sha_filename: str = get_from_env(name="LAST_RUN_SHA_FILE_URL").split("/")[-1]  # type: ignore
-    last_commit_sha = get_last_commit_sha(repo_url=repo_url, branch="main")
+    last_sha_filename: str = LAST_RUN_SHA_FILE_URL.split("/")[-1]
+    last_commit_sha = get_last_commit_sha(repo_url=EDITIONS_REPO_URL, branch="main")
 
     _path = Path(tempfile.gettempdir()) / last_sha_filename
     with open(file=_path, mode="wt") as f:
@@ -260,7 +259,7 @@ def update_run_sha(api_key: str) -> None:
 
     upload_files_to_repo(
         file_paths=[_path],
-        repo_url=repo_url,
+        repo_url=EDITIONS_REPO_URL,
         repo_path="",
         api_key=api_key,
     )

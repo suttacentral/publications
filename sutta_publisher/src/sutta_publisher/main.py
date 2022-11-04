@@ -50,10 +50,7 @@ def run(editions: EditionsConfigs, token: str, is_manual: bool) -> None:
 @click.command()
 @click.argument("token", default=None)
 @click.argument("publication_numbers", default=None, required=False)
-def setup_and_run(
-    token: str,
-    publication_numbers: str,
-) -> None:
+def setup_and_run(token: str, publication_numbers: str) -> None:
     """Setup and run the engine. It's entrypoint of the script."""
 
     try:

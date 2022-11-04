@@ -1,29 +1,7 @@
-import ast
-
 from requests import Response
 
-from sutta_publisher.shared import get_from_env
+from sutta_publisher.shared import EDITION_FINDER_PATTERNS, LAST_RUN_SHA_FILE_URL, SCDATA_REPO_URL, SUPER_TREE_URL
 from sutta_publisher.shared.github_handler import get_last_commit_sha, get_modified_filenames, worker
-
-LAST_RUN_SHA_FILE_URL: str = get_from_env(
-    name="LAST_RUN_SHA_FILE_URL",
-    example='LAST_RUN_SHA_FILE_URL = "https://raw.githubusercontent.com/suttacentral/editions/main/last_run_sha"',
-)
-REPO_URL: str = get_from_env(
-    name="SCDATA_REPO_URL", example='SCDATA_REPO_URL = "https://api.github.com/repos/suttacentral/sc-data"'
-)
-SUPER_TREE_URL: str = get_from_env(
-    name="SUPER_TREE_URL",
-    example='SUPER_TREE_URL = "https://raw.githubusercontent.com/suttacentral/sc-data/master/structure/tree/super-tree.json"',
-)
-EDITION_FINDER_PATTERNS: list[dict] = ast.literal_eval(
-    get_from_env(
-        name="EDITION_FINDER_PATTERNS",
-        example="EDITION_FINDER_PATTERNS = '["
-        '{"any": ("/_publication/", "/comment/"), "all": ("/{lang_iso}/", "/{creator}/", "/{uid}/")},'
-        "]'",
-    )
-)
 
 
 def get_last_run_sha() -> str:
@@ -141,10 +119,10 @@ def find_edition_ids(data: list[dict[str, str]]) -> list[str]:
     """
     last_run_sha: str = get_last_run_sha()
 
-    last_commit_sha: str = get_last_commit_sha(repo_url=REPO_URL, branch="master")
+    last_commit_sha: str = get_last_commit_sha(repo_url=SCDATA_REPO_URL, branch="master")
 
     filenames: list[str] = get_modified_filenames(
-        repo_url=REPO_URL, last_run_sha=last_run_sha, last_commit_sha=last_commit_sha
+        repo_url=SCDATA_REPO_URL, last_run_sha=last_run_sha, last_commit_sha=last_commit_sha
     )
 
     mapping = get_mapping(data=data)

@@ -1,17 +1,12 @@
 from __future__ import annotations
 
-import ast
 import logging
-import os
 
 import requests
 from pydantic import ValidationError
 
+from sutta_publisher.shared import API_ENDPOINTS, API_URL, CREATOR_BIOS_URL
 from sutta_publisher.shared.value_objects.edition_config import EditionConfig, EditionMappingList, EditionsConfigs
-
-API_URL = os.getenv("API_URL", "")
-API_ENDPOINTS = ast.literal_eval(os.getenv("API_ENDPOINTS", ""))
-CREATOR_BIOS_URL = os.getenv("CREATOR_BIOS_URL", "")
 
 
 def get_edition_ids(publication_numbers: str) -> list[str]:

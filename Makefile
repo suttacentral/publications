@@ -33,7 +33,7 @@ run-dev:
 
 run-dev-all:
 	for publication in $(PUBLICATIONS_LIST) ; do \
-		$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) -f $(DEV_DOCKER_COMPOSE) run publisher python sutta_publisher $$publication $(filter-out $@,$(MAKECMDGOALS)); \
+		$(COMPOSE_EXEC) -f $(PROD_DOCKER_COMPOSE) -f $(DEV_DOCKER_COMPOSE) run publisher python sutta_publisher $(filter-out $@,$(MAKECMDGOALS)) $$publication; \
 	done
 
 run-debug:

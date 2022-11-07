@@ -5,7 +5,8 @@ from typing import Iterator, Literal, Optional
 
 from pydantic import BaseModel, validator
 
-from .edition import EditionType
+from sutta_publisher.shared.edition_finder import find_edition_ids
+from sutta_publisher.shared.value_objects.edition import EditionType
 
 
 class VolumeDetail(BaseModel):
@@ -106,18 +107,24 @@ class EditionMappingList(BaseModel):
 
     __root__: list[dict[str, str]]
 
-    def get_editions_id(self, publication_number: str) -> list[str]:
+    def get_edition_ids(self, publication_numbers: list[str]) -> list[str]:
         """
-        Get editions id for a given publication.
-        Raise `ValueError` when there are no editions for that publication.
+        Get edition ids for given publications.
+        Raise `ValueError` when there are no editions for these publications.
         """
-        editions_ids = (
-            entry["edition_id"] for entry in self.__root__ if entry["publication_number"] == publication_number
+        edition_ids = (
+            entry["edition_id"] for entry in self.__root__ if entry["publication_number"] in publication_numbers
         )
-        editions: list[str] = sorted(editions_ids)
+        editions: list[str] = sorted(edition_ids)
         if not editions:
-            raise ValueError(f"No editions found for {publication_number=}.")
+            raise ValueError(f"No editions found for {publication_numbers=}.")
         return editions
+
+    def auto_find_edition_ids(self) -> list[str]:
+        edition_ids: list[str] = find_edition_ids(self.__root__)
+        if not edition_ids:
+            raise SystemExit(f"Publications are up-to-date.")
+        return edition_ids
 
 
 class EditionsConfigs(list[EditionConfig]):

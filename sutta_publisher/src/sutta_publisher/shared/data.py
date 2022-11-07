@@ -1,18 +1,12 @@
 from __future__ import annotations
 
-import ast
-import os
 from typing import NoReturn
 
 import requests
 
+from sutta_publisher.shared import API_ENDPOINTS, API_URL, SUPER_TREE_URL, TREE_URL
 from sutta_publisher.shared.value_objects.edition_config import EditionConfig, Volumes
 from sutta_publisher.shared.value_objects.edition_data import EditionData, MainMatter, MainMatterPart, VolumeData
-
-API_URL = os.getenv("API_URL")
-API_ENDPOINTS = ast.literal_eval(os.getenv("API_ENDPOINTS", ""))
-SUPER_TREE_URL = os.getenv("SUPER_TREE_URL", "")
-TREE_URL = os.getenv("TREE_URL", "")
 
 
 def get_mainmatter_data(edition_id: str, uids: list[str]) -> MainMatter:

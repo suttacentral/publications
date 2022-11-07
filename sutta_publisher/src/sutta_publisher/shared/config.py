@@ -1,27 +1,29 @@
 from __future__ import annotations
 
-import ast
 import logging
-import os
 
 import requests
 from pydantic import ValidationError
 
+from sutta_publisher.shared import API_ENDPOINTS, API_URL, CREATOR_BIOS_URL
 from sutta_publisher.shared.value_objects.edition_config import EditionConfig, EditionMappingList, EditionsConfigs
 
-API_URL = os.getenv("API_URL", "")
-API_ENDPOINTS = ast.literal_eval(os.getenv("API_ENDPOINTS", ""))
-CREATOR_BIOS_URL = os.getenv("CREATOR_BIOS_URL", "")
 
-
-def get_editions_ids(publication_number: str) -> list[str]:
-    """Get the editions that are for given `publication_number`."""
+def get_edition_ids(publication_numbers: str) -> list[str]:
+    """Get the editions that are for given `publication_numbers`."""
     response = requests.get(API_URL + API_ENDPOINTS["editions_mapping"])
     response.raise_for_status()
     payload = response.content
 
-    editions = EditionMappingList.parse_raw(payload)
-    return editions.get_editions_id(publication_number=publication_number)  # type: ignore
+    editions: EditionMappingList = EditionMappingList.parse_raw(payload)
+
+    if publication_numbers:
+        _publication_numbers = publication_numbers.split(",")
+        edition_ids: list[str] = editions.get_edition_ids(publication_numbers=_publication_numbers)
+    else:
+        edition_ids = editions.auto_find_edition_ids()
+
+    return edition_ids
 
 
 def get_edition_config(edition_id: str) -> EditionConfig:
@@ -47,9 +49,9 @@ def get_edition_config(edition_id: str) -> EditionConfig:
     return config
 
 
-def get_editions_configs(publication_number: str) -> EditionsConfigs:
+def get_edition_configs(publication_numbers: str) -> EditionsConfigs:
     """Build a list of available editions config."""
-    editions_id: list[str] = get_editions_ids(publication_number=publication_number)
+    editions_id: list[str] = get_edition_ids(publication_numbers=publication_numbers)
 
     editions_config = EditionsConfigs()
     for each_id in editions_id:
@@ -63,7 +65,7 @@ def get_editions_configs(publication_number: str) -> EditionsConfigs:
             logging.warning(" ".join(messages))
 
     if not editions_config:
-        raise SystemExit(f"No valid edition configs found for {publication_number=}. Stopping.")
+        raise SystemExit(f"No valid edition configs found for {publication_numbers=}. Stopping.")
     return editions_config
 
 

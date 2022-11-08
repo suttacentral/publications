@@ -52,12 +52,12 @@ def worker(queue: list[dict], api_key: str = None, silent: bool = False) -> list
             finished.append((_id, _response))
 
     if errors and not silent:
-        raise SystemExit(f"Error while executing HTTP requests: {_queue[0][1].get('help_text')}")
+        raise SystemExit(f"Error while executing HTTP request:\n{_queue[0][1]}")
 
     return [_res for _, _res in sorted(finished)] if finished else []
 
 
-def get_last_commit_sha(repo_url: str, branch: str, api_key: str) -> str:
+def get_last_commit_sha(repo_url: str, api_key: str, branch: str) -> str:
     """Get SHA of the last commit"""
     _request = {
         "method": "get",
@@ -223,7 +223,9 @@ def upload_files_to_repo(
 
     old_files_shas: list[str] = get_old_files_shas(file_paths, repo_url, repo_path, api_key)
 
-    new_tree: list[dict] = create_new_tree(file_paths, repo_url, repo_path, api_key, last_commit_sha, blob_shas, old_files_shas)
+    new_tree: list[dict] = create_new_tree(
+        file_paths, repo_url, repo_path, api_key, last_commit_sha, blob_shas, old_files_shas
+    )
 
     tree_sha: str = get_tree_sha(repo_url, api_key, new_tree)
 

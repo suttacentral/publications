@@ -15,6 +15,7 @@ from sutta_publisher.shared.value_objects.edition import EditionResult
 log = logging.getLogger(__name__)
 
 MAX_GITHUB_REQUEST_ERRORS = 3
+ERROR_SLEEP_TIME = 1  # in seconds
 
 
 def worker(queue: list[dict], api_key: str = None, silent: bool = False) -> list[Response]:
@@ -45,25 +46,25 @@ def worker(queue: list[dict], api_key: str = None, silent: bool = False) -> list
             errors += 1
             _queue.append((_id, _task))
             log.error(_response.json().get("message"))
-            sleep(1)
+            sleep(ERROR_SLEEP_TIME)
         else:
             errors = 0
             finished.append((_id, _response))
 
     if errors and not silent:
-        raise SystemExit(f"Error while executing HTTP requests: {_queue[0][1].get('help_text')}")
+        raise SystemExit(f"Error while executing HTTP request:\n{_queue[0][1]}")
 
     return [_res for _, _res in sorted(finished)] if finished else []
 
 
-def get_last_commit_sha(repo_url: str, branch: str) -> str:
+def get_last_commit_sha(repo_url: str, api_key: str, branch: str) -> str:
     """Get SHA of the last commit"""
     _request = {
         "method": "get",
         "url": f"{repo_url}/branches/{branch}",
         "help_text": "get last commit sha",
     }
-    _response: Response = worker(queue=[_request])[0]
+    _response: Response = worker(queue=[_request], api_key=api_key)[0]
 
     sha: str = _response.json()["commit"]["sha"]
     return sha
@@ -100,14 +101,14 @@ def match_file(filename: str, content: list[dict]) -> dict:
     return {}
 
 
-def get_old_files_shas(file_paths: list[Path], repo_url: str, repo_path: str) -> list[str]:
+def get_old_files_shas(file_paths: list[Path], repo_url: str, repo_path: str, api_key: str) -> list[str]:
     """Get SHAs of current files to be updated in repo"""
     _request = {
         "method": "get",
         "url": f"{repo_url}/contents/{repo_path}",
         "help_text": "get old files shas",
     }
-    _responses: list[Response] = worker(queue=[_request], silent=True)
+    _responses: list[Response] = worker(queue=[_request], api_key=api_key, silent=True)
 
     if not _responses:
         return []
@@ -127,6 +128,7 @@ def create_new_tree(
     file_paths: list[Path],
     repo_url: str,
     repo_path: str,
+    api_key: str,
     last_commit_sha: str,
     blob_shas: list[str],
     old_files_shas: list[str],
@@ -137,7 +139,7 @@ def create_new_tree(
         "url": f"{repo_url}/git/trees/{last_commit_sha}?recursive=1",
         "help_text": "create new tree",
     }
-    _responses: list[Response] = worker(queue=[_request], silent=True)
+    _responses: list[Response] = worker(queue=[_request], api_key=api_key, silent=True)
 
     _old_tree = _responses[0].json().get("tree", []) if _responses else []
 
@@ -205,7 +207,7 @@ def update_head(repo_url: str, api_key: str, new_commit_sha: str) -> None:
     _request = {
         "method": "post",
         "url": f"{repo_url}/git/refs/heads/main",
-        "body": json.dumps({"sha": new_commit_sha}),
+        "body": json.dumps({"sha": new_commit_sha, "force": True}),
         "help_text": "update HEAD ref",
     }
     worker(queue=[_request], api_key=api_key)
@@ -215,13 +217,15 @@ def upload_files_to_repo(
     file_paths: list[Path], repo_url: str, repo_path: str, api_key: str, edition: EditionResult = None
 ) -> None:
 
-    last_commit_sha: str = get_last_commit_sha(repo_url, "main")
+    last_commit_sha: str = get_last_commit_sha(repo_url, api_key, "main")
 
     blob_shas: list[str] = get_blob_shas(file_paths, repo_url, api_key)
 
-    old_files_shas: list[str] = get_old_files_shas(file_paths, repo_url, repo_path)
+    old_files_shas: list[str] = get_old_files_shas(file_paths, repo_url, repo_path, api_key)
 
-    new_tree: list[dict] = create_new_tree(file_paths, repo_url, repo_path, last_commit_sha, blob_shas, old_files_shas)
+    new_tree: list[dict] = create_new_tree(
+        file_paths, repo_url, repo_path, api_key, last_commit_sha, blob_shas, old_files_shas
+    )
 
     tree_sha: str = get_tree_sha(repo_url, api_key, new_tree)
 
@@ -230,14 +234,14 @@ def upload_files_to_repo(
     update_head(repo_url, api_key, new_commit_sha)
 
 
-def get_modified_filenames(repo_url: str, last_run_sha: str, last_commit_sha: str) -> list[str]:
+def get_modified_filenames(repo_url: str, api_key: str, last_run_sha: str, last_commit_sha: str) -> list[str]:
     _request = {
         "method": "get",
         "url": f"{repo_url}/compare/{last_run_sha}...{last_commit_sha}",
         "help_text": "get modified filenames",
         "headers": {"Accept": "application/vnd.github.v3.diff"},
     }
-    _response: Response = worker(queue=[_request])[0]
+    _response: Response = worker(queue=[_request], api_key=api_key)[0]
 
     _diff: str = _response.content.decode()
 
@@ -251,7 +255,7 @@ def get_modified_filenames(repo_url: str, last_run_sha: str, last_commit_sha: st
 
 def update_run_sha(api_key: str) -> None:
     last_sha_filename: str = LAST_RUN_SHA_FILE_URL.split("/")[-1]
-    last_commit_sha = get_last_commit_sha(repo_url=EDITIONS_REPO_URL, branch="main")
+    last_commit_sha = get_last_commit_sha(repo_url=EDITIONS_REPO_URL, api_key=api_key, branch="main")
 
     _path = Path(tempfile.gettempdir()) / last_sha_filename
     with open(file=_path, mode="wt") as f:

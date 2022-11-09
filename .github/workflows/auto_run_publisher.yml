@@ -1,14 +1,10 @@
-name: Generate and Push Publications
+name: Autodiscover and Update Publications
 
 on:
-  workflow_dispatch:
-    inputs:
-      publication_ids:
-        description: 'Publication IDs (comma-separated)'
-        required: true
+  schedule:
+    - cron: '0 0 * * MON'
 
 env:
-  PUBLICATION_IDS: ${{ github.event.inputs.publication_ids }}
   API_TOKEN: ${{ secrets.API_TOKEN }}
 
 jobs:
@@ -21,4 +17,4 @@ jobs:
         with:
           python-version: "3.10"
       - name: Run SuttaPublisher
-        run: make run $API_TOKEN $PUBLICATION_IDS
+        run: make run $API_TOKEN

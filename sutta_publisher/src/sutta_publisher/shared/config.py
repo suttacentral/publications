@@ -58,10 +58,10 @@ def get_edition_configs(publication_numbers: str) -> EditionsConfigs:
         try:
             editions_config.append(get_edition_config(edition_id=each_id))
         except ValidationError as err:
-            messages = ["Unsupported edition type found. Skipping to next one. Details:"]
+            messages = [f"Unsupported edition found: '{each_id}'. Skipping to next one. Details:"]
             for idx, error in enumerate(err.errors()):
                 error_location = " -> ".join(str(module) for module in error["loc"])
-                messages.append(f'[{idx+1}] {error_location}: {error["msg"]} ({error["type"]})')
+                messages.append(f'\n[{idx+1}] {error_location}: {error["msg"]} ({error["type"]})')
             logging.warning(" ".join(messages))
 
     if not editions_config:

@@ -45,7 +45,8 @@ def worker(queue: list[dict], api_key: str = None, silent: bool = False) -> list
         except requests.HTTPError:
             errors += 1
             _queue.append((_id, _task))
-            log.error(_response.json().get("message"))
+            if not silent:
+                log.error(f"HTTP {_response.status_code}: {_response.json().get('message')}")
             sleep(ERROR_SLEEP_TIME)
         else:
             errors = 0
@@ -179,7 +180,7 @@ def get_new_commit_sha(
 ) -> str:
     """Return SHA of new commit"""
     _message = (
-        f"Update {edition.translation_title} ({edition.publication_type})"
+        f"Update {edition.translation_title} [{edition.publication_type}]"
         if edition
         else f"Update {', '.join(_file.name for _file in file_paths)}"
     )
@@ -237,9 +238,9 @@ def upload_files_to_repo(
 def get_modified_filenames(repo_url: str, api_key: str, last_run_sha: str, last_commit_sha: str) -> list[str]:
     _request = {
         "method": "get",
+        "headers": {"Accept": "application/vnd.github.v3.diff"},
         "url": f"{repo_url}/compare/{last_run_sha}...{last_commit_sha}",
         "help_text": "get modified filenames",
-        "headers": {"Accept": "application/vnd.github.v3.diff"},
     }
     _response: Response = worker(queue=[_request], api_key=api_key)[0]
 

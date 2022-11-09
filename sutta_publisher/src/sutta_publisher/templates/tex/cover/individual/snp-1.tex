@@ -10,8 +10,8 @@
 
 % images. position of cover image can be adjusted if necessary
 
-\newcommand*{\backlogo}[1]{\raisebox{-.5ex}{\includegraphics[height=1em]{\VAR{images_directory | safe}sclogoorange.png}}}
+\newcommand*{\backlogo}[1]{\normalsize\Logofont{\color{secondarytextcolor}{#1}}}
 
-\newcommand*{\spinelogo}[1]{\centering{\includegraphics[height=1.5em]{\VAR{images_directory | safe}sclogoorange.png}}}
+\newcommand*{\spinelogo}[1]{\centering{\Large\Logofont{\color{secondarytextcolor}{#1}}}}
 
 \newcommand*{\coverimage}[1]{\vspace*{3in}\hspace*{2in}{\includegraphics[height=8in]{\VAR{images_directory | safe}orange2.png}}}

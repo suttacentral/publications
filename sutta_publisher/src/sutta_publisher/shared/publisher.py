@@ -9,10 +9,11 @@ log = logging.getLogger(__name__)
 
 
 def publish(result: EditionResult, api_key: str) -> None:
-    for volume in result.volumes:
+    for idx, volume in enumerate(result.volumes):
+        volume_info = f"(vol {idx + 1} of {len(result.volumes)}) " if len(result.volumes) > 1 else ""
         log.info(
-            f"** Publishing {result.translation_title} ({result.publication_type}) **\n"
-            f"Files: {', '.join(_path.name for _path in volume)}."
+            f"Publishing {result.translation_title}... {volume_info}[{result.publication_type}]\n"
+            f"Files: {', '.join(_path.name for _path in volume)}"
         )
 
         if not os.getenv("PYTHONDEBUG", ""):
@@ -24,4 +25,4 @@ def publish(result: EditionResult, api_key: str) -> None:
                 api_key=api_key,
             )
 
-    log.info("** Publication uploaded to repo **")
+    log.info("** Publication uploaded successfully! **")

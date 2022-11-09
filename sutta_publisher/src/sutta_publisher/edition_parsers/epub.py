@@ -52,7 +52,7 @@ class EpubEdition(LatexParser):
             with open(_img_path, "rb") as img:
                 book.set_cover(file_name=f"cover.jpg", content=img.read())
         except FileNotFoundError:
-            log.warning(f"File '{str(_img_path)}' not found. Skipping.")
+            log.warning(f"File '{str(_img_path)}' not found. Skipping setting epub cover.")
 
     def _add_image(self, book: EpubBook, file_path: Path) -> None:
         try:
@@ -240,6 +240,7 @@ class EpubEdition(LatexParser):
         log.debug("Generating cover...")
 
         _path = self.TEMP_DIR / volume.cover_filename
+        log.debug("Generating tex...")
         doc = self._generate_cover(volume=volume)
         # doc.generate_tex(filepath=str(_path))  # dev
         log.debug("Generating pdf...")

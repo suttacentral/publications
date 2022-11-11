@@ -363,9 +363,17 @@ class LatexParser(EditionParser):
             and int(tag.name[1:]) == self.sutta_depth
         )
 
+    def is_element_to_skip(self, tag: Tag) -> bool:
+        return (tag.has_attr("class") and any([class_ in tag["class"] for class_ in MATTERS_TO_SKIP])) or (
+            tag.has_attr("id") and any([id_ == tag["id"] for id_ in MATTERS_TO_SKIP])
+        )
+
     def _process_tag(self, tag: Tag | PageElement) -> str:
 
         match tag.name:
+
+            case tag_to_skip if self.is_element_to_skip(tag=tag):
+                return ""
 
             case range_or_sutta_title if self._is_range_or_sutta_title(tag=tag):
                 return self._append_sutta_title(tag=tag)
@@ -429,9 +437,6 @@ class LatexParser(EditionParser):
 
             case "section" if tag.has_attr("id") and tag["id"] == "main-toc":
                 return LatexParser._append_tableofcontents()
-
-            case "section" if tag.has_attr("class") and "secondary-toc" in tag["class"]:
-                return ""
 
             case "span":
                 return self._append_span(tag=tag)
@@ -581,7 +586,7 @@ class LatexParser(EditionParser):
         return name
 
     def _process_html_element(self, element: PageElement, volume: Volume | None = None) -> str:
-        if isinstance(element, Tag) and not (element.has_attr("id") and element["id"] in MATTERS_TO_SKIP):
+        if isinstance(element, Tag) and not self.is_element_to_skip(element):
             if volume and (name := LatexParser._get_matter_name(element)) in MATTERS_WITH_TEX_TEMPLATES:
                 _template: Template = LatexParser._get_shared_template(name=name)
                 tex = _template.render(
@@ -643,9 +648,27 @@ class LatexParser(EditionParser):
         with open(file=_path, mode="wt") as f:
             f.write(_output)
 
+    def _collect_endnotes(self, volume: Volume) -> list[str]:
+        endnotes = []
+
+        for _matter in volume.frontmatter:
+            # Look for any tag with 'endnotes' in id attribute
+            _html_endnotes = BeautifulSoup(_matter, "lxml").find(id=lambda x: x and "endnotes" in x)
+
+            if _html_endnotes:
+                for _endnote in _html_endnotes.find_all("li"):
+                    # get what is inside <p> tag without the last element, an anchor tag
+                    _endnote_contents = _endnote.p.contents[:-1]
+                    endnotes.append("".join(str(_el) for _el in _endnote_contents))
+
+        if volume.endnotes:
+            endnotes.extend(volume.endnotes)
+
+        return endnotes
+
     def _generate_tex(self, volume: Volume) -> Document:
         # setup
-        self.endnotes: list[str] | None = volume.endnotes if volume.endnotes else None
+        self.endnotes: list[str] | None = self._collect_endnotes(volume=volume)
         self.section_type: str = "chapter" if self._has_chapter_sutta_title(volume=volume) else "section"
 
         # create .xmpdata file

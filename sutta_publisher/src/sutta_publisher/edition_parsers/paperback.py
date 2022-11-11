@@ -46,6 +46,7 @@ class PaperbackEdition(LatexParser):
         log.debug(f"Generating cover... (vol {volume.volume_number or 1} of {self.config.edition.number_of_volumes})")
 
         _path = self.TEMP_DIR / volume.cover_filename
+        log.debug("Generating tex...")
         doc = self._generate_cover(volume=volume)
         # doc.generate_tex(filepath=str(_path))  # dev
         log.debug("Generating pdf...")

@@ -33,7 +33,9 @@ def run(editions: EditionsConfigs, token: str, is_manual: bool) -> None:
     for edition in edition_list:  # type: EditionParser
         # if edition.edition_type in ("html"):  # dev
         if edition.edition_type in ("html", "epub", "paperback"):
-            log.debug(edition)
+            log.info(
+                f"Generating {edition.config.publication.translation_title}... [{edition.config.edition.publication_type}]"
+            )
 
             try:
                 _edition_result = edition.collect_all()

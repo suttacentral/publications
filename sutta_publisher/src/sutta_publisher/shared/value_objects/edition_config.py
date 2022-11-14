@@ -120,8 +120,8 @@ class EditionMappingList(BaseModel):
             raise ValueError(f"No editions found for {publication_numbers=}.")
         return editions
 
-    def auto_find_edition_ids(self) -> list[str]:
-        edition_ids: list[str] = find_edition_ids(self.__root__)
+    def auto_find_edition_ids(self, api_key: str) -> list[str]:
+        edition_ids: list[str] = find_edition_ids(data=self.__root__, api_key=api_key)
         if not edition_ids:
             raise SystemExit(f"Publications are up-to-date.")
         return edition_ids

@@ -9,7 +9,7 @@ from sutta_publisher.shared import API_ENDPOINTS, API_URL, CREATOR_BIOS_URL
 from sutta_publisher.shared.value_objects.edition_config import EditionConfig, EditionMappingList, EditionsConfigs
 
 
-def get_edition_ids(publication_numbers: str) -> list[str]:
+def get_edition_ids(api_key: str, publication_numbers: str) -> list[str]:
     """Get the editions that are for given `publication_numbers`."""
     response = requests.get(API_URL + API_ENDPOINTS["editions_mapping"])
     response.raise_for_status()
@@ -21,7 +21,7 @@ def get_edition_ids(publication_numbers: str) -> list[str]:
         _publication_numbers = publication_numbers.split(",")
         edition_ids: list[str] = editions.get_edition_ids(publication_numbers=_publication_numbers)
     else:
-        edition_ids = editions.auto_find_edition_ids()
+        edition_ids = editions.auto_find_edition_ids(api_key=api_key)
 
     return edition_ids
 
@@ -49,9 +49,9 @@ def get_edition_config(edition_id: str) -> EditionConfig:
     return config
 
 
-def get_edition_configs(publication_numbers: str) -> EditionsConfigs:
+def get_edition_configs(api_key: str, publication_numbers: str) -> EditionsConfigs:
     """Build a list of available editions config."""
-    editions_id: list[str] = get_edition_ids(publication_numbers=publication_numbers)
+    editions_id: list[str] = get_edition_ids(api_key=api_key, publication_numbers=publication_numbers)
 
     editions_config = EditionsConfigs()
     for each_id in editions_id:

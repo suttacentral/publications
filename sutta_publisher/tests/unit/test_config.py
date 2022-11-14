@@ -8,7 +8,7 @@ from sutta_publisher.shared.value_objects.edition import EditionType
 def test_should_create_config() -> None:
     publication_number = "scpub3"
     # When
-    editions = get_edition_configs(publication_numbers=publication_number)
+    editions = get_edition_configs(api_key="foo", publication_numbers=publication_number)
 
     # Then
     assert len(editions) == 5  # (epub, html, pdf, hardcover, paperback)
@@ -44,4 +44,4 @@ def test_should_raise_for_missing_publication_number() -> None:
     publication_number = "missing_pub_no"
 
     with pytest.raises(ValueError):
-        get_edition_configs(publication_numbers=publication_number)
+        get_edition_configs(api_key="foo", publication_numbers=publication_number)

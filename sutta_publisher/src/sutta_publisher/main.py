@@ -15,7 +15,7 @@ logging.basicConfig(encoding="utf-8", level=logging.getLevelName(os.environ.get(
 log = logging.getLogger(__name__)
 
 
-def run(editions: EditionsConfigs, token: str, is_manual: bool) -> None:
+def run(editions: EditionsConfigs, api_key: str, is_manual: bool) -> None:
     """Run the script engine. Configuration should be already done via the setup functions."""
     edition_list = []
     edition_class_mapping: dict[EditionType, Type[EditionParser]] = {}
@@ -39,26 +39,26 @@ def run(editions: EditionsConfigs, token: str, is_manual: bool) -> None:
 
             try:
                 _edition_result = edition.collect_all()
-                publish(_edition_result, token)
+                publish(result=_edition_result, api_key=api_key)
             except Exception as e:
                 log.exception(e)
 
     if not is_manual and not os.getenv("PYTHONDEBUG", ""):
-        update_run_sha(token)
+        update_run_sha(api_key)
 
     log.debug("*** Script finished ***")
 
 
 @click.command()
-@click.argument("token", default=None)
+@click.argument("api_key", default=None)
 @click.argument("publication_numbers", default=None, required=False)
-def setup_and_run(token: str, publication_numbers: str) -> None:
+def setup_and_run(api_key: str, publication_numbers: str) -> None:
     """Setup and run the engine. It's entrypoint of the script."""
 
     try:
         setup_logging()
-        editions = get_edition_configs(publication_numbers=publication_numbers)
-        run(editions=editions, token=token, is_manual=bool(publication_numbers))
+        editions = get_edition_configs(api_key=api_key, publication_numbers=publication_numbers)
+        run(editions=editions, api_key=api_key, is_manual=bool(publication_numbers))
     except Exception as e:
         log.exception(e)
         raise

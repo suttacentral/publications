@@ -98,24 +98,24 @@ def _get_match(publication: tuple[str, str, str, tuple[str, ...]], filenames: li
     return False
 
 
-def match_filenames_to_edition_ids(
+def match_filenames_to_publication_numbers(
     filenames: list[str], mapping: set[tuple[str, str, str, tuple[str, ...]]]
 ) -> list[str]:
-    edition_ids = []
+    publication_numbers = []
 
     for _publication in mapping:
         _publication_number = _publication[0]
         _match = _get_match(publication=_publication, filenames=filenames, patterns=EDITION_FINDER_PATTERNS)
 
         if _match:
-            edition_ids.append(_publication_number)
+            publication_numbers.append(_publication_number)
 
-    return edition_ids
+    return publication_numbers
 
 
 def find_edition_ids(data: list[dict[str, str]], api_key: str) -> list[str]:
     """
-    Look for files that were modified since the last run of publications app and match them with publication ids.
+    Look for files that were modified since the last run of publications app and match them with edition ids.
     """
     last_run_sha: str = get_last_run_sha()
 
@@ -127,6 +127,8 @@ def find_edition_ids(data: list[dict[str, str]], api_key: str) -> list[str]:
 
     mapping = get_mapping(data=data)
 
-    edition_ids = match_filenames_to_edition_ids(filenames=filenames, mapping=mapping)
+    publication_numbers = match_filenames_to_publication_numbers(filenames=filenames, mapping=mapping)
+
+    edition_ids = [edition["edition_id"] for edition in data if edition["publication_number"] in publication_numbers]
 
     return edition_ids

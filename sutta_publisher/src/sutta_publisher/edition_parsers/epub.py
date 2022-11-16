@@ -1,6 +1,4 @@
-import ast
 import logging
-import os
 from copy import copy
 from pathlib import Path
 from typing import Callable, no_type_check
@@ -28,9 +26,6 @@ log = logging.getLogger(__name__)
 
 class EpubEdition(LatexParser):
     CSS_PATH: Path = Path(__file__).parent.parent / "css_stylesheets/epub.css"
-
-    JPG_DENSITY: int = ast.literal_eval(os.getenv("JPG_DENSITY", 200))  # type: ignore
-    JPG_QUALITY: int = ast.literal_eval(os.getenv("JPG_QUALITY", 90))  # type: ignore
 
     edition_type: EditionType = EditionType.epub
     default_style: EpubItem
@@ -241,7 +236,7 @@ class EpubEdition(LatexParser):
 
         _path = self.TEMP_DIR / volume.cover_filename
         log.debug("Generating tex...")
-        doc = self._generate_cover(volume=volume)
+        doc = self._generate_cover(volume=volume, preamble="preamble", body="body", template_dir="individual")
         # doc.generate_tex(filepath=str(_path))  # dev
         log.debug("Generating pdf...")
         doc.generate_pdf(filepath=str(_path), clean_tex=False, compiler="latexmk", compiler_args=["-lualatex"])
@@ -252,9 +247,9 @@ class EpubEdition(LatexParser):
         log.debug("Converting pdf to jpg...")
 
         _path = self.TEMP_DIR / volume.cover_filename
-        with Image(filename=f"pdf:{_path.with_suffix('.pdf')}", resolution=self.JPG_DENSITY) as img:
+        with Image(filename=f"pdf:{_path.with_suffix('.pdf')}", resolution=self.IMAGE_DENSITY) as img:
             img.format = "jpeg"
-            img.compression_quality = self.JPG_QUALITY
+            img.compression_quality = self.IMAGE_DENSITY
             img.save(filename=_path.with_suffix(".jpg"))
 
         self.append_volume_file_path(volume=volume, paths=[_path.with_suffix(".jpg")])

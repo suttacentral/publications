@@ -113,3 +113,8 @@
 
 % individual
 \BLOCK{if individual_cover_template}\VAR{individual_cover_template | safe}\BLOCK{endif}
+
+% required for generating covers with flat background image
+\BLOCK{if flat_background}
+\newcommand*{\coverimage}[1]{\vspace*{1.5in}\hspace*{2in}{\includegraphics[height=8in]{\VAR{temp_directory | safe}background-image.png}}}
+\BLOCK{endif}

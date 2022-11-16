@@ -2,6 +2,7 @@ import logging
 from typing import Callable
 
 from PyPDF2 import PdfReader
+from wand.image import Image
 
 from sutta_publisher.shared.value_objects.edition import EditionResult, EditionType
 from sutta_publisher.shared.value_objects.parser_objects import Edition, Volume
@@ -42,12 +43,31 @@ class PaperbackEdition(LatexParser):
 
             volume.spine_width = f"{_spine_width}in"
 
+    def _generate_flat_background_image(self, volume: Volume) -> None:
+        log.debug(f"Generating flat background image...")
+
+        _background_path = self.TEMP_DIR / "background-image"
+        _background_doc = self._generate_cover(
+            volume=volume, preamble="background-preamble", body="background-body", template_dir="background"
+        )
+        _background_doc.generate_pdf(
+            filepath=str(_background_path), clean_tex=False, compiler="latexmk", compiler_args=["-lualatex"]
+        )
+        with Image(filename=f"pdf:{_background_path.with_suffix('.pdf')}", resolution=self.IMAGE_DENSITY) as img:
+            img.format = "png"
+            img.compression_quality = self.IMAGE_DENSITY
+            img.save(filename=_background_path.with_suffix(".png"))
+
     def generate_cover(self, volume: Volume) -> None:
         log.debug(f"Generating cover... (vol {volume.volume_number or 1} of {self.config.edition.number_of_volumes})")
 
+        self._generate_flat_background_image(volume=volume)
+
         _path = self.TEMP_DIR / volume.cover_filename
         log.debug("Generating tex...")
-        doc = self._generate_cover(volume=volume)
+        doc = self._generate_cover(
+            volume=volume, preamble="preamble", body="body", template_dir="individual", is_flat=True
+        )
         # doc.generate_tex(filepath=str(_path))  # dev
         log.debug("Generating pdf...")
         doc.generate_pdf(filepath=str(_path), clean_tex=False, compiler="latexmk", compiler_args=["-lualatex"])

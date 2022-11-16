@@ -52,6 +52,9 @@ class LatexParser(EditionParser):
     LATEX_DOCUMENT_CONFIG: dict[str, str | tuple[str]] = ast.literal_eval(os.getenv("LATEX_DOCUMENT_CONFIG", ""))
     LATEX_COVER_CONFIG: dict[str, str | tuple[str]] = ast.literal_eval(os.getenv("LATEX_COVER_CONFIG", ""))
 
+    IMAGE_DENSITY: int = ast.literal_eval(os.getenv("IMAGE_DENSITY", 200))  # type: ignore
+    IMAGE_QUALITY: int = ast.literal_eval(os.getenv("IMAGE_QUALITY", 90))  # type: ignore
+
     TEX_TEMPLATES_DIR = Path(__file__).parent.parent / "templates" / "tex"
     INDIVIDUAL_TEMPLATES_SUBDIR = "individual"
     SHARED_TEMPLATES_SUBDIR = "shared"
@@ -521,13 +524,11 @@ class LatexParser(EditionParser):
             log.warning(f"Template '{_template_name}' for publication/volume specific configuration not found.")
             return None
 
-    def _get_cover_template(
-        self, name: str, finalize: Callable[[Any], str] = None, is_individual: bool = False
-    ) -> Template:
+    def _get_cover_template(self, name: str, finalize: Callable[[Any], str] = None, template_dir: str = "") -> Template:
 
         _subdir = LatexParser.COVER_TEMPLATES_SUBDIR
 
-        if not is_individual:
+        if not template_dir:
             if not COVER_TEMPLATES_MAPPING:
                 log.warning("Missing .env_public file or the file lacks variable COVER_TEMPLATES_MAPPING.")
 
@@ -545,7 +546,7 @@ class LatexParser(EditionParser):
                     "}'"
                 )
         else:
-            _subdir = os.path.join(_subdir, "individual")
+            _subdir = os.path.join(_subdir, template_dir)
             _template_name = name
 
         try:
@@ -728,23 +729,31 @@ class LatexParser(EditionParser):
         _html: PageElement = BeautifulSoup(input_data, "lxml").find("body").next_element
         return self._process_tag(tag=_html).replace("\n\n", "")
 
-    def _generate_cover(self, volume: Volume) -> Document:
+    def _generate_cover(
+        self, volume: Volume, preamble: str, body: str, template_dir: str, is_flat: bool = False
+    ) -> Document:
         # setup
         doc = Document(**self._process_document_config(volume=volume, config=self.LATEX_COVER_CONFIG))
 
         # cover preamble
-        _preamble_template = self._get_cover_template(name="preamble")
+        _preamble_template = self._get_cover_template(name=preamble)
         _individual_template = self._get_cover_template(
-            name=get_individual_cover_template_name(volume=volume), is_individual=True
+            name=get_individual_cover_template_name(volume=volume),
+            template_dir=template_dir,
         )
         _preamble = _preamble_template.render(
             **volume.dict(exclude_none=True, exclude_unset=True),
-            individual_cover_template=_individual_template.render(images_directory=os.path.join(self.IMAGES_DIR, "")),
+            individual_cover_template=_individual_template.render(
+                images_directory=os.path.join(self.IMAGES_DIR, ""),
+                flat_background=is_flat,
+            ),
+            temp_directory=os.path.join(self.TEMP_DIR, ""),
+            flat_background=is_flat,
         )
         doc.preamble.append(NoEscape(_preamble))
 
         # cover body
-        _body_template = self._get_cover_template(name="body", finalize=self._convert_input_to_tex)
+        _body_template = self._get_cover_template(name=body, finalize=self._convert_input_to_tex)
         _body = _body_template.render(**volume.dict(exclude_none=True, exclude_unset=True))
         doc.append(NoEscape(_body))
 

@@ -251,12 +251,8 @@ def extract_string(html: BeautifulSoup) -> str:
 
 @no_type_check
 def get_chapter_name(html: BeautifulSoup) -> str:
-    if html.section and (name := html.section.get("id")):
-        return name
-    elif html.article and (name := html.article.get("id")):
-        return name
-    else:
-        return html.article.get("class", [""])[0]
+    _html_chapter = next(html.body.children)
+    return _html_chapter.get("id", _html_chapter.get("class", [""])[0])
 
 
 def make_absolute_links(html: str) -> str:

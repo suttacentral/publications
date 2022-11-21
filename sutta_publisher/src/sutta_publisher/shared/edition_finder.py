@@ -1,18 +1,31 @@
 from requests import Response
 
-from sutta_publisher.shared import EDITION_FINDER_PATTERNS, LAST_RUN_SHA_FILE_URL, SCDATA_REPO_URL, SUPER_TREE_URL
+from sutta_publisher.shared import EDITION_FINDER_PATTERNS, LAST_RUN_DATE_FILE_URL, SCDATA_REPO_URL, SUPER_TREE_URL
 from sutta_publisher.shared.github_handler import get_last_commit_sha, get_modified_filenames, worker
 
 
-def get_last_run_sha() -> str:
+def get_last_run_date() -> str:
+    """Get the last run date. ISO 8601 format: YYYY-MM-DDTHH:MM:SSZ"""
     _request = {
         "method": "get",
-        "url": LAST_RUN_SHA_FILE_URL,
-        "help_text": "get last run sha",
+        "url": LAST_RUN_DATE_FILE_URL,
+        "help_text": "get last run date",
     }
     _response: Response = worker(queue=[_request])[0]
 
     last_run_sha: str = _response.content.decode("ascii").strip()
+    return last_run_sha
+
+
+def get_last_run_sha(repo: str, api_key: str, date: str) -> str:
+    _request = {
+        "method": "get",
+        "url": f"{repo}/commits?until={date}",
+        "help_text": f"get list of commits until {date}",
+    }
+    _response: Response = worker(queue=[_request], api_key=api_key)[0]
+
+    last_run_sha: str = _response.json()[0]["sha"]
     return last_run_sha
 
 
@@ -117,7 +130,9 @@ def find_edition_ids(data: list[dict[str, str]], api_key: str) -> list[str]:
     """
     Look for files that were modified since the last run of publications app and match them with edition ids.
     """
-    last_run_sha: str = get_last_run_sha()
+    last_run_date: str = get_last_run_date()
+
+    last_run_sha: str = get_last_run_sha(repo=SCDATA_REPO_URL, api_key=api_key, date=last_run_date)
 
     last_commit_sha: str = get_last_commit_sha(repo_url=SCDATA_REPO_URL, api_key=api_key, branch="master")
 

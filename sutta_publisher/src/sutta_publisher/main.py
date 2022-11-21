@@ -6,7 +6,7 @@ import click
 from edition_parsers.base import EditionParser
 from shared.config import get_edition_configs, setup_logging
 from shared.data import get_edition_data
-from shared.github_handler import update_run_sha
+from shared.github_handler import update_run_date
 from shared.publisher import publish
 from shared.value_objects.edition import EditionType
 from shared.value_objects.edition_config import EditionsConfigs
@@ -44,7 +44,7 @@ def run(editions: EditionsConfigs, api_key: str, is_manual: bool) -> None:
                 log.exception(e)
 
     if not is_manual and not os.getenv("PYTHONDEBUG", ""):
-        update_run_sha(api_key)
+        update_run_date(api_key)
 
     log.debug("*** Script finished ***")
 

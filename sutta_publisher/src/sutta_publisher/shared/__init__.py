@@ -41,9 +41,9 @@ EDITION_FINDER_PATTERNS: list[dict] = ast.literal_eval(
 EDITIONS_REPO_URL: str = get_from_env(
     name="EDITIONS_REPO_URL", example='EDITIONS_REPO_URL = "https://api.github.com/repos/suttacentral/editions"'
 )
-LAST_RUN_SHA_FILE_URL: str = get_from_env(
-    name="LAST_RUN_SHA_FILE_URL",
-    example='LAST_RUN_SHA_FILE_URL = "https://raw.githubusercontent.com/suttacentral/editions/main/last_run_sha"',
+LAST_RUN_DATE_FILE_URL: str = get_from_env(
+    name="LAST_RUN_DATE_FILE_URL",
+    example='LAST_RUN_DATE_FILE_URL = "https://raw.githubusercontent.com/suttacentral/editions/main/last_run_date"',
 )
 REPO_PATTERN: str = get_from_env(
     name="REPO_PATH_PATTERN",

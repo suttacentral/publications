@@ -15,7 +15,13 @@ from pylatex.utils import bold, italic
 from sutta_publisher.shared.value_objects.parser_objects import Volume
 
 from .base import EditionParser
-from .helper_functions import find_sutta_title_depth, get_heading_depth, get_individual_cover_template_name, wrap_in_z
+from .helper_functions import (
+    find_sutta_title_depth,
+    get_heading_depth,
+    get_individual_cover_template_name,
+    make_absolute_links,
+    wrap_in_z,
+)
 
 log = logging.getLogger(__name__)
 
@@ -180,6 +186,9 @@ class LatexParser(EditionParser):
         else:
             return ""
 
+    def _append_href(self, tag: Tag) -> str:
+        return cast(str, Command("href", [tag["href"], tag.string]).dumps())
+
     def _append_sutta_title(self, tag: Tag) -> str:
         tex: str = ""
         _acronym, _name, _root_name = [self._process_tag(tag=_span) for _span in tag.children]
@@ -192,7 +201,7 @@ class LatexParser(EditionParser):
             "display_name": tag.parent and tag.parent.get("id") not in SUTTATITLES_WITHOUT_TRANSLATED_TITLE,
         }
         tex += template.render(data) + NoEscape("\n\n")
-        return cast(str, tex)
+        return tex
 
     @staticmethod
     def _append_custom_chapter(tag: Tag) -> str:
@@ -368,7 +377,7 @@ class LatexParser(EditionParser):
 
     def is_element_to_skip(self, tag: Tag) -> bool:
         return (tag.has_attr("class") and any([class_ in tag["class"] for class_ in MATTERS_TO_SKIP])) or (
-            tag.has_attr("id") and any([id_ == tag["id"] for id_ in MATTERS_TO_SKIP])
+            tag.has_attr("id") and any([id_ in tag["id"] for id_ in MATTERS_TO_SKIP])
         )
 
     def _process_tag(self, tag: Tag | PageElement) -> str:
@@ -395,6 +404,9 @@ class LatexParser(EditionParser):
 
             case "a" if tag.has_attr("role") and "doc-noteref" in tag["role"]:
                 return self._append_footnote()
+
+            case "a" if tag.has_attr("href"):
+                return self._append_href(tag=tag)
 
             case "article" if tag.has_attr("class") and "epigraph" in tag["class"]:
                 return self._append_epigraph(tag=tag)
@@ -652,9 +664,9 @@ class LatexParser(EditionParser):
     def _collect_endnotes(self, volume: Volume) -> list[str]:
         endnotes = []
 
-        for _matter in volume.frontmatter:
+        for _matter in volume.frontmatter + volume.backmatter:
             # Look for any tag with 'endnotes' in id attribute
-            _html_endnotes = BeautifulSoup(_matter, "lxml").find(id=lambda x: x and "endnotes" in x)
+            _html_endnotes = BeautifulSoup(_matter, "lxml").find(id=lambda x: x and "-endnotes" in x)
 
             if _html_endnotes:
                 for _endnote in _html_endnotes.find_all("li"):
@@ -665,6 +677,8 @@ class LatexParser(EditionParser):
         if volume.endnotes:
             endnotes.extend(volume.endnotes)
 
+        # Since we use raw volume endnotes, we have to ensure that possible links are absolute
+        endnotes = list(map(make_absolute_links, endnotes))
         return endnotes
 
     def _generate_tex(self, volume: Volume) -> Document:

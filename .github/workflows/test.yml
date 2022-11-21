@@ -2,7 +2,7 @@ name: Autodiscover and Update Publications
 
 on:
   schedule:
-    - cron: '0 7 * * WED'
+    - cron: '0 0 * * TUE'
 
 env:
   API_TOKEN: ${{ secrets.API_TOKEN }}

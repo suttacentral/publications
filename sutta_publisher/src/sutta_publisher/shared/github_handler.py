@@ -3,13 +3,14 @@ import logging
 import re
 import tempfile
 from base64 import b64encode
+from datetime import datetime
 from pathlib import Path
 from time import sleep
 
 import requests
 from requests import Response
 
-from sutta_publisher.shared import EDITIONS_REPO_URL, LAST_RUN_SHA_FILE_URL
+from sutta_publisher.shared import EDITIONS_REPO_URL, LAST_RUN_DATE_FILE_URL
 from sutta_publisher.shared.value_objects.edition import EditionResult
 
 log = logging.getLogger(__name__)
@@ -34,20 +35,19 @@ def worker(queue: list[dict], api_key: str = None, silent: bool = False) -> list
         if api_key:
             _headers["Authorization"] = f"Token {api_key}"
 
-        _response: Response = getattr(requests, _method)(
-            url=_task.get("url"),
-            headers=_headers,
-            data=_task.get("body"),
-        )
-
         try:
+            _response: Response = getattr(requests, _method)(
+                url=_task.get("url"),
+                headers=_headers,
+                data=_task.get("body"),
+            )
             _response.raise_for_status()
-        except requests.HTTPError:
+        except (requests.ConnectionError, requests.exceptions.SSLError, requests.HTTPError) as err:
             errors += 1
             _queue.append((_id, _task))
             if not silent:
-                log.error(f"HTTP {_response.status_code}: {_response.json().get('message')}")
-            sleep(ERROR_SLEEP_TIME)
+                log.error(err)
+                sleep(ERROR_SLEEP_TIME)
         else:
             errors = 0
             finished.append((_id, _response))
@@ -254,13 +254,13 @@ def get_modified_filenames(repo_url: str, api_key: str, last_run_sha: str, last_
     return filenames
 
 
-def update_run_sha(api_key: str) -> None:
-    last_sha_filename: str = LAST_RUN_SHA_FILE_URL.split("/")[-1]
-    last_commit_sha = get_last_commit_sha(repo_url=EDITIONS_REPO_URL, api_key=api_key, branch="main")
+def update_run_date(api_key: str) -> None:
+    last_date_filename: str = LAST_RUN_DATE_FILE_URL.split("/")[-1]
+    _date = datetime.now().replace(microsecond=0).isoformat()
 
-    _path = Path(tempfile.gettempdir()) / last_sha_filename
+    _path = Path(tempfile.gettempdir()) / last_date_filename
     with open(file=_path, mode="wt") as f:
-        f.write(last_commit_sha)
+        f.write(f"{_date}Z")
 
     upload_files_to_repo(
         file_paths=[_path],

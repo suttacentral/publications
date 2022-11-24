@@ -6,7 +6,7 @@ GIT_EXEC?=git
 
 IMAGE_NAME?=paccakkha/suttacentral
 IMAGE_TARGET?=production
-IMAGE_VERSION?=prev_$(IMAGE_TARGET)
+IMAGE_VERSION?=suttapublisher_$(IMAGE_TARGET)
 
 APP_PATH?=sutta_publisher/src
 TESTS_PATH?=sutta_publisher/tests

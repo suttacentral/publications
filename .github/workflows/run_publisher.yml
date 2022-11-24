@@ -5,7 +5,7 @@ on:
     inputs:
       publication_ids:
         description: 'Publication IDs (comma-separated)'
-        required: true
+        required: false
 
 env:
   PUBLICATION_IDS: ${{ github.event.inputs.publication_ids }}

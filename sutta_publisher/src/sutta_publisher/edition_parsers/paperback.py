@@ -27,7 +27,7 @@ class PaperbackEdition(LatexParser):
         log.debug("Generating pdf...")
         doc.generate_pdf(filepath=str(_path), clean_tex=False, compiler="latexmk", compiler_args=["-lualatex"])
 
-        self.append_volume_file_path(
+        self.append_file_paths(
             volume=volume, paths=[_path.with_suffix(".tex"), _path.with_suffix(".pdf"), _path.with_suffix(".xmpdata")]
         )
 
@@ -72,7 +72,7 @@ class PaperbackEdition(LatexParser):
         log.debug("Generating pdf...")
         doc.generate_pdf(filepath=str(_path), clean_tex=False, compiler="latexmk", compiler_args=["-lualatex"])
 
-        self.append_volume_file_path(volume=volume, paths=[_path.with_suffix(".tex"), _path.with_suffix(".pdf")])
+        self.append_file_paths(volume=volume, paths=[_path.with_suffix(".tex"), _path.with_suffix(".pdf")])
 
     def collect_all(self) -> EditionResult:
         _edition: Edition = super().collect_all()

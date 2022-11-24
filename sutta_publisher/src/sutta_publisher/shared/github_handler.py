@@ -46,7 +46,7 @@ def worker(queue: list[dict], api_key: str = None, silent: bool = False) -> list
             errors += 1
             _queue.append((_id, _task))
             if not silent:
-                log.error(err)
+                log.debug(err)
                 sleep(ERROR_SLEEP_TIME)
         else:
             errors = 0

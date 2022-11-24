@@ -7,6 +7,7 @@ from typing import Iterator, Literal, Optional
 from pydantic import BaseModel, validator
 
 from sutta_publisher.shared.edition_finder import find_edition_ids
+from sutta_publisher.shared.github_handler import update_run_date
 from sutta_publisher.shared.value_objects.edition import EditionType
 
 log = logging.getLogger(__name__)
@@ -125,9 +126,12 @@ class EditionMappingList(BaseModel):
 
     def auto_find_edition_ids(self, api_key: str) -> list[str]:
         edition_ids: list[str] = find_edition_ids(data=self.__root__, api_key=api_key)
+
         if not edition_ids:
             logging.info(f"Publications are up-to-date.")
+            update_run_date(api_key)
             raise SystemExit()
+
         return edition_ids
 
 

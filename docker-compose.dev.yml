@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   publisher:
-    image: marekbryling/suttapublisher:prev_development
+    image: paccakkha/suttacentral:suttapublisher_development
     env_file:
       - ./.env_public
     volumes:

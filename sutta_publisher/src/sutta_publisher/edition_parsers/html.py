@@ -86,7 +86,7 @@ class HtmlEdition(EditionParser):
         with open(file=_path, mode="wt") as f:
             f.write(_output)
 
-        self.append_volume_file_path(volume=volume, paths=[_path])
+        self.append_file_paths(volume=volume, paths=[_path])
 
     def collect_all(self) -> EditionResult:
         _edition: Edition = super().collect_all()

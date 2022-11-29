@@ -274,9 +274,9 @@ def validate_node(node: Node) -> None:
 
         if hasattr(node.mainmatter, "markup") and node.mainmatter.markup:
 
-            # Check if first node markup matches node uid
+            # Check if first markup in a node matches the node's uid
             if f"id='{node.uid}'" not in next(iter(node.mainmatter.markup.values())):
-                _errors.append("mismatching tag id")
+                _errors.append("segment uid and markup tag id do not match")
 
             # Check <h1> tags
             _heading_ids = [_id for _id, _markup in node.mainmatter.markup.items() if "<h1" in _markup]
@@ -319,11 +319,14 @@ def get_true_volume_index(volume: Volume) -> int:
 
 
 def get_individual_cover_template_name(volume: Volume) -> str:
+    """Get volume's individual cover template name"""
     if volume.volume_number:
         return f"{volume.text_uid}-{volume.volume_number}.tex"
     else:
+        # if there is only one volume, use number 1
         return f"{volume.text_uid}-1.tex"
 
 
 def wrap_in_z(text: str) -> str:
+    """Adds a 'z' tex command for additional contour in tex covers"""
     return " ".join(f"\\z{{{word}}}" for word in text.split(" "))

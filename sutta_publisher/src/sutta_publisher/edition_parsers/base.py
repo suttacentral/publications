@@ -147,7 +147,8 @@ class EditionParser(ABC):
         """Returns publication url: {suttacentral_url}/editions/{UID}/{ISO}/{author}"""
         return f"{SUTTACENTRAL_URL}editions/{self.config.edition.text_uid}/{self.config.publication.translation_lang_iso}/{self.config.publication.creator_uid}"
 
-    def append_volume_file_path(self, volume: Volume, paths: list) -> None:
+    def append_file_paths(self, volume: Volume, paths: list) -> None:
+        """Appends paths of generated files to a given volume"""
         for path in paths:
             volume.file_paths.append(path)
 

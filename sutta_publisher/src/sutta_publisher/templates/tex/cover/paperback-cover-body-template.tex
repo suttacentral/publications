@@ -48,7 +48,7 @@
 
 \setstretch{1.05}
 
-\frontvolumenumber{\BLOCK{if volume_number}Volume \VAR{volume_number | safe | wrap_in_z}\BLOCK{endif}}
+\frontvolumenumber{\BLOCK{if volume_number}\z{Volume} \VAR{volume_number | safe | wrap_in_z}\BLOCK{endif}}
 \frontvolumeacronym{\BLOCK{if volume_acronym}\VAR{volume_acronym | safe | wrap_in_z}\BLOCK{endif}}
 \frontvolumetranslationtitle{\BLOCK{if volume_translation_title}\VAR{volume_translation_title | safe | wrap_in_z}\BLOCK{endif}}
 \frontvolumeroottitle{\BLOCK{if volume_root_title}\VAR{volume_root_title | safe | wrap_in_z}\BLOCK{endif}}

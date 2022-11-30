@@ -249,7 +249,7 @@ class EpubEdition(LatexParser):
         _path = self.TEMP_DIR / volume.cover_filename
         with Image(filename=f"pdf:{_path.with_suffix('.pdf')}", resolution=self.IMAGE_DENSITY) as img:
             img.format = "jpeg"
-            img.compression_quality = self.IMAGE_DENSITY
+            img.compression_quality = self.IMAGE_QUALITY
             img.save(filename=_path.with_suffix(".jpg"))
 
         self.append_file_paths(volume=volume, paths=[_path.with_suffix(".jpg")])

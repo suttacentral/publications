@@ -54,9 +54,9 @@ class PaperbackEdition(LatexParser):
             filepath=str(_background_path), clean_tex=False, compiler="latexmk", compiler_args=["-lualatex"]
         )
         with Image(filename=f"pdf:{_background_path.with_suffix('.pdf')}", resolution=self.IMAGE_DENSITY) as img:
-            img.format = "png"
-            img.compression_quality = self.IMAGE_DENSITY
-            img.save(filename=_background_path.with_suffix(".png"))
+            img.format = "jpg"
+            img.compression_quality = self.IMAGE_QUALITY
+            img.save(filename=_background_path.with_suffix(".jpg"))
 
     def generate_cover(self, volume: Volume) -> None:
         log.debug(f"Generating cover... (vol {volume.volume_number or 1} of {self.config.edition.number_of_volumes})")

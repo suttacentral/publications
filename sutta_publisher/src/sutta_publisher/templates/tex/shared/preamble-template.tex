@@ -48,24 +48,24 @@ citecolor=black
 % define fonts
 % use if arno sanskrit is unavailable
 %\setmainfont{Gentium Plus}
-%\newfontfamily\Semiboldsubheadfont[]{Gentium Plus}
-%\newfontfamily\Semiboldnormalfont[]{Gentium Plus}
-%\newfontfamily\Lightfont[]{Gentium Plus}
 %\newfontfamily\Marginalfont[]{Gentium Plus}
 %\newfontfamily\Allsmallcapsfont[RawFeature=+c2sc]{Gentium Plus}
 %\newfontfamily\Noligaturefont[Renderer=Basic]{Gentium Plus}
 %\newfontfamily\Noligaturecaptionfont[Renderer=Basic]{Gentium Plus}
 %\newfontfamily\Fleuronfont[Ornament=1]{Gentium Plus}
 
-% use if arno sanskrit is available. display is applied to \chapter and \part, subhead to \section and \subsection. When specifying semibold, the italic must be defined.
+% use if arno sanskrit is available. display is applied to \chapter and \part, subhead to \section and \subsection. 
 \setmainfont[Numbers=OldStyle]{Arno Pro}
-\newfontfamily\Semibolddisplayfont[BoldItalicFont = Arno Pro Semibold Italic Display]{Arno Pro Semibold Display} %
-\newfontfamily\Semiboldsubheadfont[BoldItalicFont = Arno Pro Semibold Italic Subhead]{Arno Pro Semibold Subhead}
-\newfontfamily\Semiboldnormalfont[BoldItalicFont = Arno Pro Semibold Italic]{Arno Pro Semibold}
 \newfontfamily\Marginalfont[RawFeature=+subs]{Arno Pro Regular}
 \newfontfamily\Allsmallcapsfont[RawFeature=+c2sc]{Arno Pro}
 \newfontfamily\Noligaturefont[Renderer=Basic]{Arno Pro}
 \newfontfamily\Noligaturecaptionfont[Renderer=Basic]{Arno Pro Caption}
+
+% If specifying semibold, the italic must be defined. I have removed it for now, because of style and because the \textsanskrit command was forcing a bold font and I couldn't figure out how to fix it. 
+%\newfontfamily\Semibolddisplayfont[BoldItalicFont = Arno Pro Semibold Italic Display]{Arno Pro Semibold Display} %
+%\newfontfamily\Semiboldsubheadfont[BoldItalicFont = Arno Pro Semibold Italic Subhead]{Arno Pro Semibold Subhead}
+%\newfontfamily\Semiboldnormalfont[BoldItalicFont = Arno Pro Semibold Italic]{Arno Pro Semibold}
+
 
 % chinese fonts
 \newfontfamily\cjk{Noto Serif TC}
@@ -174,8 +174,8 @@ citecolor=black
 
 % style headings with secsty. chapter and section are defined per-edition
 \partfont{\setstretch{.85}\normalfont\centering\textsc}
-\subsectionfont{\setstretch{.85}\Semiboldsubheadfont}%
-\subsubsectionfont{\setstretch{.85}\Semiboldnormalfont}
+\subsectionfont{\setstretch{.85}\normalfont}%
+\subsubsectionfont{\setstretch{.85}\normalfont\itshape}
 
 % style elements of suttatitle
 \newcommand*{\suttatitleacronym}[1]{\smaller[2]{#1}\vspace*{.3em}}
@@ -206,13 +206,13 @@ citecolor=black
 \renewcommand\paragraph{\@startsection{paragraph}{4}{\z@}%
             {-2.5ex\@plus -1ex \@minus -.25ex}%
             {1.25ex \@plus .25ex}%
-            {\noindent\Semiboldnormalfont\normalsize}}
+            {\noindent\normalfont\itshape\small}}
 
 % Change the style of subparagraph headings %
 \renewcommand\subparagraph{\@startsection{subparagraph}{5}{\z@}%
             {-2.5ex\@plus -1ex \@minus -.25ex}%
             {1.25ex \@plus .25ex}%
-            {\noindent\Semiboldnormalfont\small}}
+            {\noindent\normalfont\itshape\footnotesize}}
 \makeatother
 
 % use etoolbox to suppress page numbers on \part

@@ -6,18 +6,20 @@
 \let\oldfrontmatter\frontmatter
 \renewcommand{\frontmatter}{%
 \chapterfont{\setstretch{.85}\normalfont\centering}%
-\sectionfont{\setstretch{.85}\Semiboldsubheadfont}%
+\sectionfont{\setstretch{.85}\normalfont}%
 \oldfrontmatter}
 
 \let\oldmainmatter\mainmatter
 \renewcommand{\mainmatter}{%
 \chapterfont{\setstretch{.85}\normalfont\centering\Large}%
-\sectionfont{\setstretch{.85}\Semiboldsubheadfont}%
+\sectionfont{\setstretch{.85}\normalfont}%
 \oldmainmatter}
 
 \let\oldbackmatter\backmatter
 \renewcommand{\backmatter}{%
 \chapterfont{\setstretch{.85}\normalfont\centering}%
-\sectionfont{\setstretch{.85}\Semiboldsubheadfont}%
+\sectionfont{\setstretch{.85}\normalfont}%
 \oldbackmatter}
 
+% for reasons, dhp aligns too far in the margin in ToC, this fixes it. 
+\renewcommand*{\tocacronym}[1]{\hspace*{0em}{#1}\quad}

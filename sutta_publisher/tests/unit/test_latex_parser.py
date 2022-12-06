@@ -141,6 +141,11 @@ def latex_edition(data, config):
         ("<ul><li>Test 1</li></ul>", "\\begin{itemize}%\n\\item Test 1%\n\\end{itemize}\n\n"),
         # individual characters
         ("<test>Test & test _ test ~ test</test>", "Test \\& test \\_ test \\textasciitilde test"),
+        # full blurb item
+        (
+            "<a class='blurb-link' href='#mn'><span class='blurb-label'><span class='blurb-item translated-title'>Middle Discourses Collection </span><span class='blurb-item root-title'>Majjhimanikāya</span></span></a>",
+            "Middle Discourses Collection (\\textit{\\textsanskrit{Majjhimanikāya}})",
+        ),
     ],
 )
 def test_process_tag(doc, latex_edition, html, expected):

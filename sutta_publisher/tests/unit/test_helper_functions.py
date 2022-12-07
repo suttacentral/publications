@@ -1,3 +1,6 @@
+from pathlib import Path
+from unittest import mock
+
 import pytest
 from bs4 import BeautifulSoup
 
@@ -9,6 +12,7 @@ from sutta_publisher.edition_parsers.helper_functions import (
     fetch_possible_refs,
     generate_html_toc,
     make_absolute_links,
+    make_paperback_zip_files,
     process_line,
     validate_node,
 )
@@ -463,3 +467,52 @@ def test_validate_node(
 )
 def test_generate_html_toc(headings, expected):
     assert generate_html_toc(headings) == expected
+
+
+@pytest.mark.parametrize(
+    "file_paths, num_of_volumes, expected",
+    [
+        (
+            [
+                "Middle-Discourses-sujato-2022-12-06.tex",
+                "Middle-Discourses-sujato-2022-12-06.pdf",
+                "Middle-Discourses-sujato-2022-12-06.xmpdata",
+                "Middle-Discourses-sujato-2022-12-06-cover.tex",
+                "Middle-Discourses-sujato-2022-12-06-cover.pdf",
+            ],
+            1,
+            [
+                "Middle-Discourses-sujato-2022-12-06-tex.zip",
+                "Middle-Discourses-sujato-2022-12-06.zip",
+                "Middle-Discourses-sujato-2022-12-06-cover.zip",
+            ],
+        ),
+        (
+            [
+                "Middle-Discourses-sujato-2022-12-06-1.tex",
+                "Middle-Discourses-sujato-2022-12-06-1.pdf",
+                "Middle-Discourses-sujato-2022-12-06-1.xmpdata",
+                "Middle-Discourses-sujato-2022-12-06-1-cover.tex",
+                "Middle-Discourses-sujato-2022-12-06-1-cover.pdf",
+                "Middle-Discourses-sujato-2022-12-06-2.tex",
+                "Middle-Discourses-sujato-2022-12-06-2.pdf",
+                "Middle-Discourses-sujato-2022-12-06-2.xmpdata",
+                "Middle-Discourses-sujato-2022-12-06-2-cover.tex",
+                "Middle-Discourses-sujato-2022-12-06-2-cover.pdf",
+            ],
+            2,
+            [
+                "Middle-Discourses-sujato-2022-12-06-tex.zip",
+                "Middle-Discourses-sujato-2022-12-06.zip",
+                "Middle-Discourses-sujato-2022-12-06-cover.zip",
+            ],
+        ),
+    ],
+)
+def test_make_zip_files_for_paperback_edition(file_paths, num_of_volumes, expected):
+    paths = [Path(f"tmp/{_path}") for _path in file_paths]
+    expected = [Path(_exp) for _exp in expected]
+
+    with mock.patch("sutta_publisher.edition_parsers.helper_functions._make_zip") as mock_make_zip:
+        mock_make_zip.side_effect = lambda filename, paths: Path(filename)
+        assert set(make_paperback_zip_files(paths=paths, num_of_volumes=num_of_volumes)) == set(expected)

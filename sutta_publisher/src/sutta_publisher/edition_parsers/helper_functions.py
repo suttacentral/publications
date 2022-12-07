@@ -2,7 +2,10 @@ import ast
 import logging
 import os
 import re
+import tempfile
+from pathlib import Path
 from typing import Any, cast, no_type_check
+from zipfile import ZipFile
 
 import requests
 from bs4 import BeautifulSoup, Tag
@@ -15,6 +18,7 @@ ALL_REFERENCES_URL = os.getenv("ALL_REFERENCES_URL", "")
 ACCEPTED_REFERENCES = ast.literal_eval(os.getenv("ACCEPTED_REFERENCES", ""))
 MAX_HEADING_DEPTH = 6
 SUTTACENTRAL_URL = os.getenv("SUTTACENTRAL_URL", "")
+TEMP_DIR = Path(tempfile.gettempdir())
 
 
 def fetch_possible_refs() -> set[str]:
@@ -330,3 +334,36 @@ def get_individual_cover_template_name(volume: Volume) -> str:
 def wrap_in_z(text: str) -> str:
     """Adds a 'z' tex command for additional contour in tex covers"""
     return " ".join(f"\\z{{{word}}}" for word in text.split(" "))
+
+
+def _make_zip(filename: str, paths: list[Path]) -> Path:
+    with ZipFile(TEMP_DIR / filename, "w") as zip_file:
+        for _path in paths:
+            zip_file.write(filename=_path, arcname=_path.name)
+
+        return Path(cast(str, zip_file.filename))
+
+
+def make_paperback_zip_files(paths: list[Path], num_of_volumes: int) -> list[Path]:
+    tex_files, cover_files, content_files = [], [], []
+
+    for _path in paths:
+        if str(_path).endswith(".tex"):
+            tex_files.append(_path)
+        elif str(_path).endswith("cover.pdf"):
+            cover_files.append(_path)
+        else:
+            content_files.append(_path)
+
+    base_filename = str(paths[0].stem)
+    if num_of_volumes > 1:
+        base_filename = base_filename[:-2]
+
+    mapping = (
+        (f"{base_filename}-tex.zip", tex_files),
+        (f"{base_filename}-cover.zip", cover_files),
+        (f"{base_filename}.zip", content_files),
+    )
+    result = [_make_zip(filename=_filename, paths=_paths) for _filename, _paths in mapping]
+
+    return result

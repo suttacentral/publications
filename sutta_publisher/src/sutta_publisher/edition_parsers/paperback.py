@@ -46,23 +46,26 @@ class PaperbackEdition(LatexParser):
     def _generate_flat_background_image(self, volume: Volume) -> None:
         log.debug(f"Generating flat background image...")
 
-        _background_path = self.TEMP_DIR / "background-image"
-        _background_doc = self._generate_cover(
+        _path = self.TEMP_DIR / "background-image"
+        log.debug("Generating tex...")
+        doc = self._generate_cover(
             volume=volume, preamble="background-preamble", body="background-body", template_dir="background"
         )
-        _background_doc.generate_pdf(
-            filepath=str(_background_path), clean_tex=False, compiler="latexmk", compiler_args=["-lualatex"]
-        )
-        with Image(filename=f"pdf:{_background_path.with_suffix('.pdf')}", resolution=self.IMAGE_DENSITY) as img:
+        # doc.generate_tex(filepath=str(_path))  # dev
+        log.debug("Generating pdf...")
+        doc.generate_pdf(filepath=str(_path), clean_tex=False, compiler="latexmk", compiler_args=["-lualatex"])
+
+        with Image(filename=f"pdf:{_path.with_suffix('.pdf')}", resolution=self.IMAGE_DENSITY) as img:
             img.format = "jpg"
             img.compression_quality = self.IMAGE_QUALITY
-            img.save(filename=_background_path.with_suffix(".jpg"))
+            img.save(filename=_path.with_suffix(".jpg"))
 
     def generate_cover(self, volume: Volume) -> None:
         log.debug(f"Generating cover... (vol {volume.volume_number or 1} of {self.config.edition.number_of_volumes})")
 
         self._generate_flat_background_image(volume=volume)
 
+        log.debug("Generating final cover...")
         _path = self.TEMP_DIR / volume.cover_filename
         log.debug("Generating tex...")
         doc = self._generate_cover(

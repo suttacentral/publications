@@ -405,7 +405,7 @@ class LatexParser(EditionParser):
             case "a" if tag.has_attr("role") and "doc-noteref" in tag["role"]:
                 return self._append_footnote()
 
-            case "a" if tag.has_attr("href"):
+            case "a" if tag.has_attr("href") and (not tag.has_attr("class") or "blurb-link" not in tag["class"]):
                 return self._append_href(tag=tag)
 
             case "article" if tag.has_attr("class") and "epigraph" in tag["class"]:

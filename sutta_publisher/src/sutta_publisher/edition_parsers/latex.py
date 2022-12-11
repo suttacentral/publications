@@ -132,7 +132,7 @@ class LatexParser(EditionParser):
         _data: str = self._process_contents(contents=tag.contents)
 
         # add a small font size for uddanagatha
-        if "uddanagatha" in tag['class']:
+        if "uddanagatha" in tag["class"]:
             _data = NoEscape(f"{{\small\n{_data}\n}}")
 
         verse_env.append(_data)

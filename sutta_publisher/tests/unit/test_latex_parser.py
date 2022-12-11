@@ -45,8 +45,12 @@ def latex_edition(data, config):
             "\\addtocontents{toc}{\\let\\protect\\contentsline\\protect\\nopagecontentsline}\n\\chapter*{Test}\n\\addcontentsline{toc}{chapter}{\\tocchapterline{Test}}\n\\addtocontents{toc}{\\let\\protect\\contentsline\\protect\\oldcontentsline}\n\n",
         ),
         (
-            "<h2 class='section-title' id='an3-pathamapannasaka'>Test</h2>",
+            "<h2 class='section-title heading' id='an3-pathamapannasaka'>Test</h2>",
             "\\addtocontents{toc}{\\let\\protect\\contentsline\\protect\\nopagecontentsline}\n\\pannasa{Test}\n\\addcontentsline{toc}{pannasa}{Test}\n\\markboth{}{}\n\\addtocontents{toc}{\\let\\protect\\contentsline\\protect\\oldcontentsline}\n\n",
+        ),
+        (
+            "<h3 class='section-title heading' id='an6-pathamapannasaka-devatavagga'>The Chapter on Deities </h3>",
+            "\\addtocontents{toc}{\\let\\protect\\contentsline\\protect\\nopagecontentsline}\n\\chapter*{The Chapter on Deities }\n\\addcontentsline{toc}{chapter}{\\tocchapterline{The Chapter on Deities }}\n\\addtocontents{toc}{\\let\protect\\contentsline\\protect\\oldcontentsline}\n\n",
         ),
         # Subheadings
         (

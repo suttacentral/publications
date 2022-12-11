@@ -46,6 +46,7 @@ from sutta_publisher.shared.value_objects.parser_objects import (
 log = logging.getLogger(__name__)
 
 ADDITIONAL_HEADINGS = ast.literal_eval(os.getenv("ADDITIONAL_HEADINGS", ""))
+ADDITIONAL_PANNASAKA_IDS = ast.literal_eval(os.getenv("ADDITIONAL_PANNASAKA_IDS", ""))
 MATTERS_TO_TEMPLATES_MAPPING: dict[str, str] = ast.literal_eval(os.getenv("MATTERS_TO_TEMPLATES_MAPPING", ""))
 SUTTACENTRAL_URL = os.getenv("SUTTACENTRAL_URL", "/")
 
@@ -370,7 +371,7 @@ class EditionParser(ABC):
             _span.insert_after(mainmatter.new_tag("br"))
 
         # Find pannasa headings and add class "pannasaka-heading"
-        _pannasa = mainmatter.find_all(id=lambda x: x and "pannasaka" in x)
+        _pannasa = mainmatter.find_all(id=lambda x: x and (x.endswith("pannasaka") or x in ADDITIONAL_PANNASAKA_IDS))
         add_class(tags=_pannasa, class_="pannasaka-heading")
 
         return cast(str, extract_string(mainmatter))

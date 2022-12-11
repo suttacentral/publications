@@ -259,7 +259,7 @@ class LatexParser(EditionParser):
         return cast(str, _template.render(name=tag.string) + NoEscape("\n\n"))
 
     def _append_section_title(self, tag: Tag) -> str:
-        if tag.has_attr("id") and ("pannasaka" in tag["id"] or tag["id"] in ADDITIONAL_PANNASAKA_IDS):
+        if tag.has_attr("id") and (tag["id"].endswith("pannasaka") or tag["id"] in ADDITIONAL_PANNASAKA_IDS):
             # The pannasa in AN and SN requires a special markup
             return LatexParser._append_pannasa(tag=tag)
         elif self.section_type == "chapter":

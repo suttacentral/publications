@@ -130,6 +130,11 @@ class LatexParser(EditionParser):
         verse_env: Environment = Environment()
         verse_env._latex_name = "verse"
         _data: str = self._process_contents(contents=tag.contents)
+
+        # add a small font size for uddanagatha
+        if "uddanagatha" in tag['class']:
+            _data = NoEscape(f"{{\small\n{_data}\n}}")
+
         verse_env.append(_data)
         return cast(str, verse_env.dumps() + NoEscape("\n\n"))
 
@@ -367,6 +372,9 @@ class LatexParser(EditionParser):
         _depth: int = get_heading_depth(tag)
         return cast(str, actions[_depth - 1](tag=tag))
 
+    def _is_gatha(self, tag: Tag) -> bool:
+        return tag.has_attr("class") and any(_class in ["gatha", "uddanagatha"] for _class in tag["class"])
+
     def _is_range_or_sutta_title(self, tag: Tag) -> bool:
         return (
             tag.has_attr("class")
@@ -414,7 +422,7 @@ class LatexParser(EditionParser):
             case "b":
                 return self._append_bold(tag=tag)
 
-            case "blockquote" if tag.has_attr("class") and "gatha" in tag["class"]:
+            case "blockquote" if self._is_gatha(tag=tag):
                 return self._append_verse(tag=tag)
 
             case "blockquote":

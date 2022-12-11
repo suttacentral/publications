@@ -84,6 +84,15 @@ def latex_edition(data, config):
         ("<b>Test</b>", "\\textbf{Test}"),
         # <blockquote>
         ("<blockquote class='gatha'>Test</blockqoute>", "\\begin{verse}%\nTest%\n\\end{verse}\n\n"),
+        (
+            "<blockquote class='gatha'><p>“Test <br/>test. <br/>Test <br/>test. </p><p>Test <br/>test; <br/>Test, <br/>test. <br/>Test, <br/>test.” </p></blockquote>",
+            "\\begin{verse}%\n“Test \\\\\ntest. \\\\\nTest \\\\\ntest. \n\nTest \\\\\ntest; \\\\\nTest, \\\\\ntest. \\\\\nTest, \\\\\ntest.” \n\n%\n\\end{verse}\n\n",
+        ),
+        ("<blockquote class='uddanagatha'>Test</blockqoute>", "\\begin{verse}%\n{\\small\nTest\n}%\n\\end{verse}\n\n"),
+        (
+            "<blockquote class='uddanagatha'><p>“Test <br/>test. <br/>Test <br/>test. </p><p>Test <br/>test; <br/>Test, <br/>test. <br/>Test, <br/>test.” </p></blockquote>",
+            "\\begin{verse}%\n{\\small\n“Test \\\\\ntest. \\\\\nTest \\\\\ntest. \n\nTest \\\\\ntest; \\\\\nTest, \\\\\ntest. \\\\\nTest, \\\\\ntest.” \n\n\n}%\n\\end{verse}\n\n",
+        ),
         ("<blockquote>Test</blockqoute>", "\\begin{quotation}%\nTest%\n\\end{quotation}\n\n"),
         # <br>
         ("<br>", NoEscape(r"\\") + NoEscape("\n")),

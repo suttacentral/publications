@@ -493,6 +493,11 @@ h6 + h7
     text-transform: uppercase;
 }
 
+.expansion-instructions{
+	font-size: small;
+	font-style: italic;
+}
+
 dd
 {
     margin-left: 2em;

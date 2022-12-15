@@ -4,7 +4,7 @@
 \Keywords{dhamma, dharma, discourse, sutta, sutra, tipitaka, tripitaka, pali, scripture, canon}
 \Publisher{SuttaCentral}
 \Subject{\VAR{translation_subtitle | safe}}
-\Date{\VAR{created | safe}}
+\Date{\VAR{created[:10] | safe}}
 \PublicationType{book}
 \Source{\VAR{source_url | safe}}
 \URLlink{\VAR{publication_url | safe}}

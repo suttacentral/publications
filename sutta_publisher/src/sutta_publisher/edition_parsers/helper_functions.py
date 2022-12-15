@@ -348,7 +348,7 @@ def make_paperback_zip_files(paths: list[Path], num_of_volumes: int) -> list[Pat
     tex_files, cover_files, content_files = [], [], []
 
     for _path in paths:
-        if str(_path).endswith(".tex"):
+        if str(_path).endswith(".tex") or str(_path).endswith(".xmpdata"):
             tex_files.append(_path)
         elif str(_path).endswith("cover.pdf"):
             cover_files.append(_path)

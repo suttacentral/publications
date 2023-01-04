@@ -54,7 +54,7 @@ def worker(queue: list[dict], api_key: str = None, silent: bool = False) -> list
 
     if errors and not silent:
         _task_to_display = _queue[0][1]
-        _task_to_display.pop("body")
+        _task_to_display.pop("body", None)
         raise SystemExit(f"Error while executing HTTP request:\n{_task_to_display}")
 
     return [_res for _, _res in sorted(finished)] if finished else []

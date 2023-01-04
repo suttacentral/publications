@@ -46,14 +46,16 @@ def worker(queue: list[dict], api_key: str = None, silent: bool = False) -> list
             errors += 1
             _queue.append((_id, _task))
             if not silent:
-                log.debug(err)
+                log.warning(err)
                 sleep(ERROR_SLEEP_TIME)
         else:
             errors = 0
             finished.append((_id, _response))
 
     if errors and not silent:
-        raise SystemExit(f"Error while executing HTTP request:\n{_queue[0][1]}")
+        _task_to_display = _queue[0][1]
+        _task_to_display.pop("body", None)
+        raise SystemExit(f"Error while executing HTTP request:\n{_task_to_display}")
 
     return [_res for _, _res in sorted(finished)] if finished else []
 

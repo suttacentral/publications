@@ -43,7 +43,7 @@ class CustomTag(Tag):
         return (
             _original_output
             and self.__has_contents_or_belong_to_head()
-            and not self.name in self.TAGS_TO_IGNORE
+            and self.name not in self.TAGS_TO_IGNORE
             and not self.__is_simple_description_list()
             and not self.__is_simple_list_item()
             and not self.__contains_only_one_string()

@@ -327,8 +327,9 @@ class LatexParser(EditionParser):
                 LatexParser._strip_tag_string(_tag)
                 data[_var] = self._process_contents(contents=_tag.contents)
 
-        template: Template = LatexParser._get_shared_template(name="epigraph")
-        return cast(str, template.render(data) + NoEscape("\n"))
+        _template: Template = LatexParser._get_shared_template(name="epigraph")
+        tex = _template.render(data, images_directory=os.path.join(self.IMAGES_DIR, ""))
+        return cast(str, tex + NoEscape("\n"))
 
     def _append_enjambment(self, tag: Tag) -> str:
         return cast(str, f"\\\\>{self._process_contents(contents=tag.contents)}")

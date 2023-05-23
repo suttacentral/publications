@@ -17,10 +17,10 @@
 
 \newgeometry{inner=0mm, outer=.25in, top=.4in, bottom=0mm}
 \setlength{\parindent}{0em}
-\sbox\IBox{\includegraphics{/tmp/jambudipa_map.png}}%
-\includegraphics[trim=0 0 \dimexpr\wd\IBox-\textwidth{} 0,clip]{/tmp/jambudipa_map.png}
+\sbox\IBox{\includegraphics{\VAR{images_directory | safe}jambudipa_map.png}}%
+\includegraphics[trim=0 0 \dimexpr\wd\IBox-\textwidth{} 0,clip]{\VAR{images_directory | safe}jambudipa_map.png}
 \newpage
-\includegraphics[trim=\textwidth{} 0 0 0,clip]{/tmp/jambudipa_map.png}
+\includegraphics[trim=\textwidth{} 0 0 0,clip]{\VAR{images_directory | safe}jambudipa_map.png}
 \newpage
 \restoregeometry
 

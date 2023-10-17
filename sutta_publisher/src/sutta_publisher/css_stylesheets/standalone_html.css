@@ -326,6 +326,10 @@ text-align: center;
 border: none;
 text-align: center;
 }
+.inserted-heading
+{
+font-style: italic;
+}
 .sutta-heading.translated-title
 {
 font-weight: bold;

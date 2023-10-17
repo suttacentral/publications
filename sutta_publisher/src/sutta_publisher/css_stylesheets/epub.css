@@ -441,6 +441,11 @@ h6 + h7
     border: none;
 }
 
+.inserted-heading
+{
+font-style: italic;
+}
+
 .sutta-heading.translated-title
 {
     font-weight: bold;

@@ -192,7 +192,7 @@ class LatexParser(EditionParser):
             return ""
 
     def _append_href(self, tag: Tag) -> str:
-        return cast(str, Command("href", [NoEscape(tag["href"]), tag.string]).dumps())
+        return cast(str, Command("href", [NoEscape(tag["href"].replace("#", "\\#")), tag.string]).dumps())
 
     def _append_sutta_title(self, tag: Tag) -> str:
         tex: str = ""

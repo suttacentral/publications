@@ -130,13 +130,15 @@ class LatexParser(EditionParser):
         verse_env: Environment = Environment()
         verse_env._latex_name = "verse"
         _data: str = self._process_contents(contents=tag.contents)
-
-        # add a small font size for uddanagatha
-        if "uddanagatha" in tag["class"]:
-            _data = NoEscape(f"{{\small\n{_data}\n}}")
-
         verse_env.append(_data)
         return cast(str, verse_env.dumps() + NoEscape("\n\n"))
+
+    def _append_scuddana(self, tag: Tag) -> str:
+        scuddana_env: Environment = Environment()
+        scuddana_env._latex_name = "scuddana"
+        _data: str = self._process_contents(contents=tag.contents)
+        scuddana_env.append(_data)
+        return cast(str, scuddana_env.dumps() + NoEscape("\n\n"))
 
     def _append_quotation(self, tag: Tag) -> str:
         quotation_env: Environment = Environment()
@@ -374,7 +376,10 @@ class LatexParser(EditionParser):
         return cast(str, actions[_depth - 1](tag=tag))
 
     def _is_gatha(self, tag: Tag) -> bool:
-        return tag.has_attr("class") and any(_class in ["gatha", "uddanagatha"] for _class in tag["class"])
+        return tag.has_attr("class") and any(_class in ["gatha"] for _class in tag["class"])
+
+    def _is_uddanagatha(self, tag: Tag) -> bool:
+        return tag.has_attr("class") and any(_class in ["uddanagatha"] for _class in tag["class"])
 
     def _is_range_or_sutta_title(self, tag: Tag) -> bool:
         return (
@@ -425,6 +430,9 @@ class LatexParser(EditionParser):
 
             case "blockquote" if self._is_gatha(tag=tag):
                 return self._append_verse(tag=tag)
+
+            case "blockquote" if self._is_uddanagatha(tag=tag):
+                return self._append_scuddana(tag=tag)
 
             case "blockquote":
                 return self._append_quotation(tag=tag)

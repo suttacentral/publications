@@ -58,17 +58,19 @@ allcolors=black
 %\newfontfamily\Fleuronfont[Ornament=1]{Gentium Plus}
 
 % use if arno sanskrit is available. display is applied to \chapter and \part, subhead to \section and \subsection.
-\setmainfont[Numbers=OldStyle]{Arno Pro}
+\setmainfont[
+  FontFace={sb}{n}{Font = {Arno Pro Semibold}},
+  FontFace={sb}{it}{Font = {Arno  Pro Semibold Italic}}
+]{Source Sans Pro}
+
+% create commands for using semibold
+\DeclareRobustCommand{\sbseries}{\fontseries{sb}\selectfont}
+\DeclareTextFontCommand{\textsb}{\sbseries}
+
 \newfontfamily\Marginalfont[RawFeature=+subs]{Arno Pro Regular}
 \newfontfamily\Allsmallcapsfont[RawFeature=+c2sc]{Arno Pro}
 \newfontfamily\Noligaturefont[Renderer=Basic]{Arno Pro}
 \newfontfamily\Noligaturecaptionfont[Renderer=Basic]{Arno Pro Caption}
-
-% If specifying semibold, the italic must be defined. I have removed it for now, because of style and because the \textsanskrit command was forcing a bold font and I couldn't figure out how to fix it. UPDATE: try using for Vinaya rules
-%\newfontfamily\Semibolddisplayfont[BoldItalicFont = Arno Pro Semibold Italic Display]{Arno Pro Semibold Display} %
-%\newfontfamily\Semiboldsubheadfont[BoldItalicFont = Arno Pro Semibold Italic Subhead]{Arno Pro Semibold Subhead}
-\newfontfamily\Semiboldnormalfont[BoldItalicFont = Arno Pro Semibold Italic]{Arno Pro Semibold}
-
 
 % chinese fonts
 \newfontfamily\cjk{Noto Serif TC}
@@ -260,7 +262,7 @@ allcolors=black
 \newcommand*{\scendkanda}[1]{\begin{center}\textbf{#1}\end{center}} % use for ending vinaya rule sections and also samyuttas %
 \newcommand*{\scend}[1]{\begin{center}\begin{small}\textit{#1}\end{small}\end{center}}
 \newcommand*{\scendvagga}[1]{\begin{center}\textbf{#1}\end{center}}
-\newcommand*{\scrule}[1]{{\Semiboldnormalfont{#1}}}
+\newcommand*{\scrule}[1]{\textsb{#1}}
 \newcommand*{\scadd}[1]{\textit{#1}}
 \newcommand*{\scevam}[1]{\textsc{#1}}
 \newcommand*{\scspeaker}[1]{\hspace{2em}\textit{#1}}

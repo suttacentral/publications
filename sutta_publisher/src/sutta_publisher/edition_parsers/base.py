@@ -693,7 +693,7 @@ class EditionParser(ABC):
     def process_front_and_backmatter_links(self, volume: Volume) -> None:
         """Make all frontmatter and backmatter relative links absolute.
         Relative links are used by Suttacentral website, but they do not work in our output files."""
-        _volume_matters = ["frontmatter", "backmatter"]
+        _volume_matters = ["frontmatter", "mainmatter", "backmatter"]
         for _matters in _volume_matters:
             _processed_matters = []
             for _matter in getattr(volume, _matters):

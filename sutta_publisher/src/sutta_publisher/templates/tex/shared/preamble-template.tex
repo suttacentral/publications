@@ -1,3 +1,4 @@
+\usepackage{ragged2e}
 \usepackage{verse}
 \usepackage[a-3u]{pdfx}
 \usepackage[inner=1in, outer=1in, top=.7in, bottom=1in, papersize={6in,9in}, headheight=13pt]{geometry}
@@ -21,6 +22,15 @@
 \usepackage{relsize}
 \usepackage{etoolbox}
 
+% improve ragged right headings by suppressing hyphenation and orphans. spaceskip plus and minus adjust interword spacing; increase rightskip stretch to make it want to push a word on the first line(s) to the next line; reduce parfillskip stretch to make line length more equal . spacefillskip and xspacefillskip can be deleted to use defaults.
+\protected\def\BalancedRagged{
+\leftskip     0pt
+\rightskip    0pt plus 10em
+\spaceskip=1\fontdimen2\font plus .5\fontdimen3\font minus 1.5\fontdimen4\font
+\xspaceskip=1\fontdimen2\font plus 1\fontdimen3\font minus 1\fontdimen4\font
+\parfillskip  0pt plus 15em
+\relax
+}
 
 \hypersetup{
 colorlinks=true,
@@ -179,8 +189,8 @@ allcolors=black
 
 % style headings with secsty. chapter and section are defined per-edition
 \partfont{\setstretch{.85}\normalfont\centering\textsc}
-\subsectionfont{\setstretch{.85}\normalfont}%
-\subsubsectionfont{\setstretch{.85}\normalfont\itshape}
+\subsectionfont{\setstretch{.95}\normalfont\BalancedRagged}%
+\subsubsectionfont{\setstretch{1}\normalfont\itshape\BalancedRagged}
 
 % style elements of suttatitle
 \newcommand*{\suttatitleacronym}[1]{\smaller[2]{#1}\vspace*{.3em}}
@@ -255,21 +265,20 @@ allcolors=black
 \newsavebox\IBox
 
 % custom commands for html styling classes
-\newcommand*{\scnamo}[1]{\begin{center}\textit{#1}\end{center}}
-\newcommand*{\scendsection}[1]{\begin{center}\begin{small}\textit{#1}\end{small}\end{center}}
-\newcommand*{\scendsutta}[1]{\begin{center}\textit{#1}\end{center}}
-\newcommand*{\scendbook}[1]{\bigskip\begin{center}\uppercase{#1}\end{center}}
-\newcommand*{\scendkanda}[1]{\begin{center}\textbf{#1}\end{center}} % use for ending vinaya rule sections and also samyuttas %
-\newcommand*{\scend}[1]{\begin{center}\begin{small}\textit{#1}\end{small}\end{center}}
-\newcommand*{\scendvagga}[1]{\begin{center}\textbf{#1}\end{center}}
+\newcommand*{\scnamo}[1]{\begin{Center}\textit{#1}\end{Center}\bigskip}
+\newcommand*{\scendsection}[1]{\begin{Center}\begin{small}\textit{#1}\end{small}\end{Center}\addvspace{1em}}
+\newcommand*{\scendsutta}[1]{\begin{Center}\textit{#1}\end{Center}\addvspace{1em}}
+\newcommand*{\scendbook}[1]{\bigskip\begin{Center}\uppercase{#1}\end{Center}\addvspace{1em}}
+\newcommand*{\scendkanda}[1]{\begin{Center}\textbf{#1}\end{Center}\addvspace{1em}} % use for ending vinaya rule sections and also samyuttas %
+\newcommand*{\scend}[1]{\begin{Center}\begin{small}\textit{#1}\end{small}\end{Center}\addvspace{1em}}
+\newcommand*{\scendvagga}[1]{\begin{Center}\textbf{#1}\end{Center}\addvspace{1em}}
 \newcommand*{\scrule}[1]{\textsb{#1}}
 \newcommand*{\scadd}[1]{\textit{#1}}
 \newcommand*{\scevam}[1]{\textsc{#1}}
 \newcommand*{\scspeaker}[1]{\hspace{2em}\textit{#1}}
 \newcommand*{\scbyline}[1]{\begin{flushright}\textit{#1}\end{flushright}\bigskip}
 \newcommand*{\scexpansioninstructions}[1]{\begin{small}\textit{#1}\end{small}}
-
-\newcommand*{\scuddanaintro}[1]{\medskip\noindent\begin{footnotesize}\textit{#1}\end{footnotesize}}
+\newcommand*{\scuddanaintro}[1]{\medskip\noindent\begin{footnotesize}\textit{#1}\end{footnotesize}\smallskip}
 
 \newenvironment{scuddana}{%
 \setlength{\stanzaskip}{.5\baselineskip}%

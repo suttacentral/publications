@@ -1,6 +1,6 @@
 PROJ_ROOT=$(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 PYTHON_EXEC?=python
-COMPOSE_EXEC?=docker-compose
+COMPOSE_EXEC?=docker compose
 DOCKER_EXEC?=docker
 GIT_EXEC?=git
 

@@ -2,8 +2,7 @@
 
 @namespace epub 'http://www.idpf.org/2007/ops';
 
-body
-{
+body {
     hyphens: auto;
 
     font-variant-numeric: oldstyle-nums;
@@ -11,25 +10,21 @@ body
 }
 
 article,
-.range
-{
+.range {
     margin: 8em 0;
 }
 
-.range article
-{
+.range article {
     margin: 4em 0 0 0;
 }
 
-p
-{
+p {
     margin: 0;
 
     text-indent: 1em;
 }
 
-hr
-{
+hr {
     width: 25%;
     height: 0;
     margin: 1.5em auto;
@@ -39,16 +34,15 @@ hr
 }
 
 p.continued,
-h2 + p,
-h3 + p,
-h4 + p,
-h5 + p,
-h6 + p,
-header + p,
-hr + p,
-hgroup + p,
-p:first-child
-{
+h2+p,
+h3+p,
+h4+p,
+h5+p,
+h6+p,
+header+p,
+hr+p,
+hgroup+p,
+p:first-child {
     text-indent: 0;
 
     hanging-punctuation: first last;
@@ -62,79 +56,66 @@ h2,
 h3,
 h4,
 h5,
-h6
-{
+h6 {
     margin: 1em 0 1rem 0;
 }
 
-blockquote
-{
+blockquote {
     margin: 1em 1.5em;
 }
 
-blockquote p
-{
-  text-indent: 0;
+blockquote p {
+    text-indent: 0;
 }
 
 blockquote p,
 li,
-dl
-{
+dl {
     text-indent: 0;
 
     text-align: left;
 }
 
 ul,
-ol
-{
+ol {
     padding-left: 2rem;
 }
 
-li  ol,
-li ul
-{
+li ol,
+li ul {
     margin-bottom: 0;
 }
 
-dt
-{
+dt {
     font-weight: bold;
 }
 
-nav ol
-{
+nav ol {
     font-weight: bold;
 
     list-style-type: none;
 }
 
-nav ol ol
-{
+nav ol ol {
     font-weight: normal;
 }
 
-nav li
-{
+nav li {
     margin: .75em 0;
 }
 
-.toc-uid
-{
+.toc-uid {
     display: inline-block;
 
     margin-right: 1em;
 }
 
-.contents
-{
+.contents {
     margin: 2em 0;
 }
 
 #titlepage,
-#halftitlepage
-{
+#halftitlepage {
     line-height: 1;
 
     display: flex;
@@ -148,8 +129,7 @@ nav li
     align-content: center;
 }
 
-.front-top
-{
+.front-top {
     display: flex;
     flex-direction: column;
 
@@ -158,8 +138,7 @@ nav li
     justify-content: space-between;
 }
 
-.translation-title
-{
+.translation-title {
     font-size: 1.802rem;
     line-height: 1.1;
 
@@ -168,8 +147,7 @@ nav li
     text-align: center;
 }
 
-.translation-subtitle
-{
+.translation-subtitle {
     font-size: 1.424rem;
     font-style: italic;
     line-height: 1.2;
@@ -179,8 +157,7 @@ nav li
     text-align: center;
 }
 
-.creator-name
-{
+.creator-name {
     font-size: 1.6rem;
     line-height: 1.2;
 
@@ -189,8 +166,7 @@ nav li
     text-align: center;
 }
 
-.title-page-foot
-{
+.title-page-foot {
     display: flex;
     flex-direction: row;
 
@@ -201,23 +177,18 @@ nav li
     align-items: center;
 }
 
-#imprint
-{
+#imprint {
     font-size: 0.79rem;
 
     padding: 2em;
 
-    border: 1px solid;
-    border-radius: 1em;
 }
 
-.license
-{
+.license {
     margin: 2em 0;
 }
 
-.license-statement
-{
+.license-statement {
     font-style: italic;
 
     margin: 1em 2em;
@@ -225,35 +196,29 @@ nav li
     text-align: center;
 }
 
-#imprint table
-{
+#imprint table {
     border-spacing: 0;
 }
 
-#imprint td
-{
+#imprint td {
     padding: .25em 1em .25em 0;
 }
 
-address
-{
+address {
     margin: 1em;
 }
 
-.byline
-{
+.byline {
     font-style: italic;
 
     margin-bottom: 1em;
 }
 
-.front-creator
-{
+.front-creator {
     text-align: center;
 }
 
-.front-bottom
-{
+.front-bottom {
     display: flex;
     flex-direction: column;
 
@@ -262,13 +227,11 @@ address
     justify-content: space-between;
 }
 
-.volume-details
-{
+.volume-details {
     text-align: center;
 }
 
-.publisher-branding
-{
+.publisher-branding {
     font-size: 1.424rem;
 
     display: flex;
@@ -280,19 +243,16 @@ address
     gap: .5em;
 }
 
-.publisher-logo img
-{
+.publisher-logo img {
     width: 1em;
     height: 1em;
 }
 
-.publisher-name
-{
+.publisher-name {
     font-variant-caps: small-caps;
 }
 
-.epigraph
-{
+.epigraph {
     display: flex;
     flex-direction: column;
 
@@ -304,8 +264,7 @@ address
     align-content: center;
 }
 
-.epigraph-attribution
-{
+.epigraph-attribution {
     font-style: italic;
 }
 
@@ -315,8 +274,7 @@ h3,
 h4,
 h5,
 h6,
-header
-{
+header {
     hyphens: none;
 
     break-after: avoid;
@@ -324,31 +282,26 @@ header
     -epub-hyphens: none;
 }
 
-header
-{
+header {
     text-align: center;
 }
 
-header ul
-{
+header ul {
     margin-bottom: .5em;
     padding: 0;
 
     list-style-type: none;
 }
 
-header ul li
-{
+header ul li {
     display: none;
 }
 
-header ul li:nth-of-type(1)
-{
+header ul li:nth-of-type(1) {
     display: list-item;
 }
 
-h1
-{
+h1 {
     font-size: 1.802rem;
     font-weight: normal;
     line-height: 1.2;
@@ -359,39 +312,34 @@ h1
     text-align: center;
 }
 
-h2
-{
+h2 {
     font-size: 1.602rem;
     line-height: 1.3;
 
     text-align: left;
 }
 
-h3
-{
+h3 {
     font-size: 1.424rem;
     line-height: 1.4;
 
     text-align: left;
 }
 
-h4
-{
+h4 {
     font-size: 1.266rem;
     line-height: 1.4;
 
     text-align: left;
 }
 
-h5
-{
+h5 {
     font-size: 1.125remrem;
 
     text-align: left;
 }
 
-h6
-{
+h6 {
     font-size: 1rem;
 
     text-align: left;
@@ -399,21 +347,18 @@ h6
 
 /* not a mistake: we need seven heading levels. this is a valid custom tag */
 
-h7
-{
+h7 {
     font-size: 0.889rem;
     font-style: italic;
 
     display: block;
 }
 
-h6 + h7
-{
+h6+h7 {
     margin-top: -1rem;
 }
 
-.section-title
-{
+.section-title {
     font-weight: normal;
 
     margin: 0 0 2em 0;
@@ -425,35 +370,29 @@ h6 + h7
     border-bottom: 1px solid;
 }
 
-.section-title + .section-title
-{
+.section-title+.section-title {
     margin-top: 4em;
 }
 
-.sutta-title
-{
+.sutta-title {
     margin: 0 0 2em 0;
 
     text-align: center;
 }
 
-.range-title
-{
+.range-title {
     border: none;
 }
 
-.inserted-heading
-{
-font-style: italic;
+.inserted-heading {
+    font-style: italic;
 }
 
-.sutta-heading.translated-title
-{
+.sutta-heading.translated-title {
     font-weight: bold;
 }
 
-.namo
-{
+.namo {
     font-style: italic;
 
     margin: 2em;
@@ -461,29 +400,25 @@ font-style: italic;
     text-align: center;
 }
 
-.speaker
-{
+.speaker {
     font-style: italic;
 
     margin-left: 2em;
 }
 
-.evam
-{
+.evam {
     text-transform: uppercase;
 }
 
 .endsutta,
 .endsection,
-.end
-{
+.end {
     font-style: italic;
 
     text-align: center;
 }
 
-.endbook
-{
+.endbook {
     font-weight: bold;
 
     text-align: center;
@@ -491,40 +426,34 @@ font-style: italic;
     text-transform: uppercase;
 }
 
-.expansion-instructions{
-	font-size: 0.889rem;
-	font-style: italic;
+.expansion-instructions {
+    font-size: 0.889rem;
+    font-style: italic;
 }
 
-dd
-{
+dd {
     margin-left: 2em;
 }
 
-dd p
-{
+dd p {
     margin-bottom: 0;
 
     text-indent: 1em;
 }
 
-dd > p:first-of-type
-{
+dd>p:first-of-type {
     text-indent: 0;
 }
 
-.verse-line
-{
+.verse-line {
     display: block;
 }
 
-.secondary-toc
-{
+.secondary-toc {
     margin-bottom: 8em;
 }
 
-.main-toc-heading
-{
+.main-toc-heading {
     font-size: 1.424rem;
 
     margin-bottom: 2em;
@@ -533,8 +462,7 @@ dd > p:first-of-type
     text-transform: uppercase;
 }
 
-.secondary-toc-heading
-{
+.secondary-toc-heading {
     font-size: 1.424rem;
 
     margin-bottom: 2em;
@@ -543,58 +471,48 @@ dd > p:first-of-type
     text-transform: uppercase;
 }
 
-.toc-item.acronym::after
-{
+.toc-item.acronym::after {
     content: ': ';
 }
 
-.toc-item.translated-title::after
-{
+.toc-item.translated-title::after {
     content: ' — ';
 }
 
-.toc-item.root-title
-{
+.toc-item.root-title {
     font-style: italic;
 }
 
-.blurb-item.acronym::after
-{
+.blurb-item.acronym::after {
     content: ': ';
 }
 
-.blurb-item.translated-title::after
-{
+.blurb-item.translated-title::after {
     content: ' — ';
 }
 
-.blurb-item.root-title
-{
+.blurb-item.root-title {
     font-style: italic;
 }
 
-.sutta-heading
-{
+.sutta-heading {
     display: block;
 
     padding: .05em;
 }
 
-.sutta-heading.acronym
-{
+.sutta-heading.acronym {
     font-size: 0.702rem;
     font-weight: normal;
 }
 
-.sutta-heading.root-title
-{
+.sutta-heading.root-title {
     font-size: 0.702rem;
     font-weight: normal;
     font-style: italic;
 }
 
-a[epub|type~='noteref']
-{
+a[epub|type~='noteref'] {
     font-size: 0.79rem;
     font-style: normal !important;
 
@@ -604,12 +522,10 @@ a[epub|type~='noteref']
 /* overrides for specific texts */
 
 #dhp .range article,
-#pli-tv-vi .range article
-{
+#pli-tv-vi .range article {
     margin: 0;
 }
 
-.patimokkha .rule
-{
+.patimokkha .rule {
     font-weight: bold;
 }

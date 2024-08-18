@@ -1,74 +1,117 @@
 <section id="imprint" epub:type="imprint">
-    <p><cite property="dc:title">{{translation_title | safe}}</cite> is a translation of the <span property="dc:title">{{root_title | safe}}</span> by <span property="dc:creator">{{creator_name | safe}}</span>.</p>
-    <div class="license">
-        <p property="dc:rights"><a rel="license" href="https://creativecommons.org/publicdomain/zero/1.0/legalcode" target="_blank">Creative Commons Zero (<span class="license-abbreviation">CC0</span>)</a></p>
-        <p>To the extent possible under law, <span property="dc:creator">{{creator_name | safe}}</span> has waived all copyright and related or neighboring rights to <cite property="dct:title">{{translation_title | safe}}</cite>.</p>
-        <p>This work is published from <span property="vcard:Country" datatype="dct:ISO3166" content="AU" about="https://suttacentral.net/licensing">Australia</span>.</p>
-        <aside class='license-statement'>
-            <p>This translation is an expression of an ancient spiritual text that has been passed down by the Buddhist tradition for the benefit of all sentient beings. It is dedicated to the public domain via Creative Commons Zero (CC0). You are encouraged to copy, reproduce, adapt, alter, or otherwise make use of this translation. The translator respectfully requests that any use be in accordance with the values and principles of the Buddhist community.</p>
-        </aside>
-    </div>
-    <div class="text-metadata" about="https://github.com/suttacentral/bilara-data/tree/master/translation/en/sujato/sutta/dn">
-        <table>
-            <tr class='first-published'>
-                <td>Web publication date</td>
-                <td property="dc:date">{{first_published | safe}}</td>
-            </tr>
-            <tr class='created'>
-                <td>This edition</td>
-                <td property="dc:date">{{created | safe}}</td>
-            </tr>
-            {% if updated %}
-            <tr class='updated'>
-                <td>Updated</td>
-                <td property="dcterms:modified">{{updated | safe}}</td>
-            </tr>
-            {% endif %}
-            <tr class='publication-type'>
-                <td>Publication type</td>
-                <td property="dc:format">{{publication_type | safe}}</td>
-            </tr>
-            <tr class='edition-number'>
-                <td>Edition</td>
-                <td>{{edition_number | safe}}</td>
-            </tr>
-            <tr class='number-of-volumes'>
-                <td>Number of volumes</td>
-                <td>{{number_of_volumes | safe}}</td>
-            </tr>
-            <tr class='publication-isbn'>
-                <td>Publication ISBN</td>
-                <td>{{publication_isbn | safe}}</td>
-            </tr>
-            {% if volume %}
-            <tr class='volume-isbn'>
-                <td>Volume ISBN</td>
-                <td>{{volume_isbn | safe}}</td>
-            </tr>
-            {% endif %}
-            <tr class="editions-url">
-                <td>Publication URL</td>
-                <td><a href="{{publication_url}}">{{publication_url | safe}}</a></td>
-            </tr>
-            <tr class="source-url">
-                <td>Source URL</td>
-                <td><a href="{{source_url | safe}}">{{source_url | safe}}</a></td>
-            </tr>
-            <tr class='publication-number'>
-                <td>Publication number</td>
-                <td property="dc:identifier">{{publication_number | safe}}</td>
-            </tr>
-        </table>
-    </div>
-    <div class='publisher'>
-        <p>Published by <span class="publisher" property="dc:publisher">SuttaCentral</span></p>
-        <address>SuttaCentral,<br>
-            c/o Alwis & Alwis Pty Ltd<br>
-            Kaurna Country,<br>
-            Suite 12,<br>
-            198 Greenhill Road,<br>
-            Eastwood,<br>
-            SA 5063,<br>
-            Australia<br></address>
-    </div>
+  <h1>Imprint</h1>
+  <p>
+    <cite property="dc:title">{{translation_title | safe}}</cite> is a
+    translation of the <span property="dc:title">{{root_title | safe}}</span> by
+    <span property="dc:creator">{{creator_name | safe}}</span>.
+  </p>
+  <div class="license">
+    <p property="dc:rights">
+      <a
+        rel="license"
+        href="https://creativecommons.org/publicdomain/zero/1.0/legalcode"
+        target="_blank"
+        >Creative Commons Zero (<span class="license-abbreviation">CC0</span
+        >)</a
+      >
+    </p>
+    <p>
+      To the extent possible under law,
+      <span property="dc:creator">{{creator_name | safe}}</span> has waived all
+      copyright and related or neighboring rights to
+      <cite property="dct:title">{{translation_title | safe}}</cite>.
+    </p>
+    <p>
+      This work is published from
+      <span
+        property="vcard:Country"
+        datatype="dct:ISO3166"
+        content="AU"
+        about="https://suttacentral.net/licensing"
+        >Australia</span
+      >.
+    </p>
+    <aside class="license-statement">
+      <p>
+        This translation is an expression of an ancient spiritual text that has
+        been passed down by the Buddhist tradition for the benefit of all
+        sentient beings. It is dedicated to the public domain via Creative
+        Commons Zero (CC0). You are encouraged to copy, reproduce, adapt, alter,
+        or otherwise make use of this translation. The translator respectfully
+        requests that any use be in accordance with the values and principles of
+        the Buddhist community.
+      </p>
+    </aside>
+  </div>
+  <div
+    class="text-metadata"
+    about="https://github.com/suttacentral/bilara-data/tree/master/translation/en/sujato/sutta/dn"
+  >
+    <table>
+      <tr class="first-published">
+        <td>Web publication date</td>
+        <td property="dc:date">{{first_published | safe}}</td>
+      </tr>
+      <tr class="created">
+        <td>This edition</td>
+        <td property="dc:date">{{created | safe}}</td>
+      </tr>
+      {% if updated %}
+      <tr class="updated">
+        <td>Updated</td>
+        <td property="dcterms:modified">{{updated | safe}}</td>
+      </tr>
+      {% endif %}
+      <tr class="publication-type">
+        <td>Publication type</td>
+        <td property="dc:format">{{publication_type | safe}}</td>
+      </tr>
+      <tr class="edition-number">
+        <td>Edition</td>
+        <td>{{edition_number | safe}}</td>
+      </tr>
+      <tr class="number-of-volumes">
+        <td>Number of volumes</td>
+        <td>{{number_of_volumes | safe}}</td>
+      </tr>
+      <tr class="publication-isbn">
+        <td>Publication ISBN</td>
+        <td>{{publication_isbn | safe}}</td>
+      </tr>
+      {% if volume %}
+      <tr class="volume-isbn">
+        <td>Volume ISBN</td>
+        <td>{{volume_isbn | safe}}</td>
+      </tr>
+      {% endif %}
+      <tr class="editions-url">
+        <td>Publication URL</td>
+        <td><a href="{{publication_url}}">{{publication_url | safe}}</a></td>
+      </tr>
+      <tr class="source-url">
+        <td>Source URL</td>
+        <td><a href="{{source_url | safe}}">{{source_url | safe}}</a></td>
+      </tr>
+      <tr class="publication-number">
+        <td>Publication number</td>
+        <td property="dc:identifier">{{publication_number | safe}}</td>
+      </tr>
+    </table>
+  </div>
+  <div class="publisher">
+    <p>
+      Published by
+      <span class="publisher" property="dc:publisher">SuttaCentral</span>
+    </p>
+    <address>
+      SuttaCentral,<br />
+      c/o Alwis & Alwis Pty Ltd<br />
+      Kaurna Country,<br />
+      Suite 12,<br />
+      198 Greenhill Road,<br />
+      Eastwood,<br />
+      SA 5063,<br />
+      Australia<br />
+    </address>
+  </div>
 </section>

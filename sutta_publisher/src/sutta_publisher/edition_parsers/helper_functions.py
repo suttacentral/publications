@@ -84,7 +84,6 @@ def process_line(markup: str, segment_id: str, text: str, note: str, references:
     if note:
         text = text.rstrip()
         text += "<a href='#note-{number}' id='noteref-{number}' role='doc-noteref' epub:type='noteref'>{number}</a> "
-    print(markup)    
     return markup.format(f"{references_html}{text}")
 
 

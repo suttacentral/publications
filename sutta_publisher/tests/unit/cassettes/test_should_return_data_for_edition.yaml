@@ -87,7 +87,7 @@ interactions:
       User-Agent:
       - python-requests/2.28.1
     method: GET
-    uri: https://raw.githubusercontent.com/suttacentral/sc-data/master/additional-info/creator_bio.json
+    uri: https://raw.githubusercontent.com/suttacentral/sc-data/main/additional-info/creator_bio.json
   response:
     body:
       string: !!binary |
@@ -193,7 +193,7 @@ interactions:
       User-Agent:
       - python-requests/2.28.1
     method: GET
-    uri: https://raw.githubusercontent.com/suttacentral/sc-data/master/structure/tree/super-tree.json
+    uri: https://raw.githubusercontent.com/suttacentral/sc-data/main/structure/tree/super-tree.json
   response:
     body:
       string: !!binary |
@@ -278,7 +278,7 @@ interactions:
       User-Agent:
       - python-requests/2.28.1
     method: GET
-    uri: https://raw.githubusercontent.com/suttacentral/sc-data/master/structure/tree/sutta/mn-tree.json
+    uri: https://raw.githubusercontent.com/suttacentral/sc-data/main/structure/tree/sutta/mn-tree.json
   response:
     body:
       string: !!binary |

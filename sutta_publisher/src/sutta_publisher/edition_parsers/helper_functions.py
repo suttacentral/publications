@@ -84,7 +84,13 @@ def process_line(markup: str, segment_id: str, text: str, note: str, references:
     if note:
         text = text.rstrip()
         text += "<a href='#note-{number}' id='noteref-{number}' role='doc-noteref' epub:type='noteref'>{number}</a> "
-    return markup.format(f"{references_html}{text}")
+    try:    
+        new_markup = markup.format(f"{references_html}{text}")
+    except Exception as e:
+        print(e)
+        print(markup, segment_id, text, note, references, possible_refs)
+    return new_markup
+    # return markup.format(f"{references_html}{text}")
 
 
 def get_heading_depth(tag: Tag) -> int:

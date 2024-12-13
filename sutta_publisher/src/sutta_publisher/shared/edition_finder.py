@@ -134,7 +134,7 @@ def find_edition_ids(data: list[dict[str, str]], api_key: str) -> list[str]:
 
     last_run_sha: str = get_last_run_sha(repo=SCDATA_REPO_URL, api_key=api_key, date=last_run_date)
 
-    last_commit_sha: str = get_last_commit_sha(repo_url=SCDATA_REPO_URL, api_key=api_key, branch="master")
+    last_commit_sha: str = get_last_commit_sha(repo_url=SCDATA_REPO_URL, api_key=api_key, branch="main")
 
     filenames: list[str] = get_modified_filenames(
         repo_url=SCDATA_REPO_URL, api_key=api_key, last_run_sha=last_run_sha, last_commit_sha=last_commit_sha

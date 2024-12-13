@@ -11,7 +11,7 @@ interactions:
       User-Agent:
       - python-requests/2.28.1
     method: GET
-    uri: https://raw.githubusercontent.com/suttacentral/sc-data/master/misc/pali_reference_edition.json
+    uri: https://raw.githubusercontent.com/suttacentral/sc-data/main/misc/pali_reference_edition.json
   response:
     body:
       string: !!binary |

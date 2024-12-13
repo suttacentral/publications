@@ -28,7 +28,7 @@ API_ENDPOINTS: dict[str, str] = ast.literal_eval(
 )
 CREATOR_BIOS_URL: str = get_from_env(
     name="CREATOR_BIOS_URL",
-    example='CREATOR_BIOS_URL = "https://raw.githubusercontent.com/suttacentral/sc-data/master/additional-info/creator_bio.json"',
+    example='CREATOR_BIOS_URL = "https://raw.githubusercontent.com/suttacentral/sc-data/main/additional-info/creator_bio.json"',
 )
 EDITION_FINDER_PATTERNS: list[dict] = ast.literal_eval(
     get_from_env(
@@ -54,9 +54,9 @@ SCDATA_REPO_URL: str = get_from_env(
 )
 SUPER_TREE_URL: str = get_from_env(
     name="SUPER_TREE_URL",
-    example='SUPER_TREE_URL = "https://raw.githubusercontent.com/suttacentral/sc-data/master/structure/tree/super-tree.json"',
+    example='SUPER_TREE_URL = "https://raw.githubusercontent.com/suttacentral/sc-data/main/structure/tree/super-tree.json"',
 )
 TREE_URL: str = get_from_env(
     name="TREE_URL",
-    example='TREE_URL = "https://raw.githubusercontent.com/suttacentral/sc-data/master/structure/tree/{text_type}/{tree_uid}-tree.json"',
+    example='TREE_URL = "https://raw.githubusercontent.com/suttacentral/sc-data/main/structure/tree/{text_type}/{tree_uid}-tree.json"',
 )

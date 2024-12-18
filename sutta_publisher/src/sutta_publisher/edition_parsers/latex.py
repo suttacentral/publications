@@ -187,7 +187,16 @@ class LatexParser(EditionParser):
     def _append_footnote(self) -> str:
         if self.endnotes:
             _endnote = BeautifulSoup(self.endnotes.pop(0), "lxml")
-            _contents = _endnote.p.contents if _endnote.p else _endnote.body.contents
+            # _contents = _endnote.p.contents if _endnote.p else _endnote.body.contents        
+            if _endnote:
+                if _endnote.p:
+                    _contents = _endnote.p.contents
+                elif _endnote.body:
+                    _contents = _endnote.body.contents
+                else:
+                    _contents = []
+            else:
+                _contents = []
             _data: str = self._process_contents(contents=_contents)
             return cast(str, Command("footnote", _data).dumps())
         else:

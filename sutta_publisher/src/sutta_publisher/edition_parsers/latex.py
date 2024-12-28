@@ -681,10 +681,9 @@ class LatexParser(EditionParser):
     def _collect_endnotes(self, volume: Volume) -> list[str]:
         endnotes = []
 
-        for _matter in volume.frontmatter + volume.backmatter:
+        for _matter in volume.frontmatter:
             # Look for any tag with 'endnotes' in id attribute
             _html_endnotes = BeautifulSoup(_matter, "lxml").find(id=lambda x: x and "-endnotes" in x)
-
             if _html_endnotes:
                 for _endnote in _html_endnotes.find_all("li"):
                     # get what is inside <p> tag without the last element, an anchor tag
@@ -693,6 +692,15 @@ class LatexParser(EditionParser):
 
         if volume.endnotes:
             endnotes.extend(volume.endnotes)
+
+        for _matter in volume.backmatter:
+            # Look for any tag with 'endnotes' in id attribute
+            _html_endnotes = BeautifulSoup(_matter, "lxml").find(id=lambda x: x and "-endnotes" in x)
+            if _html_endnotes:
+                for _endnote in _html_endnotes.find_all("li"):
+                    # get what is inside <p> tag without the last element, an anchor tag
+                    _endnote_contents = _endnote.p.contents[:-1]
+                    endnotes.append("".join(str(_el) for _el in _endnote_contents))
 
         # Since we use raw volume endnotes, we have to ensure that possible links are absolute
         endnotes = list(map(make_absolute_links, endnotes))

@@ -1,0 +1,65 @@
+\begin{bookcover}
+
+  % background
+  
+  \bookcovercomponent{normal}{bg whole}{
+  {\coverimage{}}
+  }
+  
+  % spine
+  
+  \bookcovercomponent{center}{bg spine top}{
+  \begin{minipage}[t][][c]{.9\spinewidth}
+  
+  \spinevolumenumber{\BLOCK{if volume_number}Vol. \VAR{volume_number | safe}\BLOCK{endif}}
+  
+  \spinevolumeacronym{\BLOCK{if volume_translation_title}\VAR{volume_translation_title | safe}\BLOCK{endif}}
+  
+  \end{minipage}
+  }
+  
+  \bookcovercomponent{center rotate}{spine}[0in,0in,0in,0in]{
+  
+  \begin{tabulary}{7in}{V{4in}V{3in}}
+  \spinetranslationtitle{\VAR{translation_title | safe}} & \spinecreatorname{\VAR{creator_name | safe}}
+  \end{tabulary}
+  
+  }
+  
+  \bookcovercomponent{center}{bg spine bottom}{
+  
+  \spinelogo{0}
+  }
+  
+  % front cover
+  
+  \bookcovercomponent{normal}{front}[.95in,.92in,1in,.75in]{
+  
+  \fronttranslationtitle{\VAR{translation_title | safe | wrap_in_z}}
+  
+  \fronttranslationsubtitle{\VAR{translation_subtitle | safe | wrap_in_z}}
+  
+  \hfil{\color{secondarytextcolor}{\rule{4in}{1pt}}}\hfil
+  
+  \frontbyline{\BLOCK{filter wrap_in_z}translated by\BLOCK{endfilter}}
+  \frontcreatorname{\VAR{creator_name | safe | wrap_in_z}}
+  
+  \vfill
+  
+  \setstretch{1.05}
+  
+  \frontvolumenumber{\BLOCK{if volume_number}\z{Volume} \VAR{volume_number | safe | wrap_in_z}\BLOCK{endif}}
+  \frontvolumeacronym{\BLOCK{if volume_acronym}\VAR{volume_acronym | safe | wrap_in_z}\BLOCK{endif}}
+  \frontvolumetranslationtitle{\BLOCK{if volume_translation_title}\VAR{volume_translation_title | safe | wrap_in_z}\BLOCK{endif}}
+  \frontvolumeroottitle{\BLOCK{if volume_root_title}\VAR{volume_root_title | safe | wrap_in_z}\BLOCK{endif}}
+  }
+  
+  % Text on the back cover
+  \bookcovercomponent{center}{bg spine top}{
+  \begin{minipage}[t][][c]{.9\spinewidth}
+
+  \end{minipage}
+  }
+  
+  \end{bookcover}
+  

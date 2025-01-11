@@ -17,8 +17,6 @@ class HardcoverEdition(LatexParser):
     edition_type = EditionType.hardcover
 
     def generate_hardcover(self, volume: Volume) -> None:
-        if volume.volume_number != 3:
-            return
         log.debug(
             f"Generating hardcover... (vol {volume.volume_number or 1} of {self.config.edition.number_of_volumes})"
         )

@@ -32,7 +32,7 @@ def run(editions: EditionsConfigs, api_key: str, is_manual: bool) -> None:
 
     for edition in edition_list:  # type: EditionParser
         # if edition.edition_type in ("html"):  # dev
-        if edition.edition_type in ("html", "epub", "paperback"):
+        if edition.edition_type in ("html", "epub", "paperback", "hardcover"):
             log.info(
                 f"Generating {edition.config.publication.translation_title}... [{edition.config.edition.publication_type}]"
             )

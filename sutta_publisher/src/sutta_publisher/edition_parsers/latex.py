@@ -187,7 +187,7 @@ class LatexParser(EditionParser):
     def _append_footnote(self) -> str:
         if self.endnotes:
             _endnote = BeautifulSoup(self.endnotes.pop(0), "lxml")
-            _contents = _endnote.p.contents if _endnote.p else _endnote.body.contents        
+            _contents = _endnote.p.contents if _endnote.p else _endnote.body.contents
             _data: str = self._process_contents(contents=_contents)
             return cast(str, Command("footnote", _data).dumps())
         else:
@@ -773,11 +773,11 @@ class LatexParser(EditionParser):
     ) -> Document:
         # setup
         doc = Document(**self._process_document_config(volume=volume, config=self.LATEX_COVER_CONFIG))
-
+        publication_type = self.config.edition.publication_type.name
         # cover preamble
         _preamble_template = self._get_cover_template(name=preamble)
         _individual_template = self._get_cover_template(
-            name=get_individual_cover_template_name(volume=volume),
+            name=get_individual_cover_template_name(publication_type, volume=volume),
             template_dir=template_dir,
         )
         _preamble = _preamble_template.render(

@@ -1,0 +1,20 @@
+% blue colors
+
+\providecolor{textcolor}{HTML}{1A1607}
+
+\providecolor{secondarytextcolor}{HTML}{1A1607}
+
+\providecolor{backgroundcolor}{HTML}{FFFFFF}
+
+\color{textcolor}
+
+% images. position of cover image can be adjusted if necessary
+
+\newcommand*{\backlogo}[1]{\normalsize\Logofont{\color{secondarytextcolor}{#1}}}
+
+\newcommand*{\spinelogo}[1]{\centering{\Large\Logofont{\color{secondarytextcolor}{#1}}}}
+
+% block with if condition required for generating cover background image
+% \BLOCK{if not flat_background}
+% \newcommand*{\coverimage}[1]{\vspace*{3in}\hspace*{2in}{\includegraphics[height=8in]{\VAR{images_directory | safe}blue2.png}}}
+% \BLOCK{endif}

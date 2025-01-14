@@ -1,5 +1,12 @@
 \begin{bookcover}
 
+  \newlength{\hardcoverextraspinewidth}
+  \setlength{\hardcoverextraspinewidth}{2mm}
+
+  \newlength{\totalspinewidth}
+  \setlength{\totalspinewidth}{\spinewidth}
+  \addtolength{\totalspinewidth}{2\hardcoverextraspinewidth}
+
   % background
   
   \bookcovercomponent{normal}{bg whole}{
@@ -9,9 +16,10 @@
   % spine
   
   \bookcovercomponent{center}{bg spine top}{
-  \begin{minipage}[t][][c]{.9\spinewidth}
+  \begin{minipage}[t][][c]{\totalspinewidth}
   
-  \spinevolumenumber{\BLOCK{if volume_number}Vol. \VAR{volume_number | safe}\BLOCK{endif}}
+  % \spinevolumenumber{\BLOCK{if volume_number}\fontsize{12}{30}\selectfont Vol. \VAR{volume_number | safe}\BLOCK{endif}}
+  \spinevolumenumber{\BLOCK{if volume_number}\makebox[0pt][c]{\fontsize{12}{30}\selectfont Vol. \VAR{volume_number | safe}}\BLOCK{endif}}
   
   % \spinevolumeacronym{\BLOCK{if volume_translation_title}\VAR{volume_translation_title | safe}\BLOCK{endif}}
   

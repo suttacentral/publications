@@ -2,7 +2,7 @@ import logging
 import os
 from pathlib import Path
 
-from sutta_publisher.edition_parsers.helper_functions import make_paperback_zip_files
+from sutta_publisher.edition_parsers.helper_functions import make_paperback_zip_files, make_hardcover_zip_files
 from sutta_publisher.shared import EDITIONS_REPO_URL, REPO_PATTERN
 from sutta_publisher.shared.github_handler import upload_files_to_repo
 from sutta_publisher.shared.value_objects.edition import EditionResult
@@ -15,6 +15,10 @@ def publish(result: EditionResult, api_key: str) -> None:
 
     if result.publication_type == "paperback":
         _zip_paths = make_paperback_zip_files(paths=file_paths, num_of_volumes=len(result.volumes))
+        file_paths = _zip_paths
+
+    if result.publication_type == "hardcover":
+        _zip_paths = make_hardcover_zip_files(paths=file_paths, num_of_volumes=len(result.volumes))
         file_paths = _zip_paths
 
     volumes_info = f"({len(result.volumes)} volumes) " if len(result.volumes) > 1 else ""

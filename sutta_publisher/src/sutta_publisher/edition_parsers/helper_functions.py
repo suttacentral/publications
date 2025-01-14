@@ -322,10 +322,14 @@ def get_true_volume_index(volume: Volume) -> int:
         return cast(int, volume.volume_number - 1)
 
 
-def get_individual_cover_template_name(volume: Volume) -> str:
+def get_individual_cover_template_name(publication_type, volume: Volume) -> str:
     """Get volume's individual cover template name"""
-    if volume.volume_number:
+    if volume.volume_number and publication_type == "hardcover":
+        return f"{volume.text_uid}-{volume.volume_number}-hardcover.tex"
+    elif volume.volume_number:
         return f"{volume.text_uid}-{volume.volume_number}.tex"
+    elif publication_type == "hardcover":
+        return f"{volume.text_uid}-1-hardcover.tex"
     else:
         # if there is only one volume, use number 1
         return f"{volume.text_uid}-1.tex"
@@ -367,3 +371,29 @@ def make_paperback_zip_files(paths: list[Path], num_of_volumes: int) -> list[Pat
     result = [_make_zip(filename=_filename, paths=_paths) for _filename, _paths in mapping]
 
     return result
+
+
+def make_hardcover_zip_files(paths: list[Path], num_of_volumes: int) -> list[Path]:
+    tex_files, cover_files, content_files = [], [], []
+
+    for _path in paths:
+        if str(_path).endswith(".tex") or str(_path).endswith(".xmpdata"):
+            tex_files.append(_path)
+        elif str(_path).endswith("cover.pdf"):
+            cover_files.append(_path)
+        else:
+            content_files.append(_path)
+
+    base_filename = str(paths[0].stem)
+    if num_of_volumes > 1:
+        base_filename = base_filename[:-2]
+
+    mapping = (
+        (f"{base_filename}-hardcover-tex.zip", tex_files),
+        (f"{base_filename}-hardcover-cover.zip", cover_files),
+        (f"{base_filename}-hardcover.zip", content_files),
+    )
+    return [
+        _make_zip(filename=_filename, paths=_paths)
+        for _filename, _paths in mapping
+    ]

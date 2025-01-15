@@ -189,7 +189,10 @@ class LatexParser(EditionParser):
             _endnote = BeautifulSoup(self.endnotes.pop(0), "lxml")
             _contents = _endnote.p.contents if _endnote.p else _endnote.body.contents
             _data: str = self._process_contents(contents=_contents)
-            return cast(str, Command("footnote", _data).dumps())
+            if self.config.edition.publication_type == "hardcover":
+                return ""
+            else:
+                return cast(str, Command("footnote", _data).dumps())
         else:
             return ""
 
@@ -679,8 +682,8 @@ class LatexParser(EditionParser):
             f.write(_output)
 
     def _collect_endnotes(self, volume: Volume) -> list[str]:
-        if self.config.edition.publication_type == "hardcover":
-            return []
+        # if self.config.edition.publication_type == "hardcover":
+        #     return []
         endnotes = []
         for _matter in volume.frontmatter:
             # Look for any tag with 'endnotes' in id attribute

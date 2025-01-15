@@ -679,8 +679,9 @@ class LatexParser(EditionParser):
             f.write(_output)
 
     def _collect_endnotes(self, volume: Volume) -> list[str]:
+        if self.config.edition.publication_type == "hardcover":
+            return []
         endnotes = []
-
         for _matter in volume.frontmatter:
             # Look for any tag with 'endnotes' in id attribute
             _html_endnotes = BeautifulSoup(_matter, "lxml").find(id=lambda x: x and "-endnotes" in x)

@@ -18,7 +18,9 @@
   \bookcovercomponent{center}{bg spine top}{
   \begin{minipage}[t][][c]{\totalspinewidth}
   
+  % \spinevolumenumber{\BLOCK{if volume_number}Vol. \VAR{volume_number | safe}\BLOCK{endif}}
   % \spinevolumenumber{\BLOCK{if volume_number}\fontsize{12}{30}\selectfont Vol. \VAR{volume_number | safe}\BLOCK{endif}}
+  
   \spinevolumenumber{\BLOCK{if volume_number}\makebox[0pt][c]{\fontsize{12}{30}\selectfont Vol. \VAR{volume_number | safe}}\BLOCK{endif}}
   
   % \spinevolumeacronym{\BLOCK{if volume_translation_title}\VAR{volume_translation_title | safe}\BLOCK{endif}}
@@ -63,10 +65,26 @@
   }
   
   % Text on the back cover
-  \bookcovercomponent{center}{bg spine top}{
-  \begin{minipage}[t][][c]{.9\spinewidth}
+  \bookcovercomponent{normal}{back}[1in,.85in,1in,1in]{
 
+  \backpublicationblurb{ }
+  
+  \backvolumeblurb{ }
+  
+  \backpublisherblurb{ }
+  
+  \vfill
+  
+  \begin{minipage}[b][][b]{4in}
+  
+  % \begin{minipage}[c][][c]{2in}
+  % \backlogo{0} \backpublishername{SuttaCentral}
+  % \end{minipage}\begin{minipage}[c][][c]{2in}
+  % \backisbn{\BLOCK{if volume_isbn}\VAR{volume_isbn | safe}\BLOCK{else}\VAR{publication_isbn | safe}\BLOCK{endif}}
+  % \end{minipage}
+  
   \end{minipage}
+  
   }
   
   \end{bookcover}

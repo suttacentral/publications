@@ -682,8 +682,6 @@ class LatexParser(EditionParser):
             f.write(_output)
 
     def _collect_endnotes(self, volume: Volume) -> list[str]:
-        # if self.config.edition.publication_type == "hardcover":
-        #     return []
         endnotes = []
         for _matter in volume.frontmatter:
             # Look for any tag with 'endnotes' in id attribute
@@ -798,6 +796,8 @@ class LatexParser(EditionParser):
         # cover body
         _body_template = self._get_cover_template(name=body, finalize=self._convert_input_to_tex)
         _body = _body_template.render(**volume.dict(exclude_none=True, exclude_unset=True))
+        # The cover does not need to convert the Pali text
+        _body = _body.replace("\\textsanskrit", "")
         doc.append(NoEscape(_body))
 
         return doc

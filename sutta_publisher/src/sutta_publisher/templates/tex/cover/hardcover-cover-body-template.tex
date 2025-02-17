@@ -15,16 +15,9 @@
   
   % spine
   
-  \bookcovercomponent{center}{bg spine top}{
-  \begin{minipage}[t][][c]{\totalspinewidth}
-  
-  % \spinevolumenumber{\BLOCK{if volume_number}Vol. \VAR{volume_number | safe}\BLOCK{endif}}
-  % \spinevolumenumber{\BLOCK{if volume_number}\fontsize{12}{30}\selectfont Vol. \VAR{volume_number | safe}\BLOCK{endif}}
-  
-  \spinevolumenumber{\BLOCK{if volume_number}\makebox[0pt][c]{\fontsize{12}{30}\selectfont Vol. \VAR{volume_number | safe}}\BLOCK{endif}}
-  
-  % \spinevolumeacronym{\BLOCK{if volume_translation_title}\VAR{volume_translation_title | safe}\BLOCK{endif}}
-  
+  \bookcovercomponent{center}{bg spine top}[0in,0in,0in,0in]{
+  \begin{minipage}[t][][c]{0pt}
+  \spinevolumenumber{\BLOCK{if volume_number}\makebox[0pt][c]{\selectfont{\VAR{volume_number | safe}}}\BLOCK{endif}}
   \end{minipage}
   }
   

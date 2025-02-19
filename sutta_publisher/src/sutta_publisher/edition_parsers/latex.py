@@ -284,8 +284,8 @@ class LatexParser(EditionParser):
             # Samyutta only - move all headings one level up in order to remove the top level heading
             if self.config.edition.text_uid == "sn":
                 _heading_depth -= 1
-                if not _heading_depth:
-                    return ""
+                # if not _heading_depth:
+                    # return ""
 
             if self.sutta_depth == 2:
                 index = _heading_depth

@@ -189,10 +189,11 @@ class LatexParser(EditionParser):
             _endnote = BeautifulSoup(self.endnotes.pop(0), "lxml")
             _contents = _endnote.p.contents if _endnote.p else _endnote.body.contents
             _data: str = self._process_contents(contents=_contents)
-            if self.config.edition.publication_type == "hardcover":
-                return ""
-            else:
-                return cast(str, Command("footnote", _data).dumps())
+            return cast(str, Command("footnote", _data).dumps())
+            # if self.config.edition.publication_type == "hardcover":
+            #     return ""
+            # else:
+            #     return cast(str, Command("footnote", _data).dumps())
         else:
             return ""
 

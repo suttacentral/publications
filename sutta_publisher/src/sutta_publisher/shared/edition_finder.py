@@ -1,4 +1,4 @@
-from requests import Response
+from requests import Response  # type: ignore[import-untyped]
 
 from sutta_publisher.shared import EDITION_FINDER_PATTERNS, LAST_RUN_DATE_FILE_URL, SCDATA_REPO_URL, SUPER_TREE_URL
 from sutta_publisher.shared.github_handler import get_last_commit_sha, get_modified_filenames, worker

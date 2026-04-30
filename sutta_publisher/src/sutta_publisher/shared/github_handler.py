@@ -6,9 +6,10 @@ from base64 import b64encode
 from datetime import datetime
 from pathlib import Path
 from time import sleep
+from typing import Optional
 
-import requests
-from requests import Response
+import requests  # type: ignore[import-untyped]
+from requests import Response  # type: ignore[import-untyped]
 
 from sutta_publisher.shared import EDITIONS_REPO_URL, LAST_RUN_DATE_FILE_URL
 from sutta_publisher.shared.value_objects.edition import EditionResult
@@ -19,7 +20,7 @@ MAX_GITHUB_REQUEST_ERRORS = 3
 ERROR_SLEEP_TIME = 1  # in seconds
 
 
-def worker(queue: list[dict], api_key: str = None, silent: bool = False) -> list[Response]:
+def worker(queue: list[dict], api_key: Optional[str] = None, silent: bool = False) -> list[Response]:
 
     _queue: list[tuple[int, dict]] = [(_i, _t) for _i, _t in enumerate(queue)]
     errors = 0
@@ -62,6 +63,12 @@ def worker(queue: list[dict], api_key: str = None, silent: bool = False) -> list
 
 def get_last_commit_sha(repo_url: str, api_key: str, branch: str) -> str:
     """Get SHA of the last commit"""
+    last_commit_sha, _ = get_last_commit_and_tree_sha(repo_url=repo_url, api_key=api_key, branch=branch)
+    return last_commit_sha
+
+
+def get_last_commit_and_tree_sha(repo_url: str, api_key: str, branch: str) -> tuple[str, str]:
+    """Get SHAs of the last commit and its tree."""
     _request = {
         "method": "get",
         "url": f"{repo_url}/branches/{branch}",
@@ -69,8 +76,24 @@ def get_last_commit_sha(repo_url: str, api_key: str, branch: str) -> str:
     }
     _response: Response = worker(queue=[_request], api_key=api_key)[0]
 
-    sha: str = _response.json()["commit"]["sha"]
-    return sha
+    _response_data = _response.json()
+    _commit = _response_data.get("commit")
+    if not isinstance(_commit, dict):
+        raise ValueError(f"Unexpected GitHub response for branch '{branch}': missing 'commit' object.")
+
+    commit_sha = _commit.get("sha")
+    _nested_commit = _commit.get("commit")
+    if not isinstance(_nested_commit, dict):
+        raise ValueError(f"Unexpected GitHub response for branch '{branch}': missing nested 'commit' object.")
+
+    _tree = _nested_commit.get("tree")
+    if not isinstance(_tree, dict):
+        raise ValueError(f"Unexpected GitHub response for branch '{branch}': missing 'tree' object.")
+
+    tree_sha = _tree.get("sha")
+    if not commit_sha or not tree_sha:
+        raise ValueError(f"Unexpected GitHub response for branch '{branch}': missing commit SHA or tree SHA.")
+    return commit_sha, tree_sha
 
 
 def get_blob_shas(file_paths: list[Path], repo_url: str, api_key: str) -> list[str]:
@@ -129,46 +152,27 @@ def get_old_files_shas(file_paths: list[Path], repo_url: str, repo_path: str, ap
 
 def create_new_tree(
     file_paths: list[Path],
-    repo_url: str,
     repo_path: str,
-    api_key: str,
-    last_commit_sha: str,
     blob_shas: list[str],
-    old_files_shas: list[str],
 ) -> list[dict]:
-    """Create new Git tree with updated files"""
-    _request = {
-        "method": "get",
-        "url": f"{repo_url}/git/trees/{last_commit_sha}?recursive=1",
-        "help_text": "create new tree",
-    }
-    _responses: list[Response] = worker(queue=[_request], api_key=api_key, silent=True)
-
-    _old_tree = _responses[0].json().get("tree", []) if _responses else []
-
-    new_tree: list[dict] = [
-        _item for _item in _old_tree if _item.get("type") == "blob" and not _item.get("sha") in old_files_shas
+    """Create incremental Git tree entries with updated files only."""
+    return [
+        {
+            "path": f"{repo_path}{'/' if repo_path else ''}{_file.name}",
+            "mode": "100644",
+            "type": "blob",
+            "sha": _sha,
+        }
+        for _file, _sha in zip(file_paths, blob_shas)
     ]
-    new_tree.extend(
-        [
-            {
-                "path": f"{repo_path}{'/' if repo_path else ''}{_file.name}",
-                "mode": "100644",
-                "type": "blob",
-                "sha": _sha,
-            }
-            for _file, _sha in zip(file_paths, blob_shas)
-        ]
-    )
-    return new_tree
 
 
-def get_tree_sha(repo_url: str, api_key: str, tree: list[dict]) -> str:
-    """Post a new tree and return its SHA"""
+def get_tree_sha(repo_url: str, api_key: str, tree: list[dict], base_tree_sha: str) -> str:
+    """Post a new tree on top of base tree and return its SHA."""
     _request = {
         "method": "post",
         "url": f"{repo_url}/git/trees",
-        "body": json.dumps({"tree": tree}),
+        "body": json.dumps({"base_tree": base_tree_sha, "tree": tree}),
         "help_text": "create new tree",
     }
     _response: Response = worker(queue=[_request], api_key=api_key)[0]
@@ -217,20 +221,16 @@ def update_head(repo_url: str, api_key: str, new_commit_sha: str) -> None:
 
 
 def upload_files_to_repo(
-    file_paths: list[Path], repo_url: str, repo_path: str, api_key: str, edition: EditionResult = None
+    file_paths: list[Path], repo_url: str, repo_path: str, api_key: str, edition: Optional[EditionResult] = None
 ) -> None:
 
-    last_commit_sha: str = get_last_commit_sha(repo_url, api_key, "main")
+    last_commit_sha, base_tree_sha = get_last_commit_and_tree_sha(repo_url=repo_url, api_key=api_key, branch="main")
 
     blob_shas: list[str] = get_blob_shas(file_paths, repo_url, api_key)
 
-    old_files_shas: list[str] = get_old_files_shas(file_paths, repo_url, repo_path, api_key)
+    new_tree: list[dict] = create_new_tree(file_paths=file_paths, repo_path=repo_path, blob_shas=blob_shas)
 
-    new_tree: list[dict] = create_new_tree(
-        file_paths, repo_url, repo_path, api_key, last_commit_sha, blob_shas, old_files_shas
-    )
-
-    tree_sha: str = get_tree_sha(repo_url, api_key, new_tree)
+    tree_sha: str = get_tree_sha(repo_url=repo_url, api_key=api_key, tree=new_tree, base_tree_sha=base_tree_sha)
 
     new_commit_sha: str = get_new_commit_sha(edition, file_paths, repo_url, api_key, last_commit_sha, tree_sha)
 

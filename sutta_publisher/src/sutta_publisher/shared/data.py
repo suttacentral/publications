@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import NoReturn
 
-import requests
+import requests  # type: ignore[import-untyped]
 
 from sutta_publisher.shared import API_ENDPOINTS, API_URL, SUPER_TREE_URL, TREE_URL
 from sutta_publisher.shared.value_objects.edition_config import EditionConfig, Volumes

@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Callable, cast
 
 import jinja2
-import requests
+import requests  # type: ignore[import-untyped]
 from bs4 import BeautifulSoup, Tag
 from jinja2 import Environment, FileSystemLoader, Template, TemplateNotFound
 
@@ -615,7 +615,7 @@ class EditionParser(ABC):
         else:
             response = requests.get(FRONTMATTER_URL.format(matter=matter, working_dir=working_dir))
             response.raise_for_status()
-            return response.text
+            return cast(str, response.text)
 
     @staticmethod
     def _get_template(name: str) -> Template:

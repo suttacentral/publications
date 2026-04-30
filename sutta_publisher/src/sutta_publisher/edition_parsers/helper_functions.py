@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, cast, no_type_check
 from zipfile import ZipFile
 
-import requests
+import requests  # type: ignore[import-untyped]
 from bs4 import BeautifulSoup, Tag
 from ebooklib.epub import Link, Section
 
@@ -322,7 +322,7 @@ def get_true_volume_index(volume: Volume) -> int:
         return cast(int, volume.volume_number - 1)
 
 
-def get_individual_cover_template_name(publication_type, volume: Volume) -> str:
+def get_individual_cover_template_name(publication_type: str, volume: Volume) -> str:
     """Get volume's individual cover template name"""
     if volume.volume_number and publication_type == "hardcover":
         return f"{volume.text_uid}-{volume.volume_number}-hardcover.tex"
@@ -393,7 +393,4 @@ def make_hardcover_zip_files(paths: list[Path], num_of_volumes: int) -> list[Pat
         (f"{base_filename}-hardcover-cover.zip", cover_files),
         (f"{base_filename}-hardcover.zip", content_files),
     )
-    return [
-        _make_zip(filename=_filename, paths=_paths)
-        for _filename, _paths in mapping
-    ]
+    return [_make_zip(filename=_filename, paths=_paths) for _filename, _paths in mapping]

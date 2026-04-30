@@ -286,7 +286,7 @@ class LatexParser(EditionParser):
             if self.config.edition.text_uid == "sn":
                 _heading_depth -= 1
                 # if not _heading_depth:
-                    # return ""
+                # return ""
 
             if self.sutta_depth == 2:
                 index = _heading_depth
@@ -557,7 +557,12 @@ class LatexParser(EditionParser):
             log.warning(f"Template '{_template_name}' for publication/volume specific configuration not found.")
             return None
 
-    def _get_cover_template(self, name: str, finalize: Callable[[Any], str] = None, template_dir: str = "") -> Template:
+    def _get_cover_template(
+        self,
+        name: str,
+        finalize: Callable[[Any], str] | None = None,
+        template_dir: str = "",
+    ) -> Template:
 
         _subdir = LatexParser.COVER_TEMPLATES_SUBDIR
 

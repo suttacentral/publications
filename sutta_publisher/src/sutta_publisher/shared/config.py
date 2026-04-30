@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 
-import requests
+import requests  # type: ignore[import-untyped]
 from pydantic import ValidationError
 
 from sutta_publisher.shared import API_ENDPOINTS, API_URL, CREATOR_BIOS_URL

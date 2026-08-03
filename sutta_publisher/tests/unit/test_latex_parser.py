@@ -103,6 +103,14 @@ def latex_edition(data, config):
             "<dl><dt>Topic 1</dt><dd>Item 1</dd></dl>",
             "\\begin{description}%\n\\item[Topic 1] Item 1%\n\\end{description}\n\n",
         ),
+        (
+            "<dl><dt>Kd 1</dt><dd><span class='blurb-content'><ul><li>Section 3 is missing.</li></ul></span></dd></dl>",
+            "\\begin{description}%\n\\item[Kd 1] \\mbox{}\\par\n\\begin{itemize}%\n\\item Section 3 is missing.%\n\\end{itemize}\n\n%\n\\end{description}\n\n",
+        ),
+        (
+            "<dl><dt>Topic 2</dt><dd><ol><li>First item.</li></ol></dd></dl>",
+            "\\begin{description}%\n\\item[Topic 2] \\mbox{}\\par\n\\begin{enumerate}%\n\\item First item.%\n\\end{enumerate}\n\n%\n\\end{description}\n\n",
+        ),
         # <em>
         ("<em>Test</em>", "\\emph{Test}"),
         # <hr>

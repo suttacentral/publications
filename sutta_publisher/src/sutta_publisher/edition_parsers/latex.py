@@ -362,6 +362,9 @@ class LatexParser(EditionParser):
         for _key, _value in zip(tag.find_all("dt"), tag.find_all("dd")):
             _label = self._process_contents(contents=_key.contents)
             _item = self._process_contents(contents=_value.contents)
+            if _item.lstrip().startswith((r"\begin{itemize}", r"\begin{enumerate}")):
+                # Keep a nested list below its description label instead of sharing the label's baseline.
+                _item = cast(str, NoEscape("\\mbox{}\\par\n") + _item)
             desc.add_item(label=_label, s=_item)
         tex = desc.dumps().replace("]%\n", "] ")
 

@@ -8,6 +8,7 @@ services:
     volumes:
       - ./sutta_publisher/src:/app
       - ./sutta_publisher/tests:/tests
+      - ./sutta_publisher/assets/fonts:/usr/local/share/fonts/sutta-publisher:ro
       - ./tmp:/tmp
     environment:
       - PYTHONDEBUG=1

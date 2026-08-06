@@ -150,6 +150,31 @@ def get_old_files_shas(file_paths: list[Path], repo_url: str, repo_path: str, ap
     return old_files_shas
 
 
+def get_directory_deletion_entries(file_paths: list[Path], repo_url: str, repo_path: str, api_key: str) -> list[dict]:
+    """Create tree entries that remove remote files absent from the new publication."""
+    _request = {
+        "method": "get",
+        "url": f"{repo_url}/contents/{repo_path}",
+        "help_text": "get directory contents",
+    }
+    _responses: list[Response] = worker(queue=[_request], api_key=api_key, silent=True)
+
+    if not _responses:
+        return []
+
+    new_filenames = {_file.name for _file in file_paths}
+    return [
+        {
+            "path": _item["path"],
+            "mode": "100644",
+            "type": "blob",
+            "sha": None,
+        }
+        for _item in _responses[0].json()
+        if _item.get("type") == "file" and _item.get("name") not in new_filenames
+    ]
+
+
 def create_new_tree(
     file_paths: list[Path],
     repo_path: str,
@@ -221,14 +246,29 @@ def update_head(repo_url: str, api_key: str, new_commit_sha: str) -> None:
 
 
 def upload_files_to_repo(
-    file_paths: list[Path], repo_url: str, repo_path: str, api_key: str, edition: Optional[EditionResult] = None
+    file_paths: list[Path],
+    repo_url: str,
+    repo_path: str,
+    api_key: str,
+    edition: Optional[EditionResult] = None,
+    replace_directory: bool = False,
 ) -> None:
 
     last_commit_sha, base_tree_sha = get_last_commit_and_tree_sha(repo_url=repo_url, api_key=api_key, branch="main")
 
     blob_shas: list[str] = get_blob_shas(file_paths, repo_url, api_key)
 
-    new_tree: list[dict] = create_new_tree(file_paths=file_paths, repo_path=repo_path, blob_shas=blob_shas)
+    new_tree: list[dict] = []
+    if replace_directory:
+        new_tree.extend(
+            get_directory_deletion_entries(
+                file_paths=file_paths,
+                repo_url=repo_url,
+                repo_path=repo_path,
+                api_key=api_key,
+            )
+        )
+    new_tree.extend(create_new_tree(file_paths=file_paths, repo_path=repo_path, blob_shas=blob_shas))
 
     tree_sha: str = get_tree_sha(repo_url=repo_url, api_key=api_key, tree=new_tree, base_tree_sha=base_tree_sha)
 

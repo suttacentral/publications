@@ -34,6 +34,7 @@ def publish(result: EditionResult, api_key: str) -> None:
             repo_url=EDITIONS_REPO_URL,
             repo_path=REPO_PATTERN.format(**result.dict()),
             api_key=api_key,
+            replace_directory=True,
         )
 
     log.info("** Publication uploaded successfully! **")

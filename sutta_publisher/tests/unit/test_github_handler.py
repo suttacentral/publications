@@ -1,9 +1,149 @@
+import json
 from unittest import mock
 
 import pytest
 from requests.models import Response
 
 from sutta_publisher.shared import github_handler
+
+
+def make_response(payload: dict | list, status_code: int = 200) -> Response:
+    response = Response()
+    response.status_code = status_code
+    response.json = lambda: payload
+    return response
+
+
+@mock.patch("sutta_publisher.shared.github_handler.requests.post")
+@mock.patch("sutta_publisher.shared.github_handler.requests.get")
+def test_upload_replaces_existing_directory_contents(mock_get: mock.Mock, mock_post: mock.Mock, tmp_path) -> None:
+    new_file = tmp_path / "Sayings-of-the-Dhamma-sujato-2026-08-05.zip"
+    new_file.write_bytes(b"new publication")
+
+    mock_get.side_effect = [
+        make_response(
+            {
+                "commit": {
+                    "sha": "last-commit-sha",
+                    "commit": {"tree": {"sha": "base-tree-sha"}},
+                }
+            }
+        ),
+        make_response(
+            [
+                {
+                    "name": "Sayings-of-the-Dhamma-sujato-2026-07-01.zip",
+                    "path": "en/sujato/dhp/paperback/Sayings-of-the-Dhamma-sujato-2026-07-01.zip",
+                    "type": "file",
+                    "sha": "old-blob-sha",
+                },
+                {
+                    "name": "Sayings-of-the-Dhamma-sujato-2026-07-01-3.zip",
+                    "path": "en/sujato/dhp/paperback/Sayings-of-the-Dhamma-sujato-2026-07-01-3.zip",
+                    "type": "file",
+                    "sha": "old-third-volume-blob-sha",
+                },
+                {
+                    "name": "Sayings-of-the-Dhamma-sujato-2026-08-05.zip",
+                    "path": "en/sujato/dhp/paperback/Sayings-of-the-Dhamma-sujato-2026-08-05.zip",
+                    "type": "file",
+                    "sha": "current-blob-sha",
+                },
+                {
+                    "name": "assets",
+                    "path": "en/sujato/dhp/paperback/assets",
+                    "type": "dir",
+                    "sha": "assets-tree-sha",
+                },
+            ]
+        ),
+    ]
+    mock_post.side_effect = [
+        make_response({"sha": "new-blob-sha"}),
+        make_response({"sha": "new-tree-sha"}),
+        make_response({"sha": "new-commit-sha"}),
+        make_response({}),
+    ]
+
+    github_handler.upload_files_to_repo(
+        file_paths=[new_file],
+        repo_url="https://api.github.com/repos/example/editions",
+        repo_path="en/sujato/dhp/paperback",
+        api_key="test-key",
+        replace_directory=True,
+    )
+
+    tree_request = next(
+        call
+        for call in mock_post.call_args_list
+        if call.kwargs["url"] == "https://api.github.com/repos/example/editions/git/trees"
+    )
+    assert json.loads(tree_request.kwargs["data"])["tree"] == [
+        {
+            "path": "en/sujato/dhp/paperback/Sayings-of-the-Dhamma-sujato-2026-07-01.zip",
+            "mode": "100644",
+            "type": "blob",
+            "sha": None,
+        },
+        {
+            "path": "en/sujato/dhp/paperback/Sayings-of-the-Dhamma-sujato-2026-07-01-3.zip",
+            "mode": "100644",
+            "type": "blob",
+            "sha": None,
+        },
+        {
+            "path": "en/sujato/dhp/paperback/Sayings-of-the-Dhamma-sujato-2026-08-05.zip",
+            "mode": "100644",
+            "type": "blob",
+            "sha": "new-blob-sha",
+        },
+    ]
+
+
+@mock.patch("sutta_publisher.shared.github_handler.requests.post")
+@mock.patch("sutta_publisher.shared.github_handler.requests.get")
+def test_upload_preserves_directory_contents_by_default(mock_get: mock.Mock, mock_post: mock.Mock, tmp_path) -> None:
+    new_file = tmp_path / "last_run_date"
+    new_file.write_text("2026-08-05T10:00:00Z")
+
+    mock_get.return_value = make_response(
+        {
+            "commit": {
+                "sha": "last-commit-sha",
+                "commit": {"tree": {"sha": "base-tree-sha"}},
+            }
+        }
+    )
+    mock_post.side_effect = [
+        make_response({"sha": "new-blob-sha"}),
+        make_response({"sha": "new-tree-sha"}),
+        make_response({"sha": "new-commit-sha"}),
+        make_response({}),
+    ]
+
+    github_handler.upload_files_to_repo(
+        file_paths=[new_file],
+        repo_url="https://api.github.com/repos/example/editions",
+        repo_path="",
+        api_key="test-key",
+    )
+
+    assert [call.kwargs["url"] for call in mock_get.call_args_list] == [
+        "https://api.github.com/repos/example/editions/branches/main"
+    ]
+    tree_request = next(
+        call
+        for call in mock_post.call_args_list
+        if call.kwargs["url"] == "https://api.github.com/repos/example/editions/git/trees"
+    )
+    assert json.loads(tree_request.kwargs["data"])["tree"] == [
+        {
+            "path": "last_run_date",
+            "mode": "100644",
+            "type": "blob",
+            "sha": "new-blob-sha",
+        }
+    ]
 
 
 @pytest.mark.parametrize(

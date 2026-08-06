@@ -1,0 +1,35 @@
+% Keep CJK line breaking local to \langlzh. Loading luatexja globally changes
+% microtype behavior and reclassifies Western punctuation and symbols, which
+% affects otherwise unrelated line breaks and pagination.
+\newfontfamily\cjk{Noto Serif CJK TC}
+
+\ExplSyntaxOn
+\tl_const:Nn \c_sutta_cjk_no_break_before_tl
+  { ， 。 、 ； ： ！ ？ ） 》 」 』 】 〕 〉 〗 〙 〛 ” ’ … }
+\tl_const:Nn \c_sutta_cjk_no_break_after_tl
+  { （ 《 「 『 【 〔 〈 〖 〘 〚 “ ‘ }
+\tl_new:N \l_sutta_cjk_previous_tl
+
+\cs_new_protected:Npn \sutta_cjk_typeset:n #1
+  {
+    \tl_clear:N \l_sutta_cjk_previous_tl
+    \tl_map_inline:nn {#1}
+      {
+        \tl_if_empty:NF \l_sutta_cjk_previous_tl
+          {
+            \tl_if_in:NnF \c_sutta_cjk_no_break_before_tl {##1}
+              {
+                \exp_args:NV \tl_if_in:NnF
+                  \c_sutta_cjk_no_break_after_tl
+                  \l_sutta_cjk_previous_tl
+                  { \penalty 0 \relax }
+              }
+          }
+        ##1
+        \tl_set:Nn \l_sutta_cjk_previous_tl {##1}
+      }
+  }
+
+\NewDocumentCommand \langlzh { m }
+  { { \cjk \sutta_cjk_typeset:n {#1} } }
+\ExplSyntaxOff

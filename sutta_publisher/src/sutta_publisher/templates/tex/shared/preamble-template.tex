@@ -12,7 +12,6 @@
 \usepackage{setspace}%
 \usepackage{sectsty}
 \usepackage{fontspec}
-\usepackage{luatexja}
 \usepackage{marginnote}
 \usepackage[bottom]{footmisc}
 \usepackage{enumitem}
@@ -83,9 +82,8 @@ allcolors=black
 \newfontfamily\Noligaturefont[Renderer=Basic]{Arno Pro}
 \newfontfamily\Noligaturecaptionfont[Renderer=Basic]{Arno Pro Caption}
 
-% chinese fonts
-\newfontfamily\cjk{Noto Serif CJK TC}
-\newcommand*{\langlzh}[1]{\cjk{#1}\normalfont}%
+% chinese fonts and line breaking
+\BLOCK{ include "cjk-template.tex" }
 
 % logo
 \newfontfamily\Logofont{sclogo.ttf}

@@ -77,7 +77,17 @@ class EpubEdition(LatexParser):
         return self._make_chapter_content(html=html, file_name=file_name)
 
     def _set_chapter(self, book: EpubBook, html: BeautifulSoup, chapter_name: str) -> None:
-        chapter = self._make_chapter(html=html, chapter_name=chapter_name)
+        # Matter files can share a class (e.g. several introductions or appendices).
+        # Keep each chapter in its own ZIP entry and manifest resource.
+        used_paths = {item.file_name for item in book.get_items()}
+        used_paths.add("nav.xhtml")  # The navigation document is added after the chapters.
+        unique_name = chapter_name
+        suffix = 2
+        while f"{unique_name}.xhtml" in used_paths:
+            unique_name = f"{chapter_name}-{suffix}"
+            suffix += 1
+
+        chapter = self._make_chapter(html=html, chapter_name=unique_name)
         chapter.add_item(self.default_style)
         book.add_item(chapter)
         book.spine.append(chapter)
